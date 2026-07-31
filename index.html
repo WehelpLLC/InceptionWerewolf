@@ -618,6 +618,23 @@ async function loadAdminData(){
   el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">加载中...</div>';
 
   const data=await fb.get('tournament/playerBrackets');
+  
+  // 先显示原始数据，帮助调试
+  if(data){
+    const players=Object.values(data);
+    let dbg='<div style="background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:16px;">';
+    dbg+='<div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;">📦 Firebase 原始数据</div>';
+    players.forEach(p=>{
+      const wins=p.wins||{};
+      const r4=wins[4]||wins['4']||{};
+      const champ=r4[0]||r4['0']||'（空）';
+      dbg+=`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid rgba(200,160,40,0.08);">`;
+      dbg+=`${p.emoji||'?'} ${p.name} · 决赛冠军: <b style="color:var(--gold2)">${champ}</b>`;
+      dbg+=`</div>`;
+    });
+    dbg+='</div>';
+    el.innerHTML=dbg;
+  }
   if(!data||!Object.keys(data).length){
     el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">暂无玩家数据</div>';
     return;
