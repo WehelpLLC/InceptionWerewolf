@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>我最喜欢玩的角色！· 北美盗梦空间狼人杀联赛</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -165,6 +166,40 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   background:rgba(80,200,120,0.9);color:#fff;padding:8px 20px;border-radius:16px;
   font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
 .toast.show{opacity:1;}
+
+/* 生成结果图 */
+.gen-btn{width:100%;margin-top:12px;padding:14px;background:rgba(255,215,60,0.12);
+  border:1px solid rgba(255,215,60,0.45);color:var(--gold2);border-radius:10px;
+  font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;
+  font-family:'Noto Serif SC',serif;}
+.gen-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.gen-overlay.show{display:flex;}
+.gen-txt{color:var(--gold2);font-size:14px;letter-spacing:3px;}
+/* 结果图卡片 */
+.result-card{position:fixed;left:-9999px;top:0;width:680px;
+  background:linear-gradient(160deg,#060918 0%,#080c20 50%,#050810 100%);
+  padding:44px 48px;font-family:'Noto Serif SC',serif;color:#e8d070;
+  border:2px solid rgba(200,160,40,0.35);}
+.rc-logo{font-size:10px;letter-spacing:5px;color:rgba(200,160,40,0.45);margin-bottom:10px;}
+.rc-title{font-size:24px;font-weight:900;letter-spacing:5px;color:#fdd840;
+  text-shadow:0 0 30px rgba(255,210,40,0.4);margin-bottom:6px;}
+.rc-player{font-size:16px;letter-spacing:3px;color:rgba(200,160,40,0.6);margin-bottom:28px;
+  padding-bottom:16px;border-bottom:1px solid rgba(200,160,40,0.2);}
+.rc-podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:24px;}
+.rc-p{text-align:center;padding:20px 24px;border-radius:10px;}
+.rc-p.p1{background:rgba(255,215,60,0.14);border:1px solid rgba(255,215,60,0.5);order:2;min-width:160px;}
+.rc-p.p2{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.3);order:1;min-width:130px;}
+.rc-p.p3{background:rgba(180,120,40,0.08);border:1px solid rgba(180,120,40,0.3);order:3;min-width:130px;}
+.rc-icon{font-size:32px;margin-bottom:8px;}
+.rc-rank{font-size:10px;letter-spacing:2px;color:rgba(200,160,40,0.5);margin-bottom:6px;}
+.rc-name{font-size:20px;font-weight:900;letter-spacing:2px;}
+.rc-p.p1 .rc-name{color:#fdd840;}
+.rc-p.p2 .rc-name{color:rgba(220,220,220,.9);}
+.rc-p.p3 .rc-name{color:rgba(220,160,60,.9);}
+.rc-footer{text-align:center;font-size:10px;letter-spacing:3px;
+  color:rgba(200,160,40,0.3);margin-top:20px;padding-top:16px;
+  border-top:1px solid rgba(200,160,40,0.15);}
 </style>
 </head>
 <body>
@@ -473,7 +508,8 @@ function renderBracket(){
     html+=`<div class="m-champ"><div class="m-champ-icon">🏆</div>
       <div style="font-size:11px;color:var(--dim);letter-spacing:2px">我最喜欢玩的角色</div>
       <div class="m-champ-name">${champ}</div>
-      <div style="font-size:11px;color:var(--dim);margin-top:6px">结果已保存 ✓</div></div>
+      <div style="font-size:11px;color:rgba(80,200,120,0.7);margin-top:6px">结果已保存 ✓</div></div>
+      <button class="gen-btn" onclick="generateImage()">🖼 生成结果图</button>
       <button class="m-reset" onclick="resetBracket()">重新选择</button>`;
   }
 
@@ -483,6 +519,45 @@ function renderBracket(){
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';
   setTimeout(()=>t.className='toast',2000);
+}
+
+
+// ══ 生成结果图 ══
+function generateImage(){
+  const{champ,finalist,thirds}=top3();
+  if(!champ){showToast('请先完成所有对阵！');return;}
+  const now=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('resultCard').innerHTML=`
+    <div class="rc-logo">北美盗梦空间狼人杀联赛 · Season 3</div>
+    <div class="rc-title">我最喜欢玩的角色！</div>
+    <div class="rc-player">${curEmoji} ${curName}</div>
+    <div class="rc-podium">
+      ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">第二喜欢</div><div class="rc-name">${finalist}</div></div>`:''}
+      <div class="rc-p p1"><div class="rc-icon">🥇</div><div class="rc-rank">最喜欢的角色</div><div class="rc-name">${champ}</div></div>
+      ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">第三喜欢</div><div class="rc-name">${thirds[0]}</div></div>`:''}
+    </div>
+    <div class="rc-footer">北美盗梦空间狼人杀联赛 · ${now}</div>
+  `;
+  const overlay=document.getElementById('genOverlay');
+  overlay.classList.add('show');
+  setTimeout(()=>{
+    html2canvas(document.getElementById('resultCard'),{
+      scale:2,backgroundColor:null,useCORS:true,logging:false
+    }).then(canvas=>{
+      overlay.classList.remove('show');
+      canvas.toBlob(blob=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;
+        a.download=`${curName}_最喜欢角色.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },'image/png');
+    }).catch(()=>{
+      overlay.classList.remove('show');
+      showToast('生成失败，请截图保存');
+    });
+  },300);
 }
 
 // 页面加载完直接聚焦输入框
@@ -622,6 +697,15 @@ async function loadAdminData(){
       <div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">点击刷新数据</div>
     </div>
   </div>
+</div>
+
+
+<!-- 结果图卡片 -->
+<div class="result-card" id="resultCard"></div>
+<!-- 生成中遮罩 -->
+<div class="gen-overlay" id="genOverlay">
+  <div style="font-size:32px">🎨</div>
+  <div class="gen-txt">正在生成结果图...</div>
 </div>
 
 </body>
