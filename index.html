@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>狼人杀角色人气晋级赛 · INCEPTION</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -50,9 +51,9 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .match:hover{border-color:rgba(200,160,40,0.45);}
 .slot{display:flex;align-items:center;padding:0 5px 0 7px;font-size:11px;letter-spacing:0.5px;color:var(--text);border-left:3px solid var(--gold-dim);cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;}
 .slot:hover{background:rgba(255,215,60,0.06);}
-.slot.winner{color:var(--gold-bright);font-weight:700;background:var(--win-bg);border-left-color:var(--gold-bright);}
-.slot.elim{color:var(--elim);text-decoration:line-through;}
-.slot.empty{color:var(--text-dim);cursor:default;}
+.slot.winner{color:var(--gold-bright);font-weight:900;background:rgba(255,215,60,0.18);border-left-color:var(--gold-bright);letter-spacing:0.5px;}
+.slot.elim{color:rgba(200,160,40,0.18);text-decoration:line-through;background:rgba(0,0,0,0.2);cursor:not-allowed;pointer-events:none;}
+.slot.empty{color:rgba(200,160,40,0.2);cursor:not-allowed;font-style:italic;}
 .slot-divider{height:1px;background:rgba(200,160,40,0.12);}
 .win-mark{margin-right:4px;font-size:10px;}
 .champ-box-b{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
@@ -101,6 +102,38 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .season-item.active{border-color:var(--gold-bright);background:rgba(255,215,60,0.1);}
 .season-item-name{font-size:13px;letter-spacing:1px;}.season-item-info{font-size:10px;color:var(--text-dim);}
 .season-item-actions{display:flex;gap:6px;}
+
+/* ── 结果图卡片 ── */
+.result-card{
+  position:fixed;left:-9999px;top:0;
+  width:780px;background:linear-gradient(160deg,#060918 0%,#080c20 50%,#050810 100%);
+  padding:40px 44px 44px;font-family:'Noto Serif SC',serif;color:#e8d070;
+  border:2px solid rgba(200,160,40,0.35);
+}
+.rc-logo{font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:5px;color:rgba(200,160,40,0.5);margin-bottom:8px;}
+.rc-title{font-size:22px;font-weight:900;letter-spacing:5px;color:#fdd840;text-shadow:0 0 30px rgba(255,210,40,0.4);margin-bottom:6px;}
+.rc-season{font-size:13px;letter-spacing:3px;color:rgba(200,160,40,0.6);margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid rgba(200,160,40,0.2);}
+.rc-podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:28px;}
+.rc-p{text-align:center;padding:18px 22px;border-radius:8px;}
+.rc-p.p1{background:rgba(255,215,60,0.14);border:1px solid rgba(255,215,60,0.5);order:2;min-width:160px;}
+.rc-p.p2{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.3);order:1;min-width:130px;}
+.rc-p.p3{background:rgba(180,120,40,0.08);border:1px solid rgba(180,120,40,0.3);order:3;min-width:130px;}
+.rc-icon{font-size:32px;margin-bottom:8px;}
+.rc-rank{font-size:10px;letter-spacing:2px;color:rgba(200,160,40,0.5);margin-bottom:6px;}
+.rc-name{font-size:18px;font-weight:900;letter-spacing:2px;}
+.rc-p.p1 .rc-name{color:#fdd840;}.rc-p.p2 .rc-name{color:rgba(220,220,220,0.9);}
+.rc-p.p3 .rc-name{color:rgba(220,160,60,0.9);}
+.rc-note{font-size:11px;color:rgba(200,160,40,0.45);margin-top:6px;}
+.rc-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+.rc-table th{font-size:10px;letter-spacing:2px;color:rgba(200,160,40,0.45);font-weight:400;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(200,160,40,0.2);}
+.rc-table td{padding:9px 12px;font-size:13px;border-bottom:1px solid rgba(200,160,40,0.07);}
+.rc-table tr:last-child td{border-bottom:none;}
+.rc-sec-title{font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.55);padding:10px 0 8px 12px;border-left:2px solid rgba(200,160,40,0.4);margin-bottom:8px;}
+.rc-footer{text-align:center;padding-top:16px;border-top:1px solid rgba(200,160,40,0.15);font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.35);}
+.generating-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.generating-overlay.show{display:flex;}
+.gen-text{color:#fdd840;font-size:16px;letter-spacing:3px;}
+.gen-sub{color:rgba(200,160,40,0.5);font-size:12px;letter-spacing:2px;}
 </style>
 </head>
 <body>
@@ -129,6 +162,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <button class="btn" onclick="editRoles()">✏️ 编辑角色</button>
     <button class="btn" onclick="exportResults()">⬇️ 导出结果</button>
     <button class="btn danger" onclick="resetCurrent()">重置对阵</button>
+    <button class="btn accent" onclick="generateImage()" style="background:rgba(255,215,60,0.12);border-color:rgba(255,215,60,0.5);color:#fdd840;">🖼 生成结果图</button>
   </div>
   <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:8px;">点击角色名称选择胜者 · 实时同步云端 · 多设备共享</div>
 </div>
@@ -388,11 +422,11 @@ async function saveToFirebase() {
 // LAYOUT — 从上到下，每轮一行
 // ════════════════════════════════════════════════
 const LABEL_W = 56;      // 左侧轮次标签宽度
-const UNIT_W  = 78;      // R1每格宽度（后续轮次翻倍）
-const MATCH_VW = 72;     // 对阵框可见宽度
-const SLOT_H  = 28;      // 每个队伍槽高度
-const MATCH_H = SLOT_H*2+1; // 对阵框总高度 = 57px
-const ROW_GAP = 52;      // 轮次之间的垂直间距
+const UNIT_W  = 86;      // R1每格宽度
+const MATCH_VW = 80;     // 对阵框可见宽度
+const SLOT_H  = 34;      // 每个队伍槽高度（加大）
+const MATCH_H = SLOT_H*2+1; // 对阵框总高度 = 69px
+const ROW_GAP = 60;      // 轮次之间的垂直间距
 const ROW_H   = MATCH_H + ROW_GAP; // 每轮占据的总高度
 const BRACKET_W = LABEL_W + UNIT_W * 16; // 总宽度
 const CHAMP_Y = TOTAL * ROW_H + 10;      // 冠军框y坐标
@@ -455,7 +489,7 @@ function buildBracket(){
         if(s===1){const d=document.createElement('div');d.className='slot-divider';box.appendChild(d);}
         const sl=document.createElement('div');
         sl.className='slot';
-        sl.style.cssText=`height:${SLOT_H}px;font-size:11px;padding:0 5px 0 7px;`;
+        sl.style.cssText=`height:${SLOT_H}px;font-size:13px;padding:0 6px 0 8px;letter-spacing:0.5px;`;
         sl.dataset.ri=ri; sl.dataset.mi=mi; sl.dataset.s=s;
         sl.addEventListener('click',onSlotClick);
         slotEls[`${ri}-${mi}-${s}`]=sl;
@@ -567,17 +601,33 @@ function renderSeasonUI(){
 // INTERACTIONS
 // ════════════════════════════════════════════════
 function onSlotClick(e){
-  lastUserInteraction = Date.now(); // 记录操作时间，屏蔽SSE
+  lastUserInteraction = Date.now();
   const el=e.currentTarget;
   const ri=+el.dataset.ri, mi=+el.dataset.mi, s=+el.dataset.s;
+
+  // 两个队伍都要确定，才能选胜者
+  const team0=getTeam(ri,mi,0), team1=getTeam(ri,mi,1);
+  if(!team0 || !team1) return;
+
   const team=getTeam(ri,mi,s);
-  if(!team)return;
+  if(!team) return;
+
   const wins=getWins();
   const round=wins[ri]||{};
   const cur=round[mi]??round[String(mi)]??null;
-  if(cur===team){ delete wins[ri][mi]; delete wins[ri][String(mi)]; }
-  else { wins[ri][mi]=team; }
-  clearDown(wins,ri,mi);
+
+  if(cur===team){
+    // 点已选胜者 → 取消这场结果（方便纠错）
+    delete wins[ri][mi]; delete wins[ri][String(mi)];
+    clearDown(wins,ri,mi);
+  } else if(cur && cur!==team){
+    // ⚡ 严格二选一：点已淘汰方 → 完全无效，不能改
+    return;
+  } else {
+    // 未选过 → 设为胜者
+    wins[ri][mi]=team;
+  }
+
   renderMatch(ri,mi);
   let m=mi;
   for(let r=ri+1;r<TOTAL;r++){ m=Math.floor(m/2); renderMatch(r,m); }
@@ -808,6 +858,92 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});
 });
 
+
+// ════════════════════════════════════════════════
+// 生成结果图
+// ════════════════════════════════════════════════
+function generateImage(){
+  const {info, champ} = computeRankings();
+  if(!champ){ alert('请先完成所有对阵，选出冠军！'); return; }
+
+  const s = getActiveSeason();
+  const finalist = Object.values(info).find(x=>x.eliminatedRound===TOTAL-1);
+  const thirds = Object.values(info).filter(x=>x.eliminatedRound===TOTAL-2);
+
+  const STAGE_LABELS = ['第一轮','第二轮','第三轮','半决赛','决赛落败'];
+  const groups = [
+    {title:'🥈 亚军', f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
+    {title:'🥉 季军 (第3-4名)', f:x=>x.eliminatedRound===TOTAL-2},
+    {title:'第5-8名', f:x=>x.eliminatedRound===TOTAL-3},
+    {title:'第9-16名', f:x=>x.eliminatedRound===TOTAL-4},
+    {title:'第17-32名', f:x=>x.eliminatedRound===0},
+  ];
+
+  let tableHTML = '';
+  for(const grp of groups){
+    const roles = Object.values(info).filter(grp.f);
+    if(!roles.length) continue;
+    tableHTML += `<div class="rc-sec-title">${grp.title}</div>
+      <table class="rc-table">
+        <thead><tr><th>角色</th><th>晋级情况</th><th>败于</th></tr></thead>
+        <tbody>`;
+    for(const r of roles){
+      const stage = r.eliminatedRound !== null ? STAGE_LABELS[r.eliminatedRound] : '进行中';
+      tableHTML += `<tr>
+        <td style="font-weight:700;letter-spacing:2px;">${r.name}</td>
+        <td style="color:rgba(200,160,40,0.55);font-size:12px;">${stage}</td>
+        <td style="color:rgba(200,160,40,0.4);font-size:12px;">${r.eliminatedBy||'—'}</td>
+      </tr>`;
+    }
+    tableHTML += `</tbody></table>`;
+  }
+
+  const now = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('resultCard').innerHTML = `
+    <div class="rc-logo">INCEPTION · 盗梦空间 · 狼人杀联赛</div>
+    <div class="rc-title">角色人气晋级赛 · 完整结果</div>
+    <div class="rc-season">${s.name} · ${now}</div>
+    <div class="rc-podium">
+      ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">亚军</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
+      <div class="rc-p p1"><div class="rc-icon">🏆</div><div class="rc-rank">冠军</div><div class="rc-name">${champ}</div><div class="rc-note">最受喜爱角色</div></div>
+      ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">季军</div><div class="rc-name">${thirds[0].name}</div><div class="rc-note">败于 ${thirds[0].eliminatedBy}</div></div>`:''}
+    </div>
+    ${tableHTML}
+    <div class="rc-footer">INCEPTION · Houston · 不完美的人，才是真赢家</div>
+  `;
+
+  // 移到可见区域截图
+  const card = document.getElementById('resultCard');
+  card.style.left = '-9999px';
+  card.style.top = '0';
+
+  const overlay = document.getElementById('genOverlay');
+  overlay.classList.add('show');
+
+  setTimeout(()=>{
+    html2canvas(card, {
+      scale: 2,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      overlay.classList.remove('show');
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${s.name}_晋级赛结果.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    }).catch(err => {
+      overlay.classList.remove('show');
+      alert('生成失败，请截图保存 😅\n错误：' + err.message);
+    });
+  }, 300);
+}
+
 // ════════════════════════════════════════════════
 // INIT — 先显示空对阵，Firebase加载后再更新
 // ════════════════════════════════════════════════
@@ -818,5 +954,15 @@ initFirebase().then(()=>{
   renderAll();
 });
 </script>
+
+<!-- 结果图卡片（截图用，隐藏在屏幕外）-->
+<div class="result-card" id="resultCard"></div>
+
+<!-- 生成中遮罩 -->
+<div class="generating-overlay" id="genOverlay">
+  <div class="gen-text">🎨 正在生成结果图...</div>
+  <div class="gen-sub">请稍候</div>
+</div>
+
 </body>
 </html>
