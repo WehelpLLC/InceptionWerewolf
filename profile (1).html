@@ -167,38 +167,43 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   <div class="ld-txt">加载中...</div>
 </div>
 
-<!-- 选人页 -->
+<!-- 输入名字页 -->
 <div class="select-page" id="selectPage">
   <div class="s-header">
     <div class="s-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
     <div class="s-title">我最喜欢玩的角色！</div>
-    <div class="s-sub">你是哪位玩家？</div>
+    <div class="s-sub">输入你的名字开始</div>
   </div>
-  <div class="s-search-wrap">
-    <input class="s-search" id="searchInput" placeholder="🔍 搜索名字..." oninput="filterPlayers(this.value)">
-  </div>
-  <div class="s-list" id="playerList"></div>
 
-  <!-- 添加新玩家 -->
-  <div style="max-width:500px;margin:20px auto 0;padding:0 20px;width:100%;">
-    <div id="addToggle" style="text-align:center;">
-      <button onclick="showAddForm()" style="background:none;border:1px dashed var(--line);color:var(--dim);border-radius:10px;padding:12px 24px;font-size:13px;cursor:pointer;letter-spacing:1px;font-family:'Noto Serif SC',serif;width:100%;">
-        + 我的名字不在列表里，添加我
-      </button>
+  <div style="max-width:400px;margin:0 auto;padding:0 20px;width:100%;">
+    <!-- 名字输入 -->
+    <input id="nameInput"
+      style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+      padding:16px 20px;color:var(--text);font-size:18px;outline:none;
+      font-family:'Noto Serif SC',serif;letter-spacing:2px;text-align:center;margin-bottom:12px;"
+      placeholder="你叫什么名字？" maxlength="12"
+      oninput="onNameInput(this.value)"
+      onkeydown="if(event.key==='Enter')submitName()">
+
+    <!-- 状态提示 -->
+    <div id="nameHint" style="text-align:center;font-size:13px;color:var(--dim);letter-spacing:1px;min-height:20px;margin-bottom:16px;"></div>
+
+    <!-- 新玩家选头像 -->
+    <div id="emojiStep" style="display:none;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-align:center;">选个头像</div>
+      <div id="emojiPicker" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
     </div>
-    <div id="addForm" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;">
-      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:12px;">添加新玩家</div>
-      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;width:100%;">选个头像</div>
-        <div id="emojiPicker" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-      </div>
-      <input id="newNameInput" style="width:100%;background:rgba(6,8,26,0.6);border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--text);font-size:15px;outline:none;font-family:'Noto Serif SC',serif;margin-bottom:10px;letter-spacing:1px;" placeholder="输入你的昵称" maxlength="12" onkeydown="if(event.key==='Enter')confirmAdd()">
-      <div style="display:flex;gap:8px;">
-        <button onclick="confirmAdd()" style="flex:1;background:var(--gold2);color:#2B1F0A;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Noto Serif SC',serif;letter-spacing:1px;">确认添加</button>
-        <button onclick="hideAddForm()" style="background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:12px 16px;font-size:13px;cursor:pointer;font-family:'Noto Serif SC',serif;">取消</button>
-      </div>
-      <div id="addError" style="color:rgba(181,69,58,0.9);font-size:12px;margin-top:8px;display:none;"></div>
-    </div>
+
+    <!-- 进入按钮 -->
+    <button id="enterBtn" onclick="submitName()"
+      style="width:100%;background:rgba(255,215,60,0.1);border:1px solid rgba(255,215,60,0.3);
+      color:rgba(255,215,60,0.4);border-radius:12px;padding:16px;font-size:16px;
+      font-weight:700;letter-spacing:3px;cursor:pointer;font-family:'Noto Serif SC',serif;
+      transition:all .2s;pointer-events:none;">
+      进入 →
+    </button>
+
+    <div id="enterError" style="color:rgba(181,69,58,0.9);font-size:12px;margin-top:10px;text-align:center;display:none;"></div>
   </div>
 </div>
 
@@ -243,51 +248,36 @@ async function init(){
   allMatches=md||{};
   document.getElementById('loading').style.display='none';
 
-  // Check localStorage for remembered player
-  const savedPid=localStorage.getItem('inception_pid');
-  if(savedPid&&allPlayers[savedPid]){
-    await openProfile(savedPid);
-  } else {
-    showSelectPage();
-  }
+  // 每次都先显示选人页
+  document.getElementById('loading').style.display='none';
+  showSelectPage();
 }
 
 // ══ Select Page ══
 function showSelectPage(){
   document.getElementById('selectPage').style.display='flex';
   document.getElementById('profilePage').style.display='none';
-  renderPlayerList('');
-  setTimeout(()=>document.getElementById('searchInput').value='',100);
+  // Reset input
+  const inp=document.getElementById('nameInput');
+  inp.value='';
+  document.getElementById('nameHint').textContent='';
+  document.getElementById('emojiStep').style.display='none';
+  document.getElementById('emojiPicker').innerHTML='';
+  const btn=document.getElementById('enterBtn');
+  btn.style.background='rgba(255,215,60,0.1)';
+  btn.style.borderColor='rgba(255,215,60,0.3)';
+  btn.style.color='rgba(255,215,60,0.4)';
+  btn.style.pointerEvents='none';
+  setTimeout(()=>inp.focus(),200);
 }
 
-function renderPlayerList(filter){
-  const list=document.getElementById('playerList');
-  const players=Object.values(allPlayers);
-  if(!players.length){
-    list.innerHTML='<div class="s-empty">暂无玩家数据<br>请联系管理员添加</div>';
-    return;
-  }
-  const filtered=filter?players.filter(p=>p.name.includes(filter)):players;
-  if(!filtered.length){
-    list.innerHTML='<div class="s-empty">找不到「'+esc(filter)+'」</div>';
-    return;
-  }
-  list.innerHTML=filtered.map(p=>`
-    <button class="s-btn" onclick="selectPlayer('${p.id}')">
-      <span style="font-size:20px">${p.emoji||'🎭'}</span>
-      ${esc(p.name)}
-    </button>`).join('');
-}
 
-function filterPlayers(v){ renderPlayerList(v.trim()); }
 
 async function selectPlayer(pid){
-  localStorage.setItem('inception_pid',pid);
   await openProfile(pid);
 }
 
 function goBack(){
-  localStorage.removeItem('inception_pid');
   document.getElementById('profilePage').style.display='none';
   showSelectPage();
 }
@@ -344,6 +334,14 @@ async function openProfile(pid){
       <div class="p-emoji">${pData.emoji||'🎭'}</div>
       <div class="p-name">${esc(pData.name)}</div>
       <div class="p-rank">第 ${rank} 名 / 共 ${tp} 名玩家</div>
+      <div style="margin-top:16px;">
+        <button onclick="document.getElementById('bracketSection').scrollIntoView({behavior:'smooth',block:'start'})"
+          style="background:rgba(255,215,60,0.12);border:1px solid rgba(255,215,60,0.45);
+          color:var(--gold2);border-radius:10px;padding:12px 28px;font-size:14px;
+          font-weight:700;letter-spacing:2px;cursor:pointer;font-family:'Noto Serif SC',serif;">
+          🏆 开始填写角色排行榜 →
+        </button>
+      </div>
     </div>
 
     <!-- 角色排行榜放最前面 -->
@@ -396,13 +394,10 @@ async function openProfile(pid){
 
   document.getElementById('selectPage').style.display='none';
   document.getElementById('profilePage').style.display='flex';
+  window.scrollTo(0,0);
   bInitRound();
   renderBracket();
-  // 自动滚动到排行榜
-  setTimeout(()=>{
-    const el=document.getElementById('bracketSection');
-    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-  },300);
+
 }
 
 // ══ Bracket ══
@@ -533,33 +528,63 @@ function esc(s){if(!s)return'';const d=document.createElement('div');d.textConte
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.className='toast',2000);}
 
 
-// ══ Add Player ══
+// ══ 名字输入逻辑 ══
 const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
-let selectedEmoji = '🎭';
+let selectedEmoji='🎭';
+let isNewPlayer=false;
 
-function showAddForm(){
-  document.getElementById('addToggle').style.display='none';
-  document.getElementById('addForm').style.display='block';
-  // Render emoji picker
+function onNameInput(val){
+  const name=val.trim();
+  const hint=document.getElementById('nameHint');
+  const btn=document.getElementById('enterBtn');
+  const emojiStep=document.getElementById('emojiStep');
+  const err=document.getElementById('enterError');
+  err.style.display='none';
+
+  if(!name){
+    hint.textContent='';
+    btn.style.background='rgba(255,215,60,0.1)';
+    btn.style.borderColor='rgba(255,215,60,0.3)';
+    btn.style.color='rgba(255,215,60,0.4)';
+    btn.style.pointerEvents='none';
+    emojiStep.style.display='none';
+    isNewPlayer=false;
+    return;
+  }
+
+  const found=Object.values(allPlayers).find(p=>p.name===name);
+  if(found){
+    hint.textContent='✓ 找到你了！';
+    hint.style.color='rgba(80,200,120,0.9)';
+    emojiStep.style.display='none';
+    isNewPlayer=false;
+  } else {
+    hint.textContent='✨ 新玩家，欢迎加入！';
+    hint.style.color='var(--gold)';
+    isNewPlayer=true;
+    // Show emoji picker
+    emojiStep.style.display='block';
+    renderEmojiPicker();
+  }
+  // Enable button
+  btn.style.background='rgba(255,215,60,0.14)';
+  btn.style.borderColor='rgba(255,215,60,0.5)';
+  btn.style.color='var(--gold2)';
+  btn.style.pointerEvents='auto';
+}
+
+function renderEmojiPicker(){
   const ep=document.getElementById('emojiPicker');
+  if(ep.children.length>0) return; // already rendered
   ep.innerHTML=EMOJIS.map(e=>`
     <button onclick="selectEmoji('${e}',this)" style="
-      font-size:22px;width:40px;height:40px;border-radius:8px;
+      font-size:20px;width:38px;height:38px;border-radius:8px;
       background:${e===selectedEmoji?'rgba(200,160,40,0.2)':'transparent'};
       border:${e===selectedEmoji?'1px solid var(--gold)':'1px solid transparent'};
-      cursor:pointer;transition:all .12s;
-    " title="${e}">${e}</button>`).join('');
-  setTimeout(()=>document.getElementById('newNameInput').focus(),100);
+      cursor:pointer;transition:all .12s;">${e}</button>`).join('');
 }
 
-function hideAddForm(){
-  document.getElementById('addToggle').style.display='block';
-  document.getElementById('addForm').style.display='none';
-  document.getElementById('newNameInput').value='';
-  document.getElementById('addError').style.display='none';
-}
-
-function selectEmoji(e, btn){
+function selectEmoji(e,btn){
   selectedEmoji=e;
   document.querySelectorAll('#emojiPicker button').forEach(b=>{
     b.style.background='transparent';b.style.border='1px solid transparent';
@@ -568,26 +593,25 @@ function selectEmoji(e, btn){
   btn.style.border='1px solid var(--gold)';
 }
 
-async function confirmAdd(){
-  const name=document.getElementById('newNameInput').value.trim();
-  const err=document.getElementById('addError');
+async function submitName(){
+  const name=document.getElementById('nameInput').value.trim();
+  const err=document.getElementById('enterError');
   err.style.display='none';
-  if(!name){err.textContent='请输入昵称';err.style.display='block';return;}
-  if(name.length>12){err.textContent='昵称最多12个字';err.style.display='block';return;}
-  if(Object.values(allPlayers).find(p=>p.name===name)){
-    err.textContent='这个名字已存在，请直接在上方选择';err.style.display='block';return;
+  if(!name){return;}
+
+  const found=Object.values(allPlayers).find(p=>p.name===name);
+  if(found){
+    // 已有玩家，直接进入
+    await openProfile(found.id);
+  } else {
+    // 新玩家，创建并进入
+    const id='p'+Date.now();
+    const player={id,name,emoji:selectedEmoji,created:new Date().toLocaleDateString('zh-CN')};
+    allPlayers[id]=player;
+    await fb.put(`${PATH}/players/${id}`,player);
+    showToast(`✓ 欢迎加入，${name}！`);
+    await openProfile(id);
   }
-  const btn=event.target.closest('button')||document.querySelector('#addForm button');
-  const id='p'+Date.now();
-  const player={id,name,emoji:selectedEmoji,created:new Date().toLocaleDateString('zh-CN')};
-  allPlayers[id]=player;
-  // Save to Firebase
-  await fb.put(`${PATH}/players/${id}`,player);
-  hideAddForm();
-  showToast(`✓ 已添加玩家：${name}`);
-  renderPlayerList('');
-  // Auto select this player
-  await selectPlayer(id);
 }
 
 init();
