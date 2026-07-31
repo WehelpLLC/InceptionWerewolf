@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>狼人杀角色人气晋级赛 · INCEPTION</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#06081a;--gold:#c8a030;--gold-bright:#fdd840;
+  --gold-dim:rgba(200,160,40,0.25);--gold-faint:rgba(200,160,40,0.08);
+  --text:rgba(232,210,130,0.85);--text-dim:rgba(200,160,40,0.35);
+  --win-bg:rgba(255,215,60,0.12);--elim:rgba(200,160,40,0.22);
+  --green:rgba(80,200,120,1);--slot:30px;--match:61px;--col:158px;--bh:1152px;
+}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0d1138 0%,#06081a 65%);font-family:'Noto Serif SC',serif;color:var(--text);min-height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(6,8,26,0.98);border-bottom:1px solid var(--gold-dim);position:sticky;top:0;z-index:200;gap:10px;flex-wrap:wrap;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo{font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:5px;color:var(--gold);font-weight:700;}
+.season-select{background:var(--gold-faint);border:1px solid var(--gold-dim);color:var(--text);font-size:12px;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:'Noto Serif SC',serif;outline:none;max-width:200px;}
+.season-select option{background:#0d1138;}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.conn-status{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:1px;padding:3px 10px;border-radius:12px;border:1px solid;transition:all .3s;}
+.conn-status.online{color:var(--green);border-color:rgba(80,200,120,0.35);background:rgba(80,200,120,0.08);}
+.conn-status.offline{color:rgba(220,150,50,0.8);border-color:rgba(220,150,50,0.3);background:rgba(220,150,50,0.06);}
+.conn-status.syncing{color:var(--gold);border-color:var(--gold-dim);background:var(--gold-faint);}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.header{text-align:center;padding:16px 20px 12px;border-bottom:1px solid var(--gold-dim);}
+.header-title{font-size:18px;font-weight:900;letter-spacing:5px;color:var(--gold-bright);text-shadow:0 0 30px rgba(255,210,40,0.35);margin-bottom:6px;}
+.season-name-display{font-size:13px;letter-spacing:3px;color:var(--gold);margin-bottom:8px;}
+.champion-box{display:none;align-items:center;justify-content:center;gap:10px;margin:5px 0;}
+.champion-box.show{display:flex;}
+.champion-tag{padding:6px 20px;background:rgba(255,215,60,0.12);border:1px solid rgba(255,215,60,0.45);border-radius:4px;font-size:14px;font-weight:900;color:var(--gold-bright);letter-spacing:3px;}
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+.btn{padding:5px 14px;background:var(--gold-faint);border:1px solid var(--gold-dim);color:var(--text-dim);font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:3px;font-family:'Noto Serif SC',serif;transition:all .15s;}
+.btn:hover{background:rgba(200,160,40,0.14);color:var(--gold);}
+.btn.primary{color:var(--gold);border-color:rgba(200,160,40,0.45);}
+.btn.accent{color:#fdd840;border-color:rgba(255,215,60,0.5);background:rgba(255,215,60,0.08);}
+.btn.danger{color:rgba(220,80,60,0.7);border-color:rgba(220,80,60,0.3);}
+.progress{display:flex;gap:6px;justify-content:center;align-items:center;padding:8px 0 0;font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+.prog-dot{width:8px;height:8px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(200,160,40,0.3);transition:all .2s;}
+.prog-dot.done{background:var(--gold);border-color:var(--gold);}
+.bracket-outer{overflow-x:auto;overflow-y:hidden;padding:16px 20px 40px;-webkit-overflow-scrolling:touch;}
+.round-labels{display:flex;margin-bottom:8px;}
+.round-label{text-align:center;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);width:var(--col);flex-shrink:0;padding-bottom:6px;}
+.round-label.champ{width:160px;}
+.bracket-inner{position:relative;}
+.match{position:absolute;border:1px solid var(--gold-dim);border-radius:4px;background:rgba(8,10,28,0.85);overflow:hidden;transition:border-color .15s;}
+.match:hover{border-color:rgba(200,160,40,0.45);}
+.slot{display:flex;align-items:center;padding:0 5px 0 7px;font-size:11px;letter-spacing:0.5px;color:var(--text);border-left:3px solid var(--gold-dim);cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;}
+.slot:hover{background:rgba(255,215,60,0.06);}
+.slot.winner{color:var(--gold-bright);font-weight:700;background:var(--win-bg);border-left-color:var(--gold-bright);}
+.slot.elim{color:var(--elim);text-decoration:line-through;}
+.slot.empty{color:var(--text-dim);cursor:default;}
+.slot-divider{height:1px;background:rgba(200,160,40,0.12);}
+.win-mark{margin-right:4px;font-size:10px;}
+.champ-box-b{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
+.champ-inner{padding:12px 18px;background:rgba(255,215,60,0.08);border:1px solid rgba(255,215,60,0.3);border-radius:6px;font-size:15px;font-weight:900;color:rgba(255,215,60,0.4);letter-spacing:2px;text-align:center;min-width:90px;transition:all .2s;}
+.champ-inner.filled{color:var(--gold-bright);border-color:rgba(255,215,60,0.55);background:rgba(255,215,60,0.14);text-shadow:0 0 20px rgba(255,215,60,0.5);}
+.champ-label{font-size:11px;letter-spacing:2px;color:var(--text-dim);}
+.connectors{position:absolute;inset:0;pointer-events:none;overflow:visible;}
+.results-panel{display:none;padding:28px 24px 60px;border-top:1px solid var(--gold-dim);}
+.results-panel.show{display:block;}
+.res-title{text-align:center;font-size:16px;font-weight:900;letter-spacing:4px;color:var(--gold-bright);margin-bottom:20px;}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
+.pc{text-align:center;padding:16px 20px;border-radius:6px;min-width:120px;}
+.pc.p1{background:rgba(255,215,60,0.12);border:1px solid rgba(255,215,60,0.5);order:2;}
+.pc.p2{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.3);order:1;}
+.pc.p3{background:rgba(180,120,40,0.08);border:1px solid rgba(180,120,40,0.3);order:3;}
+.pi{font-size:28px;margin-bottom:6px;}.pr{font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;}
+.pn{font-size:16px;font-weight:900;letter-spacing:2px;}
+.pc.p1 .pn{color:var(--gold-bright);}.pc.p2 .pn{color:rgba(220,220,220,0.85);}.pc.p3 .pn{color:rgba(220,160,60,0.85);}
+.pnote{font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:1px;}
+.stat-bar{max-width:680px;margin:0 auto 24px;padding:14px;background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:6px;}
+.stat-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:12px;}
+.stat-item{text-align:center;}.stat-num{font-size:24px;font-weight:900;color:var(--gold-bright);}
+.stat-label{font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}
+.rank-section{max-width:680px;margin:0 auto 20px;}
+.rank-header{font-size:11px;letter-spacing:3px;color:var(--gold);padding:8px 0 8px 12px;border-left:3px solid var(--gold);margin-bottom:10px;}
+.rank-table{width:100%;border-collapse:collapse;}
+.rank-table th{font-size:10px;letter-spacing:2px;color:var(--text-dim);font-weight:400;padding:6px 10px;text-align:left;border-bottom:1px solid var(--gold-dim);}
+.rank-table td{padding:8px 10px;font-size:13px;border-bottom:1px solid rgba(200,160,40,0.08);}
+.rank-table tr:hover td{background:var(--gold-faint);}
+.rname{font-weight:700;letter-spacing:2px;}.rstage{font-size:11px;color:var(--text-dim);letter-spacing:1px;}
+.rby{font-size:11px;color:rgba(200,160,40,0.5);letter-spacing:1px;}
+.badge-champ{display:inline-block;padding:2px 8px;background:rgba(255,215,60,0.15);border:1px solid rgba(255,215,60,0.4);border-radius:3px;font-size:10px;color:var(--gold-bright);letter-spacing:1px;}
+.warn{text-align:center;padding:16px;color:rgba(255,150,50,0.7);font-size:13px;margin-bottom:16px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:#0d1138;border:1px solid var(--gold-dim);border-radius:8px;padding:28px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;}
+.modal-title{font-size:15px;font-weight:900;letter-spacing:3px;color:var(--gold-bright);margin-bottom:20px;text-align:center;}
+.modal input,.modal textarea{width:100%;background:rgba(200,160,40,0.06);border:1px solid var(--gold-dim);color:var(--text);padding:8px 12px;border-radius:4px;font-size:13px;font-family:'Noto Serif SC',serif;margin-bottom:12px;outline:none;}
+.modal input:focus,.modal textarea:focus{border-color:var(--gold);}
+.modal textarea{min-height:200px;resize:vertical;font-size:12px;line-height:1.8;}
+.modal-label{font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px;}
+.modal-btns{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+.modal-note{font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-top:8px;line-height:1.8;}
+.season-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.season-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:4px;}
+.season-item.active{border-color:var(--gold-bright);background:rgba(255,215,60,0.1);}
+.season-item-name{font-size:13px;letter-spacing:1px;}.season-item-info{font-size:10px;color:var(--text-dim);}
+.season-item-actions{display:flex;gap:6px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">INCEPTION</div>
+    <select class="season-select" id="seasonSelect" onchange="switchSeason(this.value)"></select>
+  </div>
+  <div class="topbar-right">
+    <div class="conn-status offline" id="connStatus"><div class="conn-dot"></div><span id="connText">连接中...</span></div>
+    <button class="btn" onclick="openSeasonManager()">📁 赛季管理</button>
+    <button class="btn accent" onclick="toggleResults()">📊 统计结果</button>
+  </div>
+</div>
+<div class="header">
+  <div class="header-title">角色喜爱程度晋级赛</div>
+  <div class="season-name-display" id="seasonNameDisplay"></div>
+  <div class="champion-box" id="chamBox"><div class="champion-tag" id="chamTag"></div></div>
+  <div class="progress" id="progRow">
+    <span>进度：</span>
+    <div class="prog-dot" id="p0"></div><div class="prog-dot" id="p1"></div>
+    <div class="prog-dot" id="p2"></div><div class="prog-dot" id="p3"></div><div class="prog-dot" id="p4"></div>
+  </div>
+  <div class="controls">
+    <button class="btn primary" onclick="loadSavedResults()">恢复手稿结果</button>
+    <button class="btn" onclick="editRoles()">✏️ 编辑角色</button>
+    <button class="btn" onclick="exportResults()">⬇️ 导出结果</button>
+    <button class="btn danger" onclick="resetCurrent()">重置对阵</button>
+  </div>
+  <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:8px;">点击角色名称选择胜者 · 实时同步云端 · 多设备共享</div>
+</div>
+<div class="bracket-outer">
+
+  <div class="bracket-inner" id="bracket"><svg class="connectors" id="connSvg"></svg></div>
+</div>
+<div class="results-panel" id="resultsPanel">
+  <div class="res-title">📊 完整结果统计</div>
+  <div id="resultsContent"></div>
+</div>
+<div class="modal-overlay" id="seasonModal">
+  <div class="modal">
+    <div class="modal-title">📁 赛季管理</div>
+    <div class="season-list" id="seasonList"></div>
+    <div style="text-align:center;"><button class="btn primary" onclick="newSeason()">+ 新建赛季</button></div>
+    <div class="modal-btns"><button class="btn" onclick="closeModal('seasonModal')">关闭</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="newSeasonModal">
+  <div class="modal">
+    <div class="modal-title">新建赛季</div>
+    <div class="modal-label">赛季名称</div>
+    <input type="text" id="newSeasonName" placeholder="例：Season 3 · 人无完人" />
+    <div class="modal-label">角色列表（每行一个）</div>
+    <textarea id="newSeasonRoles"></textarea>
+    <div class="modal-note">💡 不修改则使用默认32个角色</div>
+    <div class="modal-btns">
+      <button class="btn primary" onclick="confirmNewSeason()">创建</button>
+      <button class="btn" onclick="closeModal('newSeasonModal')">取消</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="editRolesModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 编辑角色列表</div>
+    <div class="modal-label">当前赛季角色（每行一个）</div>
+    <textarea id="editRolesText"></textarea>
+    <div class="modal-note">⚠️ 修改角色将清空当前对阵结果</div>
+    <div class="modal-btns">
+      <button class="btn primary" onclick="confirmEditRoles()">保存</button>
+      <button class="btn" onclick="closeModal('editRolesModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// FIREBASE — REST API only, no SDK needed
+// ════════════════════════════════════════════════
+const DB_URL = 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
+
+const fb = {
+  async save(path, data) {
+    try {
+      const r = await fetch(`${DB_URL}/${path}.json`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      return r.ok;
+    } catch(e){ return false; }
+  },
+  async load(path) {
+    try {
+      const r = await fetch(`${DB_URL}/${path}.json`);
+      if(r.ok) return await r.json();
+    } catch(e){}
+    return null;
+  },
+  listen(path, onData, onError) {
+    let es;
+    function connect() {
+      es = new EventSource(`${DB_URL}/${path}.json`);
+      es.addEventListener('put', e => {
+        try {
+          const p = JSON.parse(e.data);
+          if(p && p.data !== undefined) onData(p.data);
+        } catch(err){}
+      });
+      es.onerror = () => {
+        es.close();
+        if(onError) onError();
+        setTimeout(connect, 5000);
+      };
+    }
+    connect();
+    return { close: ()=> es && es.close() };
+  }
+};
+
+// ════════════════════════════════════════════════
+// ⚡ KEY FIX: Firebase converts arrays → objects
+//    This function converts them back to arrays
+// ════════════════════════════════════════════════
+function normalizeState(raw) {
+  if (!raw || typeof raw !== 'object') return { seasons:{}, activeSeason:null };
+  const state = raw;
+  if (!state.seasons) state.seasons = {};
+
+  Object.keys(state.seasons).forEach(id => {
+    const s = state.seasons[id];
+    if (!s) return;
+
+    // ── Fix roles: object → array ──
+    if (s.roles && !Array.isArray(s.roles)) {
+      s.roles = Object.keys(s.roles)
+        .sort((a,b) => Number(a) - Number(b))
+        .map(k => s.roles[k])
+        .filter(Boolean);
+    }
+    if (!Array.isArray(s.roles) || s.roles.length === 0) {
+      s.roles = [...DEFAULT_ROLES];
+    }
+
+    // ── Fix wins: object → array of 5 round-objects ──
+    if (s.wins && !Array.isArray(s.wins)) {
+      const tmp = s.wins;
+      s.wins = [0,1,2,3,4].map(i => tmp[i] || {});
+    }
+    if (!Array.isArray(s.wins)) s.wins = [{},{},{},{},{}];
+    while (s.wins.length < 5) s.wins.push({});
+
+    // ── Fix each round: ensure it's a plain object ──
+    s.wins = s.wins.map(round => {
+      if (!round || typeof round !== 'object' || Array.isArray(round)) return {};
+      // Convert any numeric-ish keys back (Firebase may store as strings, JS handles fine)
+      return round;
+    });
+  });
+
+  return state;
+}
+
+// ════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════
+const N=[16,8,4,2,1], TOTAL=5;
+const STAGE_NAMES=["第一轮淘汰","第二轮淘汰","第三轮淘汰","半决赛落败","决赛落败"];
+
+const DEFAULT_ROLES = [
+  "混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士",
+  "摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者",
+  "蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼",
+  "机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"
+];
+
+const SAVED_RESULTS=[
+  {0:'混血儿',1:'女巫',2:'白神',3:'守卫',4:'摄梦人',5:'守墓人',
+   6:'定序王子',7:'舞者',8:'禁言长老',9:'狼王',10:'狼美人',
+   11:'石像鬼',12:'机械狼',13:'梦魔',14:'假面',15:'盗宝大师'},
+  {0:'混血儿',1:'白神',2:'摄梦人',3:'舞者',5:'石像鬼',6:'机械狼',7:'假面'},
+  {0:'混血儿',1:'摄梦人',2:'石像鬼',3:'机械狼'},
+  {0:'摄梦人',1:'机械狼'},
+  {0:'机械狼'}
+];
+
+// ════════════════════════════════════════════════
+// APP STATE
+// ════════════════════════════════════════════════
+let appState = { seasons:{}, activeSeason:null };
+// 记录用户最近操作时间，3秒内有操作就忽略SSE回显
+// 彻底解决"选完后跳回去"的问题
+let lastUserInteraction = 0;
+const SSE_COOLDOWN_MS = 3000;
+
+function getActiveSeason(){ return appState.seasons[appState.activeSeason]; }
+function getWins(){ return getActiveSeason()?.wins || [{},{},{},{},{}]; }
+function getRoles(){ return getActiveSeason()?.roles || DEFAULT_ROLES; }
+
+function fixActiveSeason() {
+  if (!appState.activeSeason || !appState.seasons[appState.activeSeason]) {
+    const ids = Object.keys(appState.seasons);
+    appState.activeSeason = ids.length ? ids[0] : null;
+  }
+}
+
+function createSeason(name, roles) {
+  const id = 's_' + Date.now();
+  appState.seasons[id] = {
+    id, name,
+    roles: roles || [...DEFAULT_ROLES],
+    wins: [{},{},{},{},{}],
+    created: new Date().toLocaleDateString('zh-CN'),
+    lastModified: null
+  };
+  return id;
+}
+
+// ════════════════════════════════════════════════
+// FIREBASE INIT
+// ════════════════════════════════════════════════
+function setConn(status, text) {
+  const el=document.getElementById('connStatus');
+  const tx=document.getElementById('connText');
+  el.className='conn-status '+status;
+  tx.textContent=text;
+}
+
+async function initFirebase() {
+  setConn('syncing','连接中...');
+  try {
+    const raw = await fb.load('tournament');
+    if (raw) {
+      appState = normalizeState(raw);
+      fixActiveSeason();
+    }
+    if (!Object.keys(appState.seasons).length) {
+      const id = createSeason('首届人气投票 · 2026', [...DEFAULT_ROLES]);
+      appState.activeSeason = id;
+      await fb.save('tournament', appState);
+    }
+    // 自动修正旧数据里的年份
+    let needSave = false;
+    Object.values(appState.seasons).forEach(s => {
+      if (s && s.name && s.name.includes('2025')) {
+        s.name = s.name.replace('2025', '2026');
+        needSave = true;
+      }
+    });
+    if (needSave) await fb.save('tournament', appState);
+    setConn('online','已连接 · 实时同步');
+
+    // Real-time listener
+    fb.listen('tournament',
+      (newData) => {
+        if (!newData) return;
+        // ⚡ 核心修复：用户3秒内有操作，忽略所有SSE
+        // 防止Firebase回显覆盖掉刚选的内容
+        if (Date.now() - lastUserInteraction < SSE_COOLDOWN_MS) return;
+        appState = normalizeState(newData);
+        fixActiveSeason();
+        buildBracket();
+        renderAll();
+        if(document.getElementById('resultsPanel').classList.contains('show')) generateResults();
+      },
+      () => setConn('offline','断线，5秒后重连...')
+    );
+  } catch(e) {
+    setConn('offline','连接失败，请检查Firebase设置');
+  }
+}
+
+async function saveToFirebase() {
+  setConn('syncing','同步中...');
+  const s = getActiveSeason();
+  if(s) s.lastModified = new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const ok = await fb.save('tournament', appState);
+  if(ok) {
+    setConn('online','✓ 已同步 ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}));
+    setTimeout(()=>setConn('online','已连接 · 实时同步'), 2500);
+  } else {
+    setConn('offline','同步失败，请检查网络');
+  }
+}
+
+// ════════════════════════════════════════════════
+// LAYOUT — 从上到下，每轮一行
+// ════════════════════════════════════════════════
+const LABEL_W = 56;      // 左侧轮次标签宽度
+const UNIT_W  = 78;      // R1每格宽度（后续轮次翻倍）
+const MATCH_VW = 72;     // 对阵框可见宽度
+const SLOT_H  = 28;      // 每个队伍槽高度
+const MATCH_H = SLOT_H*2+1; // 对阵框总高度 = 57px
+const ROW_GAP = 52;      // 轮次之间的垂直间距
+const ROW_H   = MATCH_H + ROW_GAP; // 每轮占据的总高度
+const BRACKET_W = LABEL_W + UNIT_W * 16; // 总宽度
+const CHAMP_Y = TOTAL * ROW_H + 10;      // 冠军框y坐标
+const BRACKET_TOTAL_H = CHAMP_Y + 70;    // 总高度
+
+// 第ri轮第mi场的中心x
+function mcx(ri,mi){
+  const uw = UNIT_W * Math.pow(2,ri);
+  return LABEL_W + mi*uw + uw/2;
+}
+// 第ri轮的顶部y
+function mty(ri){ return ri * ROW_H; }
+// 对阵框左边x
+function mlx(ri,mi){ return mcx(ri,mi) - MATCH_VW/2; }
+
+function getTeam(ri,mi,s){
+  if(ri===0){
+    const roles=getRoles();
+    const idx=mi*2+s;
+    return (Array.isArray(roles)?roles[idx]:roles[idx]) ?? null;
+  }
+  const wins=getWins();
+  const round=wins[ri-1];
+  if(!round) return null;
+  const key=mi*2+s;
+  return round[key] ?? round[String(key)] ?? null;
+}
+
+// ════════════════════════════════════════════════
+// DOM BUILD
+// ════════════════════════════════════════════════
+const bracket=document.getElementById('bracket');
+const connSvg=document.getElementById('connSvg');
+const slotEls={};
+
+function buildBracket(){
+  [...bracket.children].forEach(c=>{ if(c!==connSvg) bracket.removeChild(c); });
+  bracket.style.width=BRACKET_W+'px';
+  bracket.style.height=BRACKET_TOTAL_H+'px';
+  connSvg.setAttribute('viewBox',`0 0 ${BRACKET_W} ${BRACKET_TOTAL_H}`);
+  connSvg.setAttribute('width',BRACKET_W);
+  connSvg.setAttribute('height',BRACKET_TOTAL_H);
+
+  // 轮次标签（左侧）
+  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
+  for(let ri=0;ri<TOTAL;ri++){
+    const lbl=document.createElement('div');
+    lbl.style.cssText=`position:absolute;left:0;top:${mty(ri)+MATCH_H/2-8}px;width:${LABEL_W-4}px;text-align:right;font-size:9px;letter-spacing:1px;color:var(--text-dim);font-family:'Courier Prime',monospace;`;
+    lbl.textContent=RNAMES[ri];
+    bracket.appendChild(lbl);
+  }
+
+  // 对阵框
+  for(let ri=0;ri<TOTAL;ri++){
+    for(let mi=0;mi<N[ri];mi++){
+      const box=document.createElement('div');
+      box.className='match';
+      box.style.cssText=`left:${mlx(ri,mi)}px;top:${mty(ri)}px;width:${MATCH_VW}px;height:${MATCH_H}px;`;
+      for(let s=0;s<2;s++){
+        if(s===1){const d=document.createElement('div');d.className='slot-divider';box.appendChild(d);}
+        const sl=document.createElement('div');
+        sl.className='slot';
+        sl.style.cssText=`height:${SLOT_H}px;font-size:11px;padding:0 5px 0 7px;`;
+        sl.dataset.ri=ri; sl.dataset.mi=mi; sl.dataset.s=s;
+        sl.addEventListener('click',onSlotClick);
+        slotEls[`${ri}-${mi}-${s}`]=sl;
+        box.appendChild(sl);
+      }
+      bracket.appendChild(box);
+    }
+  }
+
+  // 冠军框（底部居中）
+  const cx=mcx(TOTAL-1,0);
+  const cb=document.createElement('div');
+  cb.className='champ-box-b';
+  cb.style.cssText=`left:${cx-55}px;top:${CHAMP_Y}px;width:110px;`;
+  cb.innerHTML=`<div class="champ-label">🏆 冠军</div><div class="champ-inner" id="champInner">???</div>`;
+  bracket.appendChild(cb);
+  drawConnectors();
+}
+
+function drawConnectors(){
+  const S='stroke="rgba(200,160,40,0.22)" stroke-width="1"';
+  const lines=[];
+  // 每场对阵连线：底部→下一轮父场顶部（L形连接）
+  for(let ri=0;ri<TOTAL-1;ri++){
+    for(let mi=0;mi<N[ri];mi++){
+      const bx=mcx(ri,mi);
+      const by=mty(ri)+MATCH_H;
+      const px=mcx(ri+1,Math.floor(mi/2));
+      const py=mty(ri+1);
+      const midY=(by+py)/2;
+      lines.push(`<line x1="${bx}" y1="${by}" x2="${bx}" y2="${midY}" ${S}/>`);
+      lines.push(`<line x1="${bx}" y1="${midY}" x2="${px}" y2="${midY}" ${S}/>`);
+      lines.push(`<line x1="${px}" y1="${midY}" x2="${px}" y2="${py}" ${S}/>`);
+    }
+  }
+  // 决赛→冠军框连线
+  const fx=mcx(TOTAL-1,0);
+  const fy=mty(TOTAL-1)+MATCH_H;
+  lines.push(`<line x1="${fx}" y1="${fy}" x2="${fx}" y2="${CHAMP_Y}" ${S}/>`);
+  connSvg.innerHTML=lines.join('');
+}
+
+// ════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════
+function renderAll(){
+  for(let ri=0;ri<TOTAL;ri++) for(let mi=0;mi<N[ri];mi++) renderMatch(ri,mi);
+  renderChampion(); renderProgress(); renderSeasonUI();
+}
+
+function renderMatch(ri,mi){
+  const wins=getWins();
+  const round=wins[ri]||{};
+  const winner=round[mi]??round[String(mi)]??null;
+  for(let s=0;s<2;s++){
+    const team=getTeam(ri,mi,s);
+    const el=slotEls[`${ri}-${mi}-${s}`];
+    if(!el)continue;
+    el.className='slot'; el.innerHTML='';
+    if(!team){
+      el.classList.add('empty');
+      el.textContent=ri===0?'???':'待定';
+      continue;
+    }
+    if(winner===team){
+      el.classList.add('winner');
+      const mk=document.createElement('span');mk.className='win-mark';mk.textContent='▸';
+      el.appendChild(mk); el.appendChild(document.createTextNode(team));
+    } else if(winner&&winner!==team){
+      el.classList.add('elim'); el.textContent=team;
+    } else {
+      el.textContent=team;
+    }
+  }
+}
+
+function renderChampion(){
+  const wins=getWins();
+  const round=wins[TOTAL-1]||{};
+  const c=round[0]??round['0']??null;
+  const el=document.getElementById('champInner');
+  if(el){el.textContent=c??'???';el.className=c?'champ-inner filled':'champ-inner';}
+  const cb=document.getElementById('chamBox'),ct=document.getElementById('chamTag');
+  if(c){cb.classList.add('show');ct.textContent='🏆 '+c+' · 最受喜爱角色';}
+  else cb.classList.remove('show');
+}
+
+function renderProgress(){
+  const wins=getWins();
+  for(let ri=0;ri<TOTAL;ri++){
+    const d=document.getElementById('p'+ri);
+    if(d)d.classList.toggle('done',Object.keys(wins[ri]||{}).length===N[ri]);
+  }
+}
+
+function renderSeasonUI(){
+  const s=getActiveSeason();
+  document.getElementById('seasonNameDisplay').textContent=s?.name||'';
+  const sel=document.getElementById('seasonSelect');
+  sel.innerHTML='';
+  for(const [id,season] of Object.entries(appState.seasons)){
+    const opt=document.createElement('option');
+    opt.value=id; opt.textContent=season.name; opt.selected=id===appState.activeSeason;
+    sel.appendChild(opt);
+  }
+}
+
+// ════════════════════════════════════════════════
+// INTERACTIONS
+// ════════════════════════════════════════════════
+function onSlotClick(e){
+  lastUserInteraction = Date.now(); // 记录操作时间，屏蔽SSE
+  const el=e.currentTarget;
+  const ri=+el.dataset.ri, mi=+el.dataset.mi, s=+el.dataset.s;
+  const team=getTeam(ri,mi,s);
+  if(!team)return;
+  const wins=getWins();
+  const round=wins[ri]||{};
+  const cur=round[mi]??round[String(mi)]??null;
+  if(cur===team){ delete wins[ri][mi]; delete wins[ri][String(mi)]; }
+  else { wins[ri][mi]=team; }
+  clearDown(wins,ri,mi);
+  renderMatch(ri,mi);
+  let m=mi;
+  for(let r=ri+1;r<TOTAL;r++){ m=Math.floor(m/2); renderMatch(r,m); }
+  renderChampion(); renderProgress();
+  saveToFirebase();
+  if(document.getElementById('resultsPanel').classList.contains('show')) generateResults();
+}
+
+function clearDown(wins,ri,mi){
+  let m=mi;
+  for(let r=ri+1;r<TOTAL;r++){
+    m=Math.floor(m/2);
+    if(wins[r]){ delete wins[r][m]; delete wins[r][String(m)]; }
+  }
+}
+
+// ════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════
+async function loadSavedResults(){
+  if(!confirm('恢复手稿中的已有结果？'))return;
+  const s=getActiveSeason(); if(!s)return;
+  s.wins=SAVED_RESULTS.map(r=>({...r}));
+  renderAll(); await saveToFirebase();
+}
+
+async function resetCurrent(){
+  if(!confirm('确认清空所有对阵结果？'))return;
+  const s=getActiveSeason(); if(!s)return;
+  s.wins=[{},{},{},{},{}];
+  renderAll(); await saveToFirebase();
+}
+
+async function switchSeason(id){
+  appState.activeSeason=id;
+  buildBracket(); renderAll(); await saveToFirebase();
+}
+
+// ════════════════════════════════════════════════
+// SEASON MANAGER
+// ════════════════════════════════════════════════
+function openSeasonManager(){ renderSeasonList(); document.getElementById('seasonModal').classList.add('show'); }
+
+function renderSeasonList(){
+  const list=document.getElementById('seasonList'); list.innerHTML='';
+  for(const [id,s] of Object.entries(appState.seasons)){
+    const item=document.createElement('div');
+    item.className='season-item'+(id===appState.activeSeason?' active':'');
+    const wins=s.wins||[]; const round=wins[4]||{}; const champ=round[0]??round['0']??null;
+    item.innerHTML=`
+      <div>
+        <div class="season-item-name">${s.name}${champ?' · 🏆'+champ:''}</div>
+        <div class="season-item-info">创建: ${s.created||''}${s.lastModified?' · '+s.lastModified:''}</div>
+      </div>
+      <div class="season-item-actions">
+        <button class="btn" onclick="selectSeason('${id}')">切换</button>
+        ${Object.keys(appState.seasons).length>1?`<button class="btn danger" onclick="deleteSeason('${id}')">删除</button>`:''}
+      </div>`;
+    list.appendChild(item);
+  }
+}
+
+async function selectSeason(id){
+  appState.activeSeason=id;
+  closeModal('seasonModal');
+  buildBracket(); renderAll(); await saveToFirebase();
+}
+
+async function deleteSeason(id){
+  const s=appState.seasons[id];
+  if(!confirm(`删除赛季"${s.name}"？`))return;
+  delete appState.seasons[id];
+  if(appState.activeSeason===id) fixActiveSeason();
+  await saveToFirebase(); buildBracket(); renderAll(); renderSeasonList();
+}
+
+function newSeason(){
+  document.getElementById('newSeasonName').value='';
+  document.getElementById('newSeasonRoles').value=DEFAULT_ROLES.join('\n');
+  closeModal('seasonModal');
+  document.getElementById('newSeasonModal').classList.add('show');
+}
+
+async function confirmNewSeason(){
+  const name=document.getElementById('newSeasonName').value.trim()||'新赛季';
+  const raw=document.getElementById('newSeasonRoles').value.trim();
+  let roles=raw?raw.split('\n').map(r=>r.trim()).filter(r=>r):[...DEFAULT_ROLES];
+  if(roles.length<2){alert('至少需要2个角色');return;}
+  const id=createSeason(name,roles);
+  appState.activeSeason=id;
+  closeModal('newSeasonModal');
+  buildBracket(); renderAll(); await saveToFirebase();
+}
+
+function editRoles(){
+  const roles=getRoles();
+  document.getElementById('editRolesText').value=Array.isArray(roles)?roles.join('\n'):Object.values(roles).join('\n');
+  document.getElementById('editRolesModal').classList.add('show');
+}
+
+async function confirmEditRoles(){
+  const raw=document.getElementById('editRolesText').value.trim();
+  const roles=raw.split('\n').map(r=>r.trim()).filter(r=>r);
+  if(roles.length<2){alert('至少需要2个角色');return;}
+  if(!confirm('修改角色将清空当前对阵结果，确认继续？'))return;
+  const s=getActiveSeason();
+  s.roles=roles; s.wins=[{},{},{},{},{}];
+  closeModal('editRolesModal');
+  buildBracket(); renderAll(); await saveToFirebase();
+}
+
+// ════════════════════════════════════════════════
+// RESULTS
+// ════════════════════════════════════════════════
+function toggleResults(){
+  const panel=document.getElementById('resultsPanel');
+  panel.classList.toggle('show');
+  if(panel.classList.contains('show')){ generateResults(); panel.scrollIntoView({behavior:'smooth'}); }
+}
+
+function computeRankings(){
+  const wins=getWins(), roles=getRoles();
+  const roleArr=Array.isArray(roles)?roles:Object.values(roles);
+  const info={};
+  for(const r of roleArr) info[r]={name:r,eliminatedRound:null,eliminatedBy:null,reached:0};
+  for(let ri=0;ri<TOTAL;ri++){
+    for(let mi=0;mi<N[ri];mi++){
+      const t1=getTeam(ri,mi,0), t2=getTeam(ri,mi,1);
+      const round=wins[ri]||{};
+      const w=round[mi]??round[String(mi)]??null;
+      if(!t1||!t2||!w)continue;
+      const loser=w===t1?t2:t1;
+      if(info[w])info[w].reached=ri+1;
+      if(info[loser]&&info[loser].eliminatedRound===null){
+        info[loser].eliminatedRound=ri; info[loser].eliminatedBy=w;
+      }
+    }
+  }
+  const finalRound=wins[TOTAL-1]||{};
+  const champ=finalRound[0]??finalRound['0']??null;
+  if(champ&&info[champ])info[champ].reached=TOTAL;
+  return {info, champ};
+}
+
+function generateResults(){
+  const {info, champ}=computeRankings();
+  const finalist=champ?Object.values(info).find(x=>x.eliminatedRound===TOTAL-1):null;
+  const thirds=Object.values(info).filter(x=>x.eliminatedRound===TOTAL-2);
+  const wins=getWins();
+  const filled=wins.map(w=>Object.keys(w).length);
+  const complete=filled.every((f,i)=>f===N[i]);
+  let html='';
+  if(!complete)html+=`<div class="warn">⚠️ 尚未全部填写（${filled.map((f,i)=>f+'/'+N[i]).join(' · ')}）</div>`;
+  const roles=getRoles();
+  const roleArr=Array.isArray(roles)?roles:Object.values(roles);
+  const totalFilled=Object.values(info).filter(x=>x.eliminatedRound!==null||x.reached===TOTAL).length;
+  html+=`<div class="stat-bar"><div class="stat-row">
+    <div class="stat-item"><div class="stat-num">${totalFilled}</div><div class="stat-label">已确定</div></div>
+    <div class="stat-item"><div class="stat-num">${roleArr.length-totalFilled}</div><div class="stat-label">待确定</div></div>
+    <div class="stat-item"><div class="stat-num">${roleArr.length}</div><div class="stat-label">总角色</div></div>
+    <div class="stat-item"><div class="stat-num">${TOTAL}</div><div class="stat-label">总轮次</div></div>
+  </div></div>`;
+  if(champ||finalist||thirds.length){
+    html+=`<div class="podium">`;
+    if(finalist)html+=`<div class="pc p2"><div class="pi">🥈</div><div class="pr">亚军</div><div class="pn">${finalist.name}</div><div class="pnote">败于 ${champ}</div></div>`;
+    if(champ)html+=`<div class="pc p1"><div class="pi">🏆</div><div class="pr">冠军</div><div class="pn">${champ}</div><div class="pnote">最受喜爱角色</div></div>`;
+    for(const t of thirds.slice(0,1))html+=`<div class="pc p3"><div class="pi">🥉</div><div class="pr">季军</div><div class="pn">${t.name}</div><div class="pnote">败于 ${t.eliminatedBy}</div></div>`;
+    html+=`</div>`;
+  }
+  const groups=[
+    {title:'🏆 冠军',f:x=>x.reached===TOTAL},
+    {title:'🥈 决赛 · 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
+    {title:'🥉 半决赛 · 第3-4名',f:x=>x.eliminatedRound===TOTAL-2},
+    {title:'⚔️ 四强赛 · 第5-8名',f:x=>x.eliminatedRound===TOTAL-3},
+    {title:'🗡 第二轮 · 第9-16名',f:x=>x.eliminatedRound===TOTAL-4},
+    {title:'📌 第一轮 · 第17-32名',f:x=>x.eliminatedRound===0},
+  ];
+  for(const grp of groups){
+    const r=Object.values(info).filter(grp.f);
+    if(!r.length)continue;
+    html+=`<div class="rank-section"><div class="rank-header">${grp.title}</div>
+      <table class="rank-table"><thead><tr><th>角色</th><th>晋级情况</th><th>败于</th></tr></thead><tbody>`;
+    for(const x of r){
+      const isC=x.reached===TOTAL;
+      const stage=isC?'🏆 夺冠':x.eliminatedRound!==null?STAGE_NAMES[x.eliminatedRound]:'进行中';
+      html+=`<tr>
+        <td class="rname" style="${isC?'color:var(--gold-bright)':''}">${x.name}</td>
+        <td class="rstage">${isC?`<span class="badge-champ">冠军</span>`:stage}</td>
+        <td class="rby">${isC?'—':x.eliminatedBy??'—'}</td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div>`;
+  }
+  const pending=Object.values(info).filter(x=>x.reached===0&&x.eliminatedRound===null);
+  if(pending.length)html+=`<div class="rank-section"><div class="rank-header" style="color:var(--text-dim);border-color:rgba(200,160,40,0.2)">⏳ 待确定 (${pending.length}个)</div><div style="padding:8px 0;color:var(--text-dim);font-size:12px;">${pending.map(x=>x.name).join(' · ')}</div></div>`;
+  document.getElementById('resultsContent').innerHTML=html;
+}
+
+function exportResults(){
+  const {info,champ}=computeRankings();
+  const s=getActiveSeason();
+  const lines=[`【${s.name}】晋级赛结果`,`生成时间：${new Date().toLocaleString('zh-CN')}`,''];
+  if(champ)lines.push(`🏆 冠军：${champ}`,'');
+  const groups=[
+    {title:'决赛 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
+    {title:'半决赛 第3-4名',f:x=>x.eliminatedRound===TOTAL-2},
+    {title:'四强赛 第5-8名',f:x=>x.eliminatedRound===TOTAL-3},
+    {title:'第二轮 第9-16名',f:x=>x.eliminatedRound===TOTAL-4},
+    {title:'第一轮 第17-32名',f:x=>x.eliminatedRound===0},
+  ];
+  for(const grp of groups){
+    const r=Object.values(info).filter(grp.f); if(!r.length)continue;
+    lines.push(grp.title+'：');
+    r.forEach(x=>lines.push(`  ${x.name}${x.eliminatedBy?' (败于'+x.eliminatedBy+')':''}`));
+    lines.push('');
+  }
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`${s.name}_结果.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════════
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});
+});
+
+// ════════════════════════════════════════════════
+// INIT — 先显示空对阵，Firebase加载后再更新
+// ════════════════════════════════════════════════
+buildBracket();
+renderAll();
+initFirebase().then(()=>{
+  buildBracket();
+  renderAll();
+});
+</script>
+</body>
+</html>
