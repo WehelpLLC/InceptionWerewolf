@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>狼人杀角色人气晋级赛 · INCEPTION</title>
+<title>我最喜欢玩的角色排行榜 · 北美盗梦空间狼人杀联赛</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -134,12 +134,80 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .generating-overlay.show{display:flex;}
 .gen-text{color:#fdd840;font-size:16px;letter-spacing:3px;}
 .gen-sub{color:rgba(200,160,40,0.5);font-size:12px;letter-spacing:2px;}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:rgba(220,100,40,0.92);color:#fff;
+  padding:10px 22px;border-radius:20px;font-size:13px;letter-spacing:1px;
+  z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;
+  font-family:'Noto Serif SC',serif;}
+.toast.show{opacity:1;}
+
+.slot.locked{color:rgba(200,160,40,0.18);cursor:not-allowed;pointer-events:none;font-style:italic;}
+
+/* ══ 手机端专属样式 ══ */
+@media(max-width:767px){
+  .bracket-outer{display:none!important;}
+  .mobile-view{display:block;}
+  .topbar{padding:8px 14px;}
+  .header{padding:12px 14px 10px;}
+  .header-title{font-size:15px;letter-spacing:3px;}
+  .controls{gap:6px;}
+  .btn{padding:5px 10px;font-size:10px;letter-spacing:1px;}
+}
+@media(min-width:768px){.mobile-view{display:none;}}
+
+.mobile-view{padding:0 14px 50px;}
+.m-tabs{display:flex;overflow-x:auto;gap:6px;padding:10px 0 12px;scrollbar-width:none;}
+.m-tabs::-webkit-scrollbar{display:none;}
+.mtab{flex-shrink:0;padding:6px 14px;border-radius:16px;font-size:11px;
+  letter-spacing:1px;border:1px solid var(--gold-dim);color:var(--text-dim);
+  cursor:pointer;transition:all .15s;font-family:'Noto Serif SC',serif;}
+.mtab.active{background:rgba(200,160,40,0.15);border-color:var(--gold);color:var(--gold);}
+.mtab.done{color:rgba(80,200,120,0.85);border-color:rgba(80,200,120,0.3);background:rgba(80,200,120,0.06);}
+.mtab.locked{opacity:.35;cursor:not-allowed;}
+.m-rhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.m-rtitle{font-size:17px;font-weight:900;color:var(--gold-bright);letter-spacing:3px;}
+.m-rprog{font-size:12px;color:var(--text-dim);letter-spacing:1px;}
+.m-card{background:rgba(8,10,28,0.85);border:1px solid rgba(200,160,40,0.2);
+  border-radius:12px;padding:14px 14px 12px;margin-bottom:10px;}
+.m-card.decided{border-color:rgba(200,160,40,0.12);}
+.m-num{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-align:center;margin-bottom:10px;font-family:'Courier Prime',monospace;}
+.m-slot{width:100%;padding:15px 16px;border-radius:8px;font-size:16px;
+  font-weight:600;letter-spacing:1.5px;text-align:center;cursor:pointer;
+  transition:all .15s;border:1px solid rgba(200,160,40,0.18);
+  color:var(--text);margin:4px 0;background:transparent;
+  font-family:'Noto Serif SC',serif;}
+.m-slot:active{transform:scale(.98);}
+.m-slot.winner{background:rgba(255,215,60,0.16);border-color:var(--gold-bright);
+  color:var(--gold-bright);font-weight:900;}
+.m-slot.loser{color:rgba(200,160,40,0.18);text-decoration:line-through;
+  cursor:not-allowed;background:rgba(0,0,0,0.15);pointer-events:none;}
+.m-slot.pending{color:rgba(200,160,40,0.18);font-style:italic;cursor:not-allowed;}
+.m-vs{text-align:center;font-size:10px;color:rgba(200,160,40,0.28);letter-spacing:2px;padding:2px 0;}
+.m-next{text-align:center;padding:18px 0 8px;}
+.m-next-btn{padding:13px 36px;background:rgba(255,215,60,0.1);
+  border:1px solid rgba(255,215,60,0.4);color:var(--gold-bright);
+  font-size:14px;letter-spacing:2px;border-radius:8px;cursor:pointer;
+  font-family:'Noto Serif SC',serif;width:100%;}
+.m-champ{text-align:center;padding:30px 20px;background:rgba(255,215,60,0.1);
+  border:1px solid rgba(255,215,60,0.4);border-radius:12px;margin-top:16px;}
+.m-champ-icon{font-size:40px;margin-bottom:10px;}
+.m-champ-label{font-size:11px;color:var(--text-dim);letter-spacing:2px;}
+.m-champ-name{font-size:26px;font-weight:900;color:var(--gold-bright);
+  letter-spacing:3px;margin:10px 0 6px;text-shadow:0 0 20px rgba(255,215,60,0.4);}
+.m-champ-note{font-size:12px;color:rgba(200,160,40,0.45);letter-spacing:1px;}
+.m-champ-img-btn{margin-top:16px;padding:10px 24px;background:rgba(255,215,60,0.12);
+  border:1px solid rgba(255,215,60,0.35);color:var(--gold-bright);font-size:13px;
+  letter-spacing:2px;border-radius:6px;cursor:pointer;
+  font-family:'Noto Serif SC',serif;}
+.m-locked{text-align:center;padding:40px 20px;color:rgba(200,160,40,0.35);
+  font-size:14px;letter-spacing:1px;}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo">INCEPTION</div>
+    <div class="logo" style="font-size:11px;letter-spacing:3px;">北美盗梦空间狼人杀联赛</div>
     <select class="season-select" id="seasonSelect" onchange="switchSeason(this.value)"></select>
   </div>
   <div class="topbar-right">
@@ -149,7 +217,8 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   </div>
 </div>
 <div class="header">
-  <div class="header-title">角色喜爱程度晋级赛</div>
+  <div style="font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.45);margin-bottom:6px;">北美盗梦空间狼人杀联赛</div>
+  <div class="header-title">我最喜欢玩的角色排行榜</div>
   <div class="season-name-display" id="seasonNameDisplay"></div>
   <div class="champion-box" id="chamBox"><div class="champion-tag" id="chamTag"></div></div>
   <div class="progress" id="progRow">
@@ -170,6 +239,13 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 
   <div class="bracket-inner" id="bracket"><svg class="connectors" id="connSvg"></svg></div>
 </div>
+
+<!-- ══ 手机端视图 ══ -->
+<div class="mobile-view" id="mobileView">
+  <div class="m-tabs" id="mobileTabs"></div>
+  <div id="mobileMatches"></div>
+</div>
+
 <div class="results-panel" id="resultsPanel">
   <div class="res-title">📊 完整结果统计</div>
   <div id="resultsContent"></div>
@@ -538,6 +614,7 @@ function drawConnectors(){
 function renderAll(){
   for(let ri=0;ri<TOTAL;ri++) for(let mi=0;mi<N[ri];mi++) renderMatch(ri,mi);
   renderChampion(); renderProgress(); renderSeasonUI();
+  renderMobile();
 }
 
 function renderMatch(ri,mi){
@@ -600,31 +677,62 @@ function renderSeasonUI(){
 // ════════════════════════════════════════════════
 // INTERACTIONS
 // ════════════════════════════════════════════════
+// 检查上一轮是否全部填完
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function prevRoundComplete(ri, wins){
+  if(ri===0) return true;
+  const prev=wins[ri-1]||{};
+  for(let i=0;i<N[ri-1];i++){
+    if(!prev[i] && !prev[String(i)]) return false;
+  }
+  return true;
+}
+
 function onSlotClick(e){
   lastUserInteraction = Date.now();
   const el=e.currentTarget;
   const ri=+el.dataset.ri, mi=+el.dataset.mi, s=+el.dataset.s;
 
-  // 两个队伍都要确定，才能选胜者
+  const wins=getWins();
+
+  // ① 必须填完上一轮才能填这一轮
+  if(!prevRoundComplete(ri, wins)){
+    // 找出还差几场
+    const prev=wins[ri-1]||{};
+    let done=0;
+    for(let i=0;i<N[ri-1];i++){ if(prev[i]||prev[String(i)]) done++; }
+    const left=N[ri-1]-done;
+    showToast(`请先完成第${ri}轮的对阵（还剩 ${left} 场未填）`);
+    return;
+  }
+
+  // ② 本场两个对手都确定了才能选
   const team0=getTeam(ri,mi,0), team1=getTeam(ri,mi,1);
   if(!team0 || !team1) return;
+
+  // ③ 两个对手不能是同一个角色（防止数据异常）
+  if(team0===team1) return;
 
   const team=getTeam(ri,mi,s);
   if(!team) return;
 
-  const wins=getWins();
   const round=wins[ri]||{};
   const cur=round[mi]??round[String(mi)]??null;
 
   if(cur===team){
-    // 点已选胜者 → 取消这场结果（方便纠错）
+    // 点已选胜者 → 取消（纠错用）
     delete wins[ri][mi]; delete wins[ri][String(mi)];
     clearDown(wins,ri,mi);
   } else if(cur && cur!==team){
-    // ⚡ 严格二选一：点已淘汰方 → 完全无效，不能改
+    // 严格二选一：点已淘汰方 → 无效
     return;
   } else {
-    // 未选过 → 设为胜者
+    // 未选 → 设为胜者
     wins[ri][mi]=team;
   }
 
@@ -829,7 +937,7 @@ function generateResults(){
 function exportResults(){
   const {info,champ}=computeRankings();
   const s=getActiveSeason();
-  const lines=[`【${s.name}】晋级赛结果`,`生成时间：${new Date().toLocaleString('zh-CN')}`,''];
+  const lines=[`【${s.name}】排行榜结果`,`生成时间：${new Date().toLocaleString('zh-CN')}`,''];
   if(champ)lines.push(`🏆 冠军：${champ}`,'');
   const groups=[
     {title:'决赛 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
@@ -901,8 +1009,8 @@ function generateImage(){
   const now = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
 
   document.getElementById('resultCard').innerHTML = `
-    <div class="rc-logo">INCEPTION · 盗梦空间 · 狼人杀联赛</div>
-    <div class="rc-title">角色人气晋级赛 · 完整结果</div>
+    <div class="rc-logo">北美盗梦空间狼人杀联赛</div>
+    <div class="rc-title">我最喜欢玩的角色排行榜 · 完整结果</div>
     <div class="rc-season">${s.name} · ${now}</div>
     <div class="rc-podium">
       ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">亚军</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
@@ -910,7 +1018,7 @@ function generateImage(){
       ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">季军</div><div class="rc-name">${thirds[0].name}</div><div class="rc-note">败于 ${thirds[0].eliminatedBy}</div></div>`:''}
     </div>
     ${tableHTML}
-    <div class="rc-footer">INCEPTION · Houston · 不完美的人，才是真赢家</div>
+    <div class="rc-footer">北美盗梦空间狼人杀联赛 · 不完美的人，才是真赢家</div>
   `;
 
   // 移到可见区域截图
@@ -933,7 +1041,7 @@ function generateImage(){
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${s.name}_晋级赛结果.png`;
+        a.download = `${s.name}_排行榜结果.png`;
         a.click();
         URL.revokeObjectURL(url);
       }, 'image/png');
@@ -944,14 +1052,145 @@ function generateImage(){
   }, 300);
 }
 
+
+// ════════════════════════════════════════════════
+// 手机端视图
+// ════════════════════════════════════════════════
+let mobileRound = 0;
+
+function isMobile(){ return window.innerWidth < 768; }
+
+function initMobileRound(){
+  // 自动定位到第一个未完成的轮次
+  const wins=getWins();
+  for(let ri=0;ri<TOTAL;ri++){
+    const done=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+    if(done < N[ri]){ mobileRound=ri; return; }
+  }
+  mobileRound=TOTAL-1; // 全部完成，停在决赛
+}
+
+function renderMobile(){
+  if(!isMobile()) return;
+  renderMobileTabs();
+  renderMobileMatches();
+}
+
+function renderMobileTabs(){
+  const el=document.getElementById('mobileTabs');
+  if(!el) return;
+  const wins=getWins();
+  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
+  el.innerHTML=RNAMES.map((name,ri)=>{
+    const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+    const done=cnt===N[ri];
+    const active=ri===mobileRound;
+    const ok=ri===0||Object.values(wins[ri-1]||{}).filter(v=>v&&typeof v==='string').length===N[ri-1];
+    return `<div class="mtab${active?' active':''}${done?' done':''}${!ok?' locked':''}"
+      onclick="${ok?`setMobileRound(${ri})`:''}">${name}${done?' ✓':` ${cnt}/${N[ri]}`}</div>`;
+  }).join('');
+}
+
+function setMobileRound(ri){
+  mobileRound=ri;
+  renderMobile();
+  document.getElementById('mobileMatches').scrollTop=0;
+}
+
+function renderMobileMatches(){
+  const el=document.getElementById('mobileMatches');
+  if(!el) return;
+  const wins=getWins();
+  const ri=mobileRound;
+  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
+  const ok=ri===0||Object.values(wins[ri-1]||{}).filter(v=>v&&typeof v==='string').length===N[ri-1];
+  const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+
+  let html=`<div class="m-rhead">
+    <div class="m-rtitle">${RNAMES[ri]}</div>
+    <div class="m-rprog">${cnt} / ${N[ri]} 场</div>
+  </div>`;
+
+  if(!ok){
+    html+=`<div class="m-locked">请先完成上一轮对阵<br>才能进入${RNAMES[ri]}</div>`;
+  } else {
+    for(let mi=0;mi<N[ri];mi++){
+      const t0=getTeam(ri,mi,0), t1=getTeam(ri,mi,1);
+      const round=wins[ri]||{};
+      const cur=round[mi]??round[String(mi)]??null;
+      const canSel=ok&&t0&&t1&&t0!==t1;
+
+      const slot=(team,s)=>{
+        if(!team) return `<div class="m-slot pending">待定</div>`;
+        const isW=cur===team, isL=cur&&cur!==team;
+        return `<div class="m-slot${isW?' winner':isL?' loser':''}"
+          onclick="${canSel&&!isL?`mobileSelect(${ri},${mi},${s})`:''}">${isW?'▶ ':''}${team}</div>`;
+      };
+
+      html+=`<div class="m-card${cur?' decided':''}">
+        <div class="m-num">第 ${mi+1} 场 / ${N[ri]}</div>
+        ${slot(t0,0)}
+        <div class="m-vs">VS</div>
+        ${slot(t1,1)}
+      </div>`;
+    }
+
+    // 下一轮按钮
+    if(cnt===N[ri]&&ri<TOTAL-1){
+      html+=`<div class="m-next">
+        <button class="m-next-btn" onclick="setMobileRound(${ri+1})">
+          全部填完 · 进入${['第二轮','第三轮','半决赛','决赛'][ri]} →
+        </button></div>`;
+    }
+
+    // 冠军展示
+    if(ri===TOTAL-1&&cnt===N[ri]){
+      const champ=wins[TOTAL-1]?.[0]??wins[TOTAL-1]?.['0']??null;
+      if(champ) html+=`<div class="m-champ">
+        <div class="m-champ-icon">🏆</div>
+        <div class="m-champ-label">最受喜爱角色</div>
+        <div class="m-champ-name">${champ}</div>
+        <div class="m-champ-note">恭喜夺冠！</div>
+        <button class="m-champ-img-btn" onclick="generateImage()">🖼 生成结果图</button>
+      </div>`;
+    }
+  }
+  el.innerHTML=html;
+}
+
+function mobileSelect(ri,mi,s){
+  lastUserInteraction=Date.now();
+  const wins=getWins();
+  if(!prevRoundComplete(ri,wins)){ showToast('请先完成上一轮'); return; }
+  const t0=getTeam(ri,mi,0),t1=getTeam(ri,mi,1);
+  if(!t0||!t1||t0===t1) return;
+  const team=getTeam(ri,mi,s);
+  if(!team) return;
+  const round=wins[ri]||{};
+  const cur=round[mi]??round[String(mi)]??null;
+  if(cur===team){ delete wins[ri][mi]; delete wins[ri][String(mi)]; clearDown(wins,ri,mi); }
+  else if(cur&&cur!==team){ return; }
+  else { wins[ri][mi]=team; }
+  renderMobileMatches();
+  renderMobileTabs();
+  renderChampion(); renderProgress();
+  saveToFirebase();
+}
+
+window.addEventListener('resize',()=>{ renderMobile(); });
+
 // ════════════════════════════════════════════════
 // INIT — 先显示空对阵，Firebase加载后再更新
 // ════════════════════════════════════════════════
 buildBracket();
 renderAll();
+initMobileRound();
+renderMobile();
 initFirebase().then(()=>{
   buildBracket();
   renderAll();
+  initMobileRound();
+  renderMobile();
 });
 </script>
 
@@ -964,5 +1203,6 @@ initFirebase().then(()=>{
   <div class="gen-sub">请稍候</div>
 </div>
 
+<div class="toast" id="toast"></div>
 </body>
 </html>
