@@ -127,6 +127,39 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   font-family:'Noto Serif SC',serif;letter-spacing:1px;}
 .m-reset:hover{border-color:var(--gold);color:var(--gold);}
 
+
+/* ── 管理员页 ── */
+.admin-page{display:none;flex-direction:column;min-height:100vh;padding:0 0 60px;}
+.a-topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:rgba(6,8,26,0.96);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);}
+.a-title{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--gold2);}
+.a-back{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;
+  letter-spacing:1px;font-family:'Noto Serif SC',serif;padding:6px 10px;}
+.a-back:hover{color:var(--gold);}
+.a-wrap{max-width:600px;margin:0 auto;padding:16px;}
+.a-sec{margin-bottom:24px;}
+.a-sec-title{font-size:11px;letter-spacing:3px;color:var(--dim);
+  margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+.vote-row{display:grid;grid-template-columns:24px 1fr 80px 80px 80px;align-items:center;
+  gap:8px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;margin-bottom:6px;font-size:13px;}
+.vtag{padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:1px;white-space:nowrap;}
+.vtag.p1{background:rgba(224,180,99,0.2);border:1px solid rgba(224,180,99,0.5);color:var(--gold2);}
+.vtag.p2{background:rgba(180,180,180,0.1);border:1px solid rgba(180,180,180,0.3);color:#ccc;}
+.vtag.p3{background:rgba(180,120,40,0.1);border:1px solid rgba(180,120,40,0.3);color:#cd9a40;}
+.a-summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;}
+.a-bar-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(200,160,40,0.07);}
+.a-bar-row:last-child{border-bottom:none;}
+.a-bar-role{font-size:12px;min-width:65px;}
+.a-bar-wrap{flex:1;background:rgba(200,160,40,0.1);border-radius:4px;height:5px;}
+.a-bar-fill{height:100%;border-radius:4px;background:var(--gold);}
+.a-bar-cnt{font-size:11px;color:var(--dim);min-width:28px;text-align:right;font-family:'Courier Prime',monospace;}
+/* 管理员入口按钮（低调） */
+.admin-entry{display:block;margin:30px auto 0;background:none;border:none;
+  color:rgba(200,160,40,0.18);cursor:pointer;font-size:10px;letter-spacing:2px;
+  font-family:'Noto Serif SC',serif;padding:8px;}
+.admin-entry:hover{color:var(--dim);}
 /* Toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
   background:rgba(80,200,120,0.9);color:#fff;padding:8px 20px;border-radius:16px;
@@ -183,6 +216,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <div class="round-tabs" id="roundTabs"></div>
     <div class="bracket-wrap" id="matchArea"></div>
   </div>
+    <button class="admin-entry" onclick="openAdmin()">管理员入口</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -453,6 +487,142 @@ function showToast(msg){
 
 // 页面加载完直接聚焦输入框
 window.addEventListener('load',()=>setTimeout(()=>document.getElementById('nameInput').focus(),300));
+
+// ══ 管理员入口 ══
+const ADMIN_PW='inception2026';
+
+function openAdmin(){
+  const pw=prompt('管理员密码：');
+  if(pw===ADMIN_PW){
+    document.getElementById('namePage').style.display='none';
+    document.getElementById('bracketPage').style.display='none';
+    document.getElementById('adminPage').style.display='flex';
+    loadAdminData();
+  } else if(pw!==null){
+    alert('密码错误');
+  }
+}
+
+function closeAdmin(){
+  document.getElementById('adminPage').style.display='none';
+  document.getElementById('namePage').style.display='flex';
+}
+
+async function loadAdminData(){
+  const el=document.getElementById('adminContent');
+  el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">加载中...</div>';
+
+  const data=await fb.get('tournament/playerBrackets');
+  if(!data||!Object.keys(data).length){
+    el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">暂无玩家数据</div>';
+    return;
+  }
+
+  const players=Object.values(data);
+
+  function normW(raw){
+    if(!raw)return[{},{},{},{},{}];
+    const arr=Array.isArray(raw)?raw:[0,1,2,3,4].map(i=>raw[i]||{});
+    while(arr.length<5)arr.push({});
+    return arr.map(r=>(!r||typeof r!=='object'||Array.isArray(r))?{}:r);
+  }
+
+  function getTop3(wins){
+    const w=normW(wins);
+    const champ=w[4]?.[0]??w[4]?.['0']??null;
+    function gT(ri,mi,s){
+      if(ri===0)return ROLES[mi*2+s];
+      const r=w[ri-1]||{};return r[mi*2+s]??r[String(mi*2+s)]??null;
+    }
+    function gW(ri,mi){const r=w[ri]||{};return r[mi]??r[String(mi)]??null;}
+    const t0=gT(4,0,0),t1=gT(4,0,1);
+    const finalist=champ?(champ===t0?t1:t0):null;
+    const thirds=[];
+    for(let mi=0;mi<N[3];mi++){
+      const ww=gW(3,mi);
+      if(ww){const a=gT(3,mi,0),b=gT(3,mi,1);thirds.push(ww===a?b:a);}
+    }
+    return{champ,finalist,thirds:thirds.filter(Boolean)};
+  }
+
+  // 统计热门角色
+  const roleCnt={};
+  players.forEach(p=>{
+    const{champ,finalist,thirds}=getTop3(p.wins);
+    if(champ)roleCnt[champ]=(roleCnt[champ]||0)+3;
+    if(finalist)roleCnt[finalist]=(roleCnt[finalist]||0)+2;
+    if(thirds[0])roleCnt[thirds[0]]=(roleCnt[thirds[0]]||0)+1;
+  });
+  const topRoles=Object.entries(roleCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxScore=topRoles[0]?.[1]||1;
+  const done=players.filter(p=>getTop3(p.wins).champ);
+  const notDone=players.filter(p=>!getTop3(p.wins).champ);
+
+  let html='';
+
+  // 热门角色汇总
+  if(topRoles.length){
+    html+=`<div class="a-sec">
+      <div class="a-sec-title">🔥 最受欢迎角色 · 综合排名</div>
+      <div class="a-summary">
+        ${topRoles.map(([role,score])=>`
+          <div class="a-bar-row">
+            <div class="a-bar-role">${role}</div>
+            <div class="a-bar-wrap"><div class="a-bar-fill" style="width:${Math.round(score/maxScore*100)}%"></div></div>
+            <div class="a-bar-cnt">${score}分</div>
+          </div>`).join('')}
+        <div style="font-size:10px;color:var(--dim);margin-top:10px;letter-spacing:1px;">冠军+3分 · 亚军+2分 · 季军+1分</div>
+      </div>
+    </div>`;
+  }
+
+  // 玩家列表
+  html+=`<div class="a-sec">
+    <div class="a-sec-title">👥 玩家结果 · 已完成 ${done.length} 人 / 共 ${players.length} 人</div>`;
+
+  if(done.length){
+    html+=`<div style="display:grid;grid-template-columns:24px 1fr 80px 80px 80px;gap:8px;padding:5px 12px;font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;">
+      <div></div><div>玩家</div><div>🥇最喜欢</div><div>🥈第二</div><div>🥉第三</div>
+    </div>`;
+    html+=done.map((p,i)=>{
+      const{champ,finalist,thirds}=getTop3(p.wins);
+      return`<div class="vote-row">
+        <div style="font-weight:700;color:var(--dim);text-align:center;font-family:'Courier Prime',monospace;font-size:11px;">${i+1}</div>
+        <div style="font-weight:700;font-size:13px;">${p.emoji||'🎭'} ${p.name||'?'}</div>
+        <div><span class="vtag p1">${champ||'—'}</span></div>
+        <div><span class="vtag p2">${finalist||'—'}</span></div>
+        <div><span class="vtag p3">${thirds[0]||'—'}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  if(notDone.length){
+    html+=`<div style="margin-top:14px;font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;">未完成（${notDone.length}人）：</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${notDone.map(p=>`<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px 12px;font-size:12px;">${p.emoji||'🎭'} ${p.name}</div>`).join('')}
+      </div>`;
+  }
+
+  html+=`</div>`;
+  el.innerHTML=html;
+}
 </script>
+
+<!-- 管理员页 -->
+<div class="admin-page" id="adminPage">
+  <div class="a-topbar">
+    <div class="a-title">🛡 管理员 · 投票结果</div>
+    <button class="a-back" onclick="closeAdmin()">← 返回</button>
+  </div>
+  <div class="a-wrap">
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button onclick="loadAdminData()" style="background:var(--gold2);color:#2B1F0A;border:none;border-radius:8px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Noto Serif SC',serif;letter-spacing:1px;">🔄 刷新数据</button>
+    </div>
+    <div id="adminContent">
+      <div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">点击刷新数据</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
