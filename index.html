@@ -1,1211 +1,458 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我最喜欢玩的角色排行榜！ · 北美盗梦空间狼人杀联赛</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我最喜欢玩的角色！· 北美盗梦空间狼人杀联赛</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#06081a;--gold:#c8a030;--gold-bright:#fdd840;
-  --gold-dim:rgba(200,160,40,0.25);--gold-faint:rgba(200,160,40,0.08);
-  --text:rgba(232,210,130,0.85);--text-dim:rgba(200,160,40,0.35);
-  --win-bg:rgba(255,215,60,0.12);--elim:rgba(200,160,40,0.22);
-  --green:rgba(80,200,120,1);--slot:30px;--match:61px;--col:158px;--bh:1152px;
+  --bg:#06081a;--panel:rgba(20,25,37,0.92);--line:rgba(200,160,40,0.2);
+  --gold:#c8a030;--gold2:#fdd840;--text:rgba(232,210,130,0.9);--dim:rgba(200,160,40,0.4);
+  --win-bg:rgba(255,215,60,0.14);
 }
-body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0d1138 0%,#06081a 65%);font-family:'Noto Serif SC',serif;color:var(--text);min-height:100vh;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(6,8,26,0.98);border-bottom:1px solid var(--gold-dim);position:sticky;top:0;z-index:200;gap:10px;flex-wrap:wrap;}
-.topbar-left{display:flex;align-items:center;gap:12px;}
-.logo{font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:5px;color:var(--gold);font-weight:700;}
-.season-select{background:var(--gold-faint);border:1px solid var(--gold-dim);color:var(--text);font-size:12px;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:'Noto Serif SC',serif;outline:none;max-width:200px;}
-.season-select option{background:#0d1138;}
-.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.conn-status{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:1px;padding:3px 10px;border-radius:12px;border:1px solid;transition:all .3s;}
-.conn-status.online{color:var(--green);border-color:rgba(80,200,120,0.35);background:rgba(80,200,120,0.08);}
-.conn-status.offline{color:rgba(220,150,50,0.8);border-color:rgba(220,150,50,0.3);background:rgba(220,150,50,0.06);}
-.conn-status.syncing{color:var(--gold);border-color:var(--gold-dim);background:var(--gold-faint);}
-.conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
-.header{text-align:center;padding:16px 20px 12px;border-bottom:1px solid var(--gold-dim);}
-.header-title{font-size:18px;font-weight:900;letter-spacing:5px;color:var(--gold-bright);text-shadow:0 0 30px rgba(255,210,40,0.35);margin-bottom:6px;}
-.season-name-display{font-size:13px;letter-spacing:3px;color:var(--gold);margin-bottom:8px;}
-.champion-box{display:none;align-items:center;justify-content:center;gap:10px;margin:5px 0;}
-.champion-box.show{display:flex;}
-.champion-tag{padding:6px 20px;background:rgba(255,215,60,0.12);border:1px solid rgba(255,215,60,0.45);border-radius:4px;font-size:14px;font-weight:900;color:var(--gold-bright);letter-spacing:3px;}
-.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
-.btn{padding:5px 14px;background:var(--gold-faint);border:1px solid var(--gold-dim);color:var(--text-dim);font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:3px;font-family:'Noto Serif SC',serif;transition:all .15s;}
-.btn:hover{background:rgba(200,160,40,0.14);color:var(--gold);}
-.btn.primary{color:var(--gold);border-color:rgba(200,160,40,0.45);}
-.btn.accent{color:#fdd840;border-color:rgba(255,215,60,0.5);background:rgba(255,215,60,0.08);}
-.btn.danger{color:rgba(220,80,60,0.7);border-color:rgba(220,80,60,0.3);}
-.progress{display:flex;gap:6px;justify-content:center;align-items:center;padding:8px 0 0;font-size:10px;color:var(--text-dim);letter-spacing:1px;}
-.prog-dot{width:8px;height:8px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(200,160,40,0.3);transition:all .2s;}
-.prog-dot.done{background:var(--gold);border-color:var(--gold);}
-.bracket-outer{overflow-x:auto;overflow-y:hidden;padding:16px 20px 40px;-webkit-overflow-scrolling:touch;}
-.round-labels{display:flex;margin-bottom:8px;}
-.round-label{text-align:center;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);width:var(--col);flex-shrink:0;padding-bottom:6px;}
-.round-label.champ{width:160px;}
-.bracket-inner{position:relative;}
-.match{position:absolute;border:1px solid var(--gold-dim);border-radius:4px;background:rgba(8,10,28,0.85);overflow:hidden;transition:border-color .15s;}
-.match:hover{border-color:rgba(200,160,40,0.45);}
-.slot{display:flex;align-items:center;padding:0 5px 0 7px;font-size:11px;letter-spacing:0.5px;color:var(--text);border-left:3px solid var(--gold-dim);cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none;}
-.slot:hover{background:rgba(255,215,60,0.06);}
-.slot.winner{color:var(--gold-bright);font-weight:900;background:rgba(255,215,60,0.18);border-left-color:var(--gold-bright);letter-spacing:0.5px;}
-.slot.elim{color:rgba(200,160,40,0.18);text-decoration:line-through;background:rgba(0,0,0,0.2);cursor:not-allowed;pointer-events:none;}
-.slot.empty{color:rgba(200,160,40,0.2);cursor:not-allowed;font-style:italic;}
-.slot-divider{height:1px;background:rgba(200,160,40,0.12);}
-.win-mark{margin-right:4px;font-size:10px;}
-.champ-box-b{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
-.champ-inner{padding:12px 18px;background:rgba(255,215,60,0.08);border:1px solid rgba(255,215,60,0.3);border-radius:6px;font-size:15px;font-weight:900;color:rgba(255,215,60,0.4);letter-spacing:2px;text-align:center;min-width:90px;transition:all .2s;}
-.champ-inner.filled{color:var(--gold-bright);border-color:rgba(255,215,60,0.55);background:rgba(255,215,60,0.14);text-shadow:0 0 20px rgba(255,215,60,0.5);}
-.champ-label{font-size:11px;letter-spacing:2px;color:var(--text-dim);}
-.connectors{position:absolute;inset:0;pointer-events:none;overflow:visible;}
-.results-panel{display:none;padding:28px 24px 60px;border-top:1px solid var(--gold-dim);}
-.results-panel.show{display:block;}
-.res-title{text-align:center;font-size:16px;font-weight:900;letter-spacing:4px;color:var(--gold-bright);margin-bottom:20px;}
-.podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
-.pc{text-align:center;padding:16px 20px;border-radius:6px;min-width:120px;}
-.pc.p1{background:rgba(255,215,60,0.12);border:1px solid rgba(255,215,60,0.5);order:2;}
-.pc.p2{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.3);order:1;}
-.pc.p3{background:rgba(180,120,40,0.08);border:1px solid rgba(180,120,40,0.3);order:3;}
-.pi{font-size:28px;margin-bottom:6px;}.pr{font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;}
-.pn{font-size:16px;font-weight:900;letter-spacing:2px;}
-.pc.p1 .pn{color:var(--gold-bright);}.pc.p2 .pn{color:rgba(220,220,220,0.85);}.pc.p3 .pn{color:rgba(220,160,60,0.85);}
-.pnote{font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:1px;}
-.stat-bar{max-width:680px;margin:0 auto 24px;padding:14px;background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:6px;}
-.stat-row{display:flex;justify-content:space-around;flex-wrap:wrap;gap:12px;}
-.stat-item{text-align:center;}.stat-num{font-size:24px;font-weight:900;color:var(--gold-bright);}
-.stat-label{font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}
-.rank-section{max-width:680px;margin:0 auto 20px;}
-.rank-header{font-size:11px;letter-spacing:3px;color:var(--gold);padding:8px 0 8px 12px;border-left:3px solid var(--gold);margin-bottom:10px;}
-.rank-table{width:100%;border-collapse:collapse;}
-.rank-table th{font-size:10px;letter-spacing:2px;color:var(--text-dim);font-weight:400;padding:6px 10px;text-align:left;border-bottom:1px solid var(--gold-dim);}
-.rank-table td{padding:8px 10px;font-size:13px;border-bottom:1px solid rgba(200,160,40,0.08);}
-.rank-table tr:hover td{background:var(--gold-faint);}
-.rname{font-weight:700;letter-spacing:2px;}.rstage{font-size:11px;color:var(--text-dim);letter-spacing:1px;}
-.rby{font-size:11px;color:rgba(200,160,40,0.5);letter-spacing:1px;}
-.badge-champ{display:inline-block;padding:2px 8px;background:rgba(255,215,60,0.15);border:1px solid rgba(255,215,60,0.4);border-radius:3px;font-size:10px;color:var(--gold-bright);letter-spacing:1px;}
-.warn{text-align:center;padding:16px;color:rgba(255,150,50,0.7);font-size:13px;margin-bottom:16px;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;}
-.modal-overlay.show{display:flex;}
-.modal{background:#0d1138;border:1px solid var(--gold-dim);border-radius:8px;padding:28px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;}
-.modal-title{font-size:15px;font-weight:900;letter-spacing:3px;color:var(--gold-bright);margin-bottom:20px;text-align:center;}
-.modal input,.modal textarea{width:100%;background:rgba(200,160,40,0.06);border:1px solid var(--gold-dim);color:var(--text);padding:8px 12px;border-radius:4px;font-size:13px;font-family:'Noto Serif SC',serif;margin-bottom:12px;outline:none;}
-.modal input:focus,.modal textarea:focus{border-color:var(--gold);}
-.modal textarea{min-height:200px;resize:vertical;font-size:12px;line-height:1.8;}
-.modal-label{font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px;}
-.modal-btns{display:flex;gap:10px;justify-content:center;margin-top:16px;}
-.modal-note{font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-top:8px;line-height:1.8;}
-.season-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-.season-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:4px;}
-.season-item.active{border-color:var(--gold-bright);background:rgba(255,215,60,0.1);}
-.season-item-name{font-size:13px;letter-spacing:1px;}.season-item-info{font-size:10px;color:var(--text-dim);}
-.season-item-actions{display:flex;gap:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0d1138 0%,#06081a 70%);
+  color:var(--text);font-family:'Noto Serif SC',serif;min-height:100vh;}
 
-/* ── 结果图卡片 ── */
-.result-card{
-  position:fixed;left:-9999px;top:0;
-  width:780px;background:linear-gradient(160deg,#060918 0%,#080c20 50%,#050810 100%);
-  padding:40px 44px 44px;font-family:'Noto Serif SC',serif;color:#e8d070;
-  border:2px solid rgba(200,160,40,0.35);
-}
-.rc-logo{font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:5px;color:rgba(200,160,40,0.5);margin-bottom:8px;}
-.rc-title{font-size:22px;font-weight:900;letter-spacing:5px;color:#fdd840;text-shadow:0 0 30px rgba(255,210,40,0.4);margin-bottom:6px;}
-.rc-season{font-size:13px;letter-spacing:3px;color:rgba(200,160,40,0.6);margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid rgba(200,160,40,0.2);}
-.rc-podium{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:28px;}
-.rc-p{text-align:center;padding:18px 22px;border-radius:8px;}
-.rc-p.p1{background:rgba(255,215,60,0.14);border:1px solid rgba(255,215,60,0.5);order:2;min-width:160px;}
-.rc-p.p2{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.3);order:1;min-width:130px;}
-.rc-p.p3{background:rgba(180,120,40,0.08);border:1px solid rgba(180,120,40,0.3);order:3;min-width:130px;}
-.rc-icon{font-size:32px;margin-bottom:8px;}
-.rc-rank{font-size:10px;letter-spacing:2px;color:rgba(200,160,40,0.5);margin-bottom:6px;}
-.rc-name{font-size:18px;font-weight:900;letter-spacing:2px;}
-.rc-p.p1 .rc-name{color:#fdd840;}.rc-p.p2 .rc-name{color:rgba(220,220,220,0.9);}
-.rc-p.p3 .rc-name{color:rgba(220,160,60,0.9);}
-.rc-note{font-size:11px;color:rgba(200,160,40,0.45);margin-top:6px;}
-.rc-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
-.rc-table th{font-size:10px;letter-spacing:2px;color:rgba(200,160,40,0.45);font-weight:400;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(200,160,40,0.2);}
-.rc-table td{padding:9px 12px;font-size:13px;border-bottom:1px solid rgba(200,160,40,0.07);}
-.rc-table tr:last-child td{border-bottom:none;}
-.rc-sec-title{font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.55);padding:10px 0 8px 12px;border-left:2px solid rgba(200,160,40,0.4);margin-bottom:8px;}
-.rc-footer{text-align:center;padding-top:16px;border-top:1px solid rgba(200,160,40,0.15);font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.35);}
-.generating-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
-.generating-overlay.show{display:flex;}
-.gen-text{color:#fdd840;font-size:16px;letter-spacing:3px;}
-.gen-sub{color:rgba(200,160,40,0.5);font-size:12px;letter-spacing:2px;}
+/* ── 输入名字页 ── */
+.name-page{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:40px 20px;}
+.n-badge{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:4px;
+  color:var(--dim);margin-bottom:16px;}
+.n-title{font-size:26px;font-weight:900;letter-spacing:4px;color:var(--gold2);
+  text-shadow:0 0 30px rgba(255,210,40,0.3);margin-bottom:8px;text-align:center;}
+.n-sub{font-size:13px;color:var(--dim);letter-spacing:2px;margin-bottom:36px;}
+.n-box{width:100%;max-width:360px;}
+.n-input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:18px 22px;color:var(--text);font-size:20px;outline:none;
+  font-family:'Noto Serif SC',serif;letter-spacing:2px;text-align:center;
+  margin-bottom:10px;transition:border-color .2s;}
+.n-input:focus{border-color:var(--gold);}
+.n-input::placeholder{color:var(--dim);font-size:16px;}
+.n-hint{text-align:center;font-size:13px;color:var(--dim);letter-spacing:1px;min-height:22px;margin-bottom:14px;}
+.n-hint.ok{color:rgba(80,200,120,0.9);}
+.n-hint.new{color:var(--gold);}
+.n-emoji-wrap{margin-bottom:16px;display:none;}
+.n-emoji-label{font-size:10px;color:var(--dim);letter-spacing:2px;text-align:center;margin-bottom:10px;}
+.n-emoji-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.n-emoji-btn{font-size:22px;width:42px;height:42px;border-radius:10px;background:transparent;
+  border:1px solid transparent;cursor:pointer;transition:all .12s;}
+.n-emoji-btn.sel{background:rgba(200,160,40,0.2);border-color:var(--gold);}
+.n-btn{width:100%;background:rgba(255,215,60,0.08);border:1px solid rgba(255,215,60,0.25);
+  color:rgba(255,215,60,0.35);border-radius:12px;padding:16px;font-size:16px;
+  font-weight:700;letter-spacing:3px;cursor:pointer;font-family:'Noto Serif SC',serif;
+  transition:all .2s;pointer-events:none;}
+.n-btn.ready{background:rgba(255,215,60,0.14);border-color:rgba(255,215,60,0.55);
+  color:var(--gold2);pointer-events:auto;}
+.n-err{color:rgba(181,69,58,.9);font-size:12px;text-align:center;margin-top:8px;display:none;}
 
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
-  background:rgba(220,100,40,0.92);color:#fff;
-  padding:10px 22px;border-radius:20px;font-size:13px;letter-spacing:1px;
-  z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;
+/* ── 排行榜页 ── */
+.bracket-page{display:none;flex-direction:column;min-height:100vh;padding:0 0 60px;}
+
+/* 顶栏 */
+.b-topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:rgba(6,8,26,0.96);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);}
+.b-topname{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--gold2);}
+.b-topbadge{font-size:10px;color:var(--dim);letter-spacing:1px;}
+.b-change{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;
+  letter-spacing:1px;font-family:'Noto Serif SC',serif;padding:6px 10px;}
+.b-change:hover{color:var(--gold);}
+
+/* 头部 */
+.b-header{text-align:center;padding:28px 20px 20px;border-bottom:1px solid var(--line);}
+.b-emoji{font-size:48px;margin-bottom:10px;}
+.b-name{font-size:22px;font-weight:900;letter-spacing:4px;color:var(--gold2);
+  text-shadow:0 0 20px rgba(255,210,40,0.3);}
+.b-title{font-size:13px;color:var(--dim);letter-spacing:2px;margin-top:8px;}
+
+/* 前三名展示 */
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;
+  padding:20px 16px;max-width:480px;margin:0 auto;}
+.pod-card{text-align:center;padding:14px 16px;border-radius:10px;min-width:90px;}
+.pod-card.p1{background:rgba(255,215,60,0.14);border:1px solid rgba(255,215,60,0.5);order:2;}
+.pod-card.p2{background:rgba(180,180,180,0.07);border:1px solid rgba(180,180,180,0.25);order:1;}
+.pod-card.p3{background:rgba(180,120,40,0.07);border:1px solid rgba(180,120,40,0.25);order:3;}
+.pod-icon{font-size:24px;margin-bottom:6px;}
+.pod-rank{font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:4px;}
+.pod-role{font-size:14px;font-weight:900;letter-spacing:1px;}
+.pod-card.p1 .pod-role{color:var(--gold2);}
+.pod-card.p2 .pod-role{color:rgba(220,220,220,.85);}
+.pod-card.p3 .pod-role{color:rgba(220,160,60,.85);}
+
+/* 对阵区域 */
+.bracket-wrap{max-width:480px;margin:0 auto;padding:0 16px;}
+.round-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.round-title{font-size:16px;font-weight:900;color:var(--gold2);letter-spacing:2px;}
+.round-prog{font-size:11px;color:var(--dim);}
+
+/* 轮次标签 */
+.round-tabs{display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding:0 16px;}
+.round-tabs::-webkit-scrollbar{display:none;}
+.rtab{flex-shrink:0;padding:6px 12px;border-radius:12px;font-size:11px;letter-spacing:1px;
+  border:1px solid var(--line);color:var(--dim);cursor:pointer;transition:all .12s;
   font-family:'Noto Serif SC',serif;}
-.toast.show{opacity:1;}
+.rtab.active{background:rgba(200,160,40,0.15);border-color:var(--gold);color:var(--gold);}
+.rtab.done{color:rgba(80,200,120,.8);border-color:rgba(80,200,120,.3);}
+.rtab.locked{opacity:.3;cursor:not-allowed;}
 
-.slot.locked{color:rgba(200,160,40,0.18);cursor:not-allowed;pointer-events:none;font-style:italic;}
-
-/* ══ 手机端专属样式 ══ */
-@media(max-width:767px){
-  .bracket-outer{display:none!important;}
-  .mobile-view{display:block;}
-  .topbar{padding:8px 14px;}
-  .header{padding:12px 14px 10px;}
-  .header-title{font-size:15px;letter-spacing:3px;}
-  .controls{gap:6px;}
-  .btn{padding:5px 10px;font-size:10px;letter-spacing:1px;}
-}
-@media(min-width:768px){.mobile-view{display:none;}}
-
-.mobile-view{padding:0 14px 50px;}
-.m-tabs{display:flex;overflow-x:auto;gap:6px;padding:10px 0 12px;scrollbar-width:none;}
-.m-tabs::-webkit-scrollbar{display:none;}
-.mtab{flex-shrink:0;padding:6px 14px;border-radius:16px;font-size:11px;
-  letter-spacing:1px;border:1px solid var(--gold-dim);color:var(--text-dim);
-  cursor:pointer;transition:all .15s;font-family:'Noto Serif SC',serif;}
-.mtab.active{background:rgba(200,160,40,0.15);border-color:var(--gold);color:var(--gold);}
-.mtab.done{color:rgba(80,200,120,0.85);border-color:rgba(80,200,120,0.3);background:rgba(80,200,120,0.06);}
-.mtab.locked{opacity:.35;cursor:not-allowed;}
-.m-rhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.m-rtitle{font-size:17px;font-weight:900;color:var(--gold-bright);letter-spacing:3px;}
-.m-rprog{font-size:12px;color:var(--text-dim);letter-spacing:1px;}
-.m-card{background:rgba(8,10,28,0.85);border:1px solid rgba(200,160,40,0.2);
-  border-radius:12px;padding:14px 14px 12px;margin-bottom:10px;}
-.m-card.decided{border-color:rgba(200,160,40,0.12);}
-.m-num{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-align:center;margin-bottom:10px;font-family:'Courier Prime',monospace;}
-.m-slot{width:100%;padding:15px 16px;border-radius:8px;font-size:16px;
-  font-weight:600;letter-spacing:1.5px;text-align:center;cursor:pointer;
-  transition:all .15s;border:1px solid rgba(200,160,40,0.18);
-  color:var(--text);margin:4px 0;background:transparent;
-  font-family:'Noto Serif SC',serif;}
+/* 对阵卡片 */
+.match-card{background:var(--panel);border:1px solid rgba(200,160,40,0.13);border-radius:10px;
+  padding:14px 14px 12px;margin-bottom:10px;}
+.match-card.decided{border-color:rgba(200,160,40,0.07);}
+.match-num{font-size:10px;color:var(--dim);text-align:center;margin-bottom:10px;
+  font-family:'Courier Prime',monospace;}
+.m-slot{width:100%;padding:15px 16px;border-radius:8px;font-size:16px;font-weight:600;
+  letter-spacing:1px;text-align:center;cursor:pointer;transition:all .12s;
+  border:1px solid rgba(200,160,40,0.16);color:var(--text);margin:4px 0;
+  background:transparent;font-family:'Noto Serif SC',serif;}
 .m-slot:active{transform:scale(.98);}
-.m-slot.winner{background:rgba(255,215,60,0.16);border-color:var(--gold-bright);
-  color:var(--gold-bright);font-weight:900;}
-.m-slot.loser{color:rgba(200,160,40,0.18);text-decoration:line-through;
+.m-slot.winner{background:var(--win-bg);border-color:var(--gold2);color:var(--gold2);font-weight:900;}
+.m-slot.loser{color:rgba(200,160,40,0.14);text-decoration:line-through;
   cursor:not-allowed;background:rgba(0,0,0,0.15);pointer-events:none;}
-.m-slot.pending{color:rgba(200,160,40,0.18);font-style:italic;cursor:not-allowed;}
-.m-vs{text-align:center;font-size:10px;color:rgba(200,160,40,0.28);letter-spacing:2px;padding:2px 0;}
-.m-next{text-align:center;padding:18px 0 8px;}
-.m-next-btn{padding:13px 36px;background:rgba(255,215,60,0.1);
-  border:1px solid rgba(255,215,60,0.4);color:var(--gold-bright);
-  font-size:14px;letter-spacing:2px;border-radius:8px;cursor:pointer;
+.m-slot.pending{color:rgba(200,160,40,0.14);font-style:italic;cursor:not-allowed;}
+.m-vs{text-align:center;font-size:10px;color:rgba(200,160,40,0.22);letter-spacing:2px;}
+.m-next{text-align:center;padding:16px 0 4px;}
+.m-next-btn{padding:14px 0;background:rgba(255,215,60,0.1);border:1px solid rgba(255,215,60,0.35);
+  color:var(--gold2);font-size:14px;letter-spacing:2px;border-radius:8px;cursor:pointer;
   font-family:'Noto Serif SC',serif;width:100%;}
-.m-champ{text-align:center;padding:30px 20px;background:rgba(255,215,60,0.1);
-  border:1px solid rgba(255,215,60,0.4);border-radius:12px;margin-top:16px;}
-.m-champ-icon{font-size:40px;margin-bottom:10px;}
-.m-champ-label{font-size:11px;color:var(--text-dim);letter-spacing:2px;}
-.m-champ-name{font-size:26px;font-weight:900;color:var(--gold-bright);
-  letter-spacing:3px;margin:10px 0 6px;text-shadow:0 0 20px rgba(255,215,60,0.4);}
-.m-champ-note{font-size:12px;color:rgba(200,160,40,0.45);letter-spacing:1px;}
-.m-champ-img-btn{margin-top:16px;padding:10px 24px;background:rgba(255,215,60,0.12);
-  border:1px solid rgba(255,215,60,0.35);color:var(--gold-bright);font-size:13px;
-  letter-spacing:2px;border-radius:6px;cursor:pointer;
-  font-family:'Noto Serif SC',serif;}
-.m-locked{text-align:center;padding:40px 20px;color:rgba(200,160,40,0.35);
-  font-size:14px;letter-spacing:1px;}
+.m-locked{text-align:center;padding:30px;color:var(--dim);font-size:13px;}
+.m-champ{text-align:center;padding:24px;background:rgba(255,215,60,0.1);
+  border:1px solid rgba(255,215,60,0.35);border-radius:10px;margin:0 16px;}
+.m-champ-icon{font-size:36px;margin-bottom:10px;}
+.m-champ-name{font-size:24px;font-weight:900;color:var(--gold2);letter-spacing:3px;margin:8px 0;}
+.m-reset{display:block;margin:16px auto 0;background:none;border:1px solid var(--line);
+  color:var(--dim);border-radius:8px;padding:8px 20px;font-size:12px;cursor:pointer;
+  font-family:'Noto Serif SC',serif;letter-spacing:1px;}
+.m-reset:hover{border-color:var(--gold);color:var(--gold);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(80,200,120,0.9);color:#fff;padding:8px 20px;border-radius:16px;
+  font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="logo">INCEPTION</div><div style="font-size:9px;letter-spacing:2px;color:rgba(200,160,40,0.45);">北美盗梦空间狼人杀联赛</div>
-    <select class="season-select" id="seasonSelect" onchange="switchSeason(this.value)"></select>
-  </div>
-  <div class="topbar-right">
-    <div class="conn-status offline" id="connStatus"><div class="conn-dot"></div><span id="connText">连接中...</span></div>
-    <button class="btn" onclick="openSeasonManager()">📁 赛季管理</button>
-    <button class="btn accent" onclick="toggleResults()">📊 统计结果</button>
-  </div>
-</div>
-<div class="header">
-  <div style="font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.45);margin-bottom:6px;">北美盗梦空间狼人杀联赛</div>
-  <div class="header-title">我最喜欢玩的角色排行榜！</div>
-  <div class="season-name-display" id="seasonNameDisplay"></div>
-  <div class="champion-box" id="chamBox"><div class="champion-tag" id="chamTag"></div></div>
-  <div class="progress" id="progRow">
-    <span>进度：</span>
-    <div class="prog-dot" id="p0"></div><div class="prog-dot" id="p1"></div>
-    <div class="prog-dot" id="p2"></div><div class="prog-dot" id="p3"></div><div class="prog-dot" id="p4"></div>
-  </div>
-  <div class="controls">
-    <button class="btn primary" onclick="loadSavedResults()">恢复手稿结果</button>
-    <button class="btn" onclick="editRoles()">✏️ 编辑角色</button>
-    <button class="btn" onclick="exportResults()">⬇️ 导出结果</button>
-    <button class="btn danger" onclick="resetCurrent()">重置对阵</button>
-    <button class="btn accent" onclick="generateImage()" style="background:rgba(255,215,60,0.12);border-color:rgba(255,215,60,0.5);color:#fdd840;">🖼 生成结果图</button>
-  </div>
-  <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:8px;">点击角色名称选择胜者 · 实时同步云端 · 多设备共享</div>
-</div>
-<div class="bracket-outer">
 
-  <div class="bracket-inner" id="bracket"><svg class="connectors" id="connSvg"></svg></div>
-</div>
-
-<!-- ══ 手机端视图 ══ -->
-<div class="mobile-view" id="mobileView">
-  <div class="m-tabs" id="mobileTabs"></div>
-  <div id="mobileMatches"></div>
-</div>
-
-<div class="results-panel" id="resultsPanel">
-  <div class="res-title">📊 完整结果统计</div>
-  <div id="resultsContent"></div>
-</div>
-<div class="modal-overlay" id="seasonModal">
-  <div class="modal">
-    <div class="modal-title">📁 赛季管理</div>
-    <div class="season-list" id="seasonList"></div>
-    <div style="text-align:center;"><button class="btn primary" onclick="newSeason()">+ 新建赛季</button></div>
-    <div class="modal-btns"><button class="btn" onclick="closeModal('seasonModal')">关闭</button></div>
-  </div>
-</div>
-<div class="modal-overlay" id="newSeasonModal">
-  <div class="modal">
-    <div class="modal-title">新建赛季</div>
-    <div class="modal-label">赛季名称</div>
-    <input type="text" id="newSeasonName" placeholder="例：Season 3 · 人无完人" />
-    <div class="modal-label">角色列表（每行一个）</div>
-    <textarea id="newSeasonRoles"></textarea>
-    <div class="modal-note">💡 不修改则使用默认32个角色</div>
-    <div class="modal-btns">
-      <button class="btn primary" onclick="confirmNewSeason()">创建</button>
-      <button class="btn" onclick="closeModal('newSeasonModal')">取消</button>
+<!-- 输入名字页 -->
+<div class="name-page" id="namePage">
+  <div class="n-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
+  <div class="n-title">我最喜欢玩的角色！</div>
+  <div class="n-sub">输入你的名字开始</div>
+  <div class="n-box">
+    <input class="n-input" id="nameInput" placeholder="你叫什么名字？"
+      maxlength="12" autocomplete="off" autocorrect="off" spellcheck="false"
+      oninput="onName(this.value)"
+      onkeydown="if(event.key==='Enter')enter()">
+    <div class="n-hint" id="nameHint"></div>
+    <div class="n-emoji-wrap" id="emojiWrap">
+      <div class="n-emoji-label">选个头像</div>
+      <div class="n-emoji-grid" id="emojiGrid"></div>
     </div>
-  </div>
-</div>
-<div class="modal-overlay" id="editRolesModal">
-  <div class="modal">
-    <div class="modal-title">✏️ 编辑角色列表</div>
-    <div class="modal-label">当前赛季角色（每行一个）</div>
-    <textarea id="editRolesText"></textarea>
-    <div class="modal-note">⚠️ 修改角色将清空当前对阵结果</div>
-    <div class="modal-btns">
-      <button class="btn primary" onclick="confirmEditRoles()">保存</button>
-      <button class="btn" onclick="closeModal('editRolesModal')">取消</button>
-    </div>
+    <button class="n-btn" id="enterBtn" onclick="enter()">进入 →</button>
+    <div class="n-err" id="nameErr"></div>
   </div>
 </div>
 
-<script>
-// ════════════════════════════════════════════════
-// FIREBASE — REST API only, no SDK needed
-// ════════════════════════════════════════════════
-const DB_URL = 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
-
-const fb = {
-  async save(path, data) {
-    try {
-      const r = await fetch(`${DB_URL}/${path}.json`, {
-        method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-      return r.ok;
-    } catch(e){ return false; }
-  },
-  async load(path) {
-    try {
-      const r = await fetch(`${DB_URL}/${path}.json`);
-      if(r.ok) return await r.json();
-    } catch(e){}
-    return null;
-  },
-  listen(path, onData, onError) {
-    let es;
-    function connect() {
-      es = new EventSource(`${DB_URL}/${path}.json`);
-      es.addEventListener('put', e => {
-        try {
-          const p = JSON.parse(e.data);
-          if(p && p.data !== undefined) onData(p.data);
-        } catch(err){}
-      });
-      es.onerror = () => {
-        es.close();
-        if(onError) onError();
-        setTimeout(connect, 5000);
-      };
-    }
-    connect();
-    return { close: ()=> es && es.close() };
-  }
-};
-
-// ════════════════════════════════════════════════
-// ⚡ KEY FIX: Firebase converts arrays → objects
-//    This function converts them back to arrays
-// ════════════════════════════════════════════════
-function normalizeState(raw) {
-  if (!raw || typeof raw !== 'object') return { seasons:{}, activeSeason:null };
-  const state = raw;
-  if (!state.seasons) state.seasons = {};
-
-  Object.keys(state.seasons).forEach(id => {
-    const s = state.seasons[id];
-    if (!s) return;
-
-    // ── Fix roles: object → array ──
-    if (s.roles && !Array.isArray(s.roles)) {
-      s.roles = Object.keys(s.roles)
-        .sort((a,b) => Number(a) - Number(b))
-        .map(k => s.roles[k])
-        .filter(Boolean);
-    }
-    if (!Array.isArray(s.roles) || s.roles.length === 0) {
-      s.roles = [...DEFAULT_ROLES];
-    }
-
-    // ── Fix wins: object → array of 5 round-objects ──
-    if (s.wins && !Array.isArray(s.wins)) {
-      const tmp = s.wins;
-      s.wins = [0,1,2,3,4].map(i => tmp[i] || {});
-    }
-    if (!Array.isArray(s.wins)) s.wins = [{},{},{},{},{}];
-    while (s.wins.length < 5) s.wins.push({});
-
-    // ── Fix each round: ensure it's a plain object ──
-    s.wins = s.wins.map(round => {
-      if (!round || typeof round !== 'object' || Array.isArray(round)) return {};
-      // Convert any numeric-ish keys back (Firebase may store as strings, JS handles fine)
-      return round;
-    });
-  });
-
-  return state;
-}
-
-// ════════════════════════════════════════════════
-// CONSTANTS
-// ════════════════════════════════════════════════
-const N=[16,8,4,2,1], TOTAL=5;
-const STAGE_NAMES=["第一轮淘汰","第二轮淘汰","第三轮淘汰","半决赛落败","决赛落败"];
-
-const DEFAULT_ROLES = [
-  "混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士",
-  "摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者",
-  "蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼",
-  "机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"
-];
-
-const SAVED_RESULTS=[
-  {0:'混血儿',1:'女巫',2:'白神',3:'守卫',4:'摄梦人',5:'守墓人',
-   6:'定序王子',7:'舞者',8:'禁言长老',9:'狼王',10:'狼美人',
-   11:'石像鬼',12:'机械狼',13:'梦魔',14:'假面',15:'盗宝大师'},
-  {0:'混血儿',1:'白神',2:'摄梦人',3:'舞者',5:'石像鬼',6:'机械狼',7:'假面'},
-  {0:'混血儿',1:'摄梦人',2:'石像鬼',3:'机械狼'},
-  {0:'摄梦人',1:'机械狼'},
-  {0:'机械狼'}
-];
-
-// ════════════════════════════════════════════════
-// APP STATE
-// ════════════════════════════════════════════════
-let appState = { seasons:{}, activeSeason:null };
-// 记录用户最近操作时间，3秒内有操作就忽略SSE回显
-// 彻底解决"选完后跳回去"的问题
-let lastUserInteraction = 0;
-const SSE_COOLDOWN_MS = 3000;
-
-function getActiveSeason(){ return appState.seasons[appState.activeSeason]; }
-function getWins(){ return getActiveSeason()?.wins || [{},{},{},{},{}]; }
-function getRoles(){ return getActiveSeason()?.roles || DEFAULT_ROLES; }
-
-function fixActiveSeason() {
-  if (!appState.activeSeason || !appState.seasons[appState.activeSeason]) {
-    const ids = Object.keys(appState.seasons);
-    appState.activeSeason = ids.length ? ids[0] : null;
-  }
-}
-
-function createSeason(name, roles) {
-  const id = 's_' + Date.now();
-  appState.seasons[id] = {
-    id, name,
-    roles: roles || [...DEFAULT_ROLES],
-    wins: [{},{},{},{},{}],
-    created: new Date().toLocaleDateString('zh-CN'),
-    lastModified: null
-  };
-  return id;
-}
-
-// ════════════════════════════════════════════════
-// FIREBASE INIT
-// ════════════════════════════════════════════════
-function setConn(status, text) {
-  const el=document.getElementById('connStatus');
-  const tx=document.getElementById('connText');
-  el.className='conn-status '+status;
-  tx.textContent=text;
-}
-
-async function initFirebase() {
-  setConn('syncing','连接中...');
-  try {
-    const raw = await fb.load('tournament');
-    if (raw) {
-      appState = normalizeState(raw);
-      fixActiveSeason();
-    }
-    if (!Object.keys(appState.seasons).length) {
-      const id = createSeason('首届人气投票 · 2026', [...DEFAULT_ROLES]);
-      appState.activeSeason = id;
-      await fb.save('tournament', appState);
-    }
-    // 自动修正旧数据里的年份
-    let needSave = false;
-    Object.values(appState.seasons).forEach(s => {
-      if (s && s.name && s.name.includes('2025')) {
-        s.name = s.name.replace('2025', '2026');
-        needSave = true;
-      }
-    });
-    if (needSave) await fb.save('tournament', appState);
-    setConn('online','已连接 · 实时同步');
-
-    // Real-time listener
-    fb.listen('tournament',
-      (newData) => {
-        if (!newData) return;
-        // ⚡ 核心修复：用户3秒内有操作，忽略所有SSE
-        // 防止Firebase回显覆盖掉刚选的内容
-        if (Date.now() - lastUserInteraction < SSE_COOLDOWN_MS) return;
-        appState = normalizeState(newData);
-        fixActiveSeason();
-        buildBracket();
-        renderAll();
-        if(document.getElementById('resultsPanel').classList.contains('show')) generateResults();
-      },
-      () => setConn('offline','断线，5秒后重连...')
-    );
-  } catch(e) {
-    setConn('offline','连接失败，请检查Firebase设置');
-  }
-}
-
-async function saveToFirebase() {
-  setConn('syncing','同步中...');
-  const s = getActiveSeason();
-  if(s) s.lastModified = new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  const ok = await fb.save('tournament', appState);
-  if(ok) {
-    setConn('online','✓ 已同步 ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}));
-    setTimeout(()=>setConn('online','已连接 · 实时同步'), 2500);
-  } else {
-    setConn('offline','同步失败，请检查网络');
-  }
-}
-
-// ════════════════════════════════════════════════
-// LAYOUT — 从上到下，每轮一行
-// ════════════════════════════════════════════════
-const LABEL_W = 56;      // 左侧轮次标签宽度
-const UNIT_W  = 86;      // R1每格宽度
-const MATCH_VW = 80;     // 对阵框可见宽度
-const SLOT_H  = 34;      // 每个队伍槽高度（加大）
-const MATCH_H = SLOT_H*2+1; // 对阵框总高度 = 69px
-const ROW_GAP = 60;      // 轮次之间的垂直间距
-const ROW_H   = MATCH_H + ROW_GAP; // 每轮占据的总高度
-const BRACKET_W = LABEL_W + UNIT_W * 16; // 总宽度
-const CHAMP_Y = TOTAL * ROW_H + 10;      // 第一名y坐标
-const BRACKET_TOTAL_H = CHAMP_Y + 70;    // 总高度
-
-// 第ri轮第mi场的中心x
-function mcx(ri,mi){
-  const uw = UNIT_W * Math.pow(2,ri);
-  return LABEL_W + mi*uw + uw/2;
-}
-// 第ri轮的顶部y
-function mty(ri){ return ri * ROW_H; }
-// 对阵框左边x
-function mlx(ri,mi){ return mcx(ri,mi) - MATCH_VW/2; }
-
-function getTeam(ri,mi,s){
-  if(ri===0){
-    const roles=getRoles();
-    const idx=mi*2+s;
-    return (Array.isArray(roles)?roles[idx]:roles[idx]) ?? null;
-  }
-  const wins=getWins();
-  const round=wins[ri-1];
-  if(!round) return null;
-  const key=mi*2+s;
-  return round[key] ?? round[String(key)] ?? null;
-}
-
-// ════════════════════════════════════════════════
-// DOM BUILD
-// ════════════════════════════════════════════════
-const bracket=document.getElementById('bracket');
-const connSvg=document.getElementById('connSvg');
-const slotEls={};
-
-function buildBracket(){
-  [...bracket.children].forEach(c=>{ if(c!==connSvg) bracket.removeChild(c); });
-  bracket.style.width=BRACKET_W+'px';
-  bracket.style.height=BRACKET_TOTAL_H+'px';
-  connSvg.setAttribute('viewBox',`0 0 ${BRACKET_W} ${BRACKET_TOTAL_H}`);
-  connSvg.setAttribute('width',BRACKET_W);
-  connSvg.setAttribute('height',BRACKET_TOTAL_H);
-
-  // 轮次标签（左侧）
-  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
-  for(let ri=0;ri<TOTAL;ri++){
-    const lbl=document.createElement('div');
-    lbl.style.cssText=`position:absolute;left:0;top:${mty(ri)+MATCH_H/2-8}px;width:${LABEL_W-4}px;text-align:right;font-size:9px;letter-spacing:1px;color:var(--text-dim);font-family:'Courier Prime',monospace;`;
-    lbl.textContent=RNAMES[ri];
-    bracket.appendChild(lbl);
-  }
-
-  // 对阵框
-  for(let ri=0;ri<TOTAL;ri++){
-    for(let mi=0;mi<N[ri];mi++){
-      const box=document.createElement('div');
-      box.className='match';
-      box.style.cssText=`left:${mlx(ri,mi)}px;top:${mty(ri)}px;width:${MATCH_VW}px;height:${MATCH_H}px;`;
-      for(let s=0;s<2;s++){
-        if(s===1){const d=document.createElement('div');d.className='slot-divider';box.appendChild(d);}
-        const sl=document.createElement('div');
-        sl.className='slot';
-        sl.style.cssText=`height:${SLOT_H}px;font-size:13px;padding:0 6px 0 8px;letter-spacing:0.5px;`;
-        sl.dataset.ri=ri; sl.dataset.mi=mi; sl.dataset.s=s;
-        sl.addEventListener('click',onSlotClick);
-        slotEls[`${ri}-${mi}-${s}`]=sl;
-        box.appendChild(sl);
-      }
-      bracket.appendChild(box);
-    }
-  }
-
-  // 第一名（底部居中）
-  const cx=mcx(TOTAL-1,0);
-  const cb=document.createElement('div');
-  cb.className='champ-box-b';
-  cb.style.cssText=`left:${cx-55}px;top:${CHAMP_Y}px;width:110px;`;
-  cb.innerHTML=`<div class="champ-label">🥇 我最喜欢的角色</div><div class="champ-inner" id="champInner">???</div>`;
-  bracket.appendChild(cb);
-  drawConnectors();
-}
-
-function drawConnectors(){
-  const S='stroke="rgba(200,160,40,0.22)" stroke-width="1"';
-  const lines=[];
-  // 每场对阵连线：底部→下一轮父场顶部（L形连接）
-  for(let ri=0;ri<TOTAL-1;ri++){
-    for(let mi=0;mi<N[ri];mi++){
-      const bx=mcx(ri,mi);
-      const by=mty(ri)+MATCH_H;
-      const px=mcx(ri+1,Math.floor(mi/2));
-      const py=mty(ri+1);
-      const midY=(by+py)/2;
-      lines.push(`<line x1="${bx}" y1="${by}" x2="${bx}" y2="${midY}" ${S}/>`);
-      lines.push(`<line x1="${bx}" y1="${midY}" x2="${px}" y2="${midY}" ${S}/>`);
-      lines.push(`<line x1="${px}" y1="${midY}" x2="${px}" y2="${py}" ${S}/>`);
-    }
-  }
-  // 决赛→第一名连线
-  const fx=mcx(TOTAL-1,0);
-  const fy=mty(TOTAL-1)+MATCH_H;
-  lines.push(`<line x1="${fx}" y1="${fy}" x2="${fx}" y2="${CHAMP_Y}" ${S}/>`);
-  connSvg.innerHTML=lines.join('');
-}
-
-// ════════════════════════════════════════════════
-// RENDER
-// ════════════════════════════════════════════════
-function renderAll(){
-  for(let ri=0;ri<TOTAL;ri++) for(let mi=0;mi<N[ri];mi++) renderMatch(ri,mi);
-  renderChampion(); renderProgress(); renderSeasonUI();
-  renderMobile();
-}
-
-function renderMatch(ri,mi){
-  const wins=getWins();
-  const round=wins[ri]||{};
-  const winner=round[mi]??round[String(mi)]??null;
-  for(let s=0;s<2;s++){
-    const team=getTeam(ri,mi,s);
-    const el=slotEls[`${ri}-${mi}-${s}`];
-    if(!el)continue;
-    el.className='slot'; el.innerHTML='';
-    if(!team){
-      el.classList.add('empty');
-      el.textContent=ri===0?'???':'待定';
-      continue;
-    }
-    if(winner===team){
-      el.classList.add('winner');
-      const mk=document.createElement('span');mk.className='win-mark';mk.textContent='▸';
-      el.appendChild(mk); el.appendChild(document.createTextNode(team));
-    } else if(winner&&winner!==team){
-      el.classList.add('elim'); el.textContent=team;
-    } else {
-      el.textContent=team;
-    }
-  }
-}
-
-function renderChampion(){
-  const wins=getWins();
-  const round=wins[TOTAL-1]||{};
-  const c=round[0]??round['0']??null;
-  const el=document.getElementById('champInner');
-  if(el){el.textContent=c??'???';el.className=c?'champ-inner filled':'champ-inner';}
-  const cb=document.getElementById('chamBox'),ct=document.getElementById('chamTag');
-  if(c){cb.classList.add('show');ct.textContent='🏆 '+c+' · 我最喜欢的角色';}
-  else cb.classList.remove('show');
-}
-
-function renderProgress(){
-  const wins=getWins();
-  for(let ri=0;ri<TOTAL;ri++){
-    const d=document.getElementById('p'+ri);
-    if(d)d.classList.toggle('done',Object.keys(wins[ri]||{}).length===N[ri]);
-  }
-}
-
-function renderSeasonUI(){
-  const s=getActiveSeason();
-  document.getElementById('seasonNameDisplay').textContent=s?.name||'';
-  const sel=document.getElementById('seasonSelect');
-  sel.innerHTML='';
-  for(const [id,season] of Object.entries(appState.seasons)){
-    const opt=document.createElement('option');
-    opt.value=id; opt.textContent=season.name; opt.selected=id===appState.activeSeason;
-    sel.appendChild(opt);
-  }
-}
-
-// ════════════════════════════════════════════════
-// INTERACTIONS
-// ════════════════════════════════════════════════
-// 检查上一轮是否全部填完
-
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-function prevRoundComplete(ri, wins){
-  if(ri===0) return true;
-  const prev=wins[ri-1]||{};
-  for(let i=0;i<N[ri-1];i++){
-    if(!prev[i] && !prev[String(i)]) return false;
-  }
-  return true;
-}
-
-function onSlotClick(e){
-  lastUserInteraction = Date.now();
-  const el=e.currentTarget;
-  const ri=+el.dataset.ri, mi=+el.dataset.mi, s=+el.dataset.s;
-
-  const wins=getWins();
-
-  // ① 必须填完上一轮才能填这一轮
-  if(!prevRoundComplete(ri, wins)){
-    // 找出还差几场
-    const prev=wins[ri-1]||{};
-    let done=0;
-    for(let i=0;i<N[ri-1];i++){ if(prev[i]||prev[String(i)]) done++; }
-    const left=N[ri-1]-done;
-    showToast(`请先完成第${ri}轮的对阵（还剩 ${left} 场未填）`);
-    return;
-  }
-
-  // ② 本场两个对手都确定了才能选
-  const team0=getTeam(ri,mi,0), team1=getTeam(ri,mi,1);
-  if(!team0 || !team1) return;
-
-  // ③ 两个对手不能是同一个角色（防止数据异常）
-  if(team0===team1) return;
-
-  const team=getTeam(ri,mi,s);
-  if(!team) return;
-
-  const round=wins[ri]||{};
-  const cur=round[mi]??round[String(mi)]??null;
-
-  if(cur===team){
-    // 点已选胜者 → 取消（纠错用）
-    delete wins[ri][mi]; delete wins[ri][String(mi)];
-    clearDown(wins,ri,mi);
-  } else if(cur && cur!==team){
-    // 严格二选一：点已淘汰方 → 无效
-    return;
-  } else {
-    // 未选 → 设为胜者
-    wins[ri][mi]=team;
-  }
-
-  renderMatch(ri,mi);
-  let m=mi;
-  for(let r=ri+1;r<TOTAL;r++){ m=Math.floor(m/2); renderMatch(r,m); }
-  renderChampion(); renderProgress();
-  saveToFirebase();
-  if(document.getElementById('resultsPanel').classList.contains('show')) generateResults();
-}
-
-function clearDown(wins,ri,mi){
-  let m=mi;
-  for(let r=ri+1;r<TOTAL;r++){
-    m=Math.floor(m/2);
-    if(wins[r]){ delete wins[r][m]; delete wins[r][String(m)]; }
-  }
-}
-
-// ════════════════════════════════════════════════
-// CONTROLS
-// ════════════════════════════════════════════════
-async function loadSavedResults(){
-  if(!confirm('恢复手稿中的已有结果？'))return;
-  const s=getActiveSeason(); if(!s)return;
-  s.wins=SAVED_RESULTS.map(r=>({...r}));
-  renderAll(); await saveToFirebase();
-}
-
-async function resetCurrent(){
-  if(!confirm('确认清空所有对阵结果？'))return;
-  const s=getActiveSeason(); if(!s)return;
-  s.wins=[{},{},{},{},{}];
-  renderAll(); await saveToFirebase();
-}
-
-async function switchSeason(id){
-  appState.activeSeason=id;
-  buildBracket(); renderAll(); await saveToFirebase();
-}
-
-// ════════════════════════════════════════════════
-// SEASON MANAGER
-// ════════════════════════════════════════════════
-function openSeasonManager(){ renderSeasonList(); document.getElementById('seasonModal').classList.add('show'); }
-
-function renderSeasonList(){
-  const list=document.getElementById('seasonList'); list.innerHTML='';
-  for(const [id,s] of Object.entries(appState.seasons)){
-    const item=document.createElement('div');
-    item.className='season-item'+(id===appState.activeSeason?' active':'');
-    const wins=s.wins||[]; const round=wins[4]||{}; const champ=round[0]??round['0']??null;
-    item.innerHTML=`
-      <div>
-        <div class="season-item-name">${s.name}${champ?' · 🏆'+champ:''}</div>
-        <div class="season-item-info">创建: ${s.created||''}${s.lastModified?' · '+s.lastModified:''}</div>
-      </div>
-      <div class="season-item-actions">
-        <button class="btn" onclick="selectSeason('${id}')">切换</button>
-        ${Object.keys(appState.seasons).length>1?`<button class="btn danger" onclick="deleteSeason('${id}')">删除</button>`:''}
-      </div>`;
-    list.appendChild(item);
-  }
-}
-
-async function selectSeason(id){
-  appState.activeSeason=id;
-  closeModal('seasonModal');
-  buildBracket(); renderAll(); await saveToFirebase();
-}
-
-async function deleteSeason(id){
-  const s=appState.seasons[id];
-  if(!confirm(`删除赛季"${s.name}"？`))return;
-  delete appState.seasons[id];
-  if(appState.activeSeason===id) fixActiveSeason();
-  await saveToFirebase(); buildBracket(); renderAll(); renderSeasonList();
-}
-
-function newSeason(){
-  document.getElementById('newSeasonName').value='';
-  document.getElementById('newSeasonRoles').value=DEFAULT_ROLES.join('\n');
-  closeModal('seasonModal');
-  document.getElementById('newSeasonModal').classList.add('show');
-}
-
-async function confirmNewSeason(){
-  const name=document.getElementById('newSeasonName').value.trim()||'新赛季';
-  const raw=document.getElementById('newSeasonRoles').value.trim();
-  let roles=raw?raw.split('\n').map(r=>r.trim()).filter(r=>r):[...DEFAULT_ROLES];
-  if(roles.length<2){alert('至少需要2个角色');return;}
-  const id=createSeason(name,roles);
-  appState.activeSeason=id;
-  closeModal('newSeasonModal');
-  buildBracket(); renderAll(); await saveToFirebase();
-}
-
-function editRoles(){
-  const roles=getRoles();
-  document.getElementById('editRolesText').value=Array.isArray(roles)?roles.join('\n'):Object.values(roles).join('\n');
-  document.getElementById('editRolesModal').classList.add('show');
-}
-
-async function confirmEditRoles(){
-  const raw=document.getElementById('editRolesText').value.trim();
-  const roles=raw.split('\n').map(r=>r.trim()).filter(r=>r);
-  if(roles.length<2){alert('至少需要2个角色');return;}
-  if(!confirm('修改角色将清空当前对阵结果，确认继续？'))return;
-  const s=getActiveSeason();
-  s.roles=roles; s.wins=[{},{},{},{},{}];
-  closeModal('editRolesModal');
-  buildBracket(); renderAll(); await saveToFirebase();
-}
-
-// ════════════════════════════════════════════════
-// RESULTS
-// ════════════════════════════════════════════════
-function toggleResults(){
-  const panel=document.getElementById('resultsPanel');
-  panel.classList.toggle('show');
-  if(panel.classList.contains('show')){ generateResults(); panel.scrollIntoView({behavior:'smooth'}); }
-}
-
-function computeRankings(){
-  const wins=getWins(), roles=getRoles();
-  const roleArr=Array.isArray(roles)?roles:Object.values(roles);
-  const info={};
-  for(const r of roleArr) info[r]={name:r,eliminatedRound:null,eliminatedBy:null,reached:0};
-  for(let ri=0;ri<TOTAL;ri++){
-    for(let mi=0;mi<N[ri];mi++){
-      const t1=getTeam(ri,mi,0), t2=getTeam(ri,mi,1);
-      const round=wins[ri]||{};
-      const w=round[mi]??round[String(mi)]??null;
-      if(!t1||!t2||!w)continue;
-      const loser=w===t1?t2:t1;
-      if(info[w])info[w].reached=ri+1;
-      if(info[loser]&&info[loser].eliminatedRound===null){
-        info[loser].eliminatedRound=ri; info[loser].eliminatedBy=w;
-      }
-    }
-  }
-  const finalRound=wins[TOTAL-1]||{};
-  const champ=finalRound[0]??finalRound['0']??null;
-  if(champ&&info[champ])info[champ].reached=TOTAL;
-  return {info, champ};
-}
-
-function generateResults(){
-  const {info, champ}=computeRankings();
-  const finalist=champ?Object.values(info).find(x=>x.eliminatedRound===TOTAL-1):null;
-  const thirds=Object.values(info).filter(x=>x.eliminatedRound===TOTAL-2);
-  const wins=getWins();
-  const filled=wins.map(w=>Object.keys(w).length);
-  const complete=filled.every((f,i)=>f===N[i]);
-  let html='';
-  if(!complete)html+=`<div class="warn">⚠️ 尚未全部填写（${filled.map((f,i)=>f+'/'+N[i]).join(' · ')}）</div>`;
-  const roles=getRoles();
-  const roleArr=Array.isArray(roles)?roles:Object.values(roles);
-  const totalFilled=Object.values(info).filter(x=>x.eliminatedRound!==null||x.reached===TOTAL).length;
-  html+=`<div class="stat-bar"><div class="stat-row">
-    <div class="stat-item"><div class="stat-num">${totalFilled}</div><div class="stat-label">已确定</div></div>
-    <div class="stat-item"><div class="stat-num">${roleArr.length-totalFilled}</div><div class="stat-label">待确定</div></div>
-    <div class="stat-item"><div class="stat-num">${roleArr.length}</div><div class="stat-label">总角色</div></div>
-    <div class="stat-item"><div class="stat-num">${TOTAL}</div><div class="stat-label">总轮次</div></div>
-  </div></div>`;
-  if(champ||finalist||thirds.length){
-    html+=`<div class="podium">`;
-    if(finalist)html+=`<div class="pc p2"><div class="pi">🥈</div><div class="pr">第二喜欢的角色</div><div class="pn">${finalist.name}</div><div class="pnote">败于 ${champ}</div></div>`;
-    if(champ)html+=`<div class="pc p1"><div class="pi">🏆</div><div class="pr">我最喜欢的角色</div><div class="pn">${champ}</div><div class="pnote">我最喜欢的角色</div></div>`;
-    for(const t of thirds.slice(0,1))html+=`<div class="pc p3"><div class="pi">🥉</div><div class="pr">第三喜欢的角色</div><div class="pn">${t.name}</div><div class="pnote">败于 ${t.eliminatedBy}</div></div>`;
-    html+=`</div>`;
-  }
-  const groups=[
-    {title:'🥇 我最喜欢的角色',f:x=>x.reached===TOTAL},
-    {title:'🥈 第二喜欢',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
-    {title:'🥉 第三&四喜欢',f:x=>x.eliminatedRound===TOTAL-2},
-    {title:'⚔️ 四强赛 · 第5-8名',f:x=>x.eliminatedRound===TOTAL-3},
-    {title:'🗡 第二轮 · 第9-16名',f:x=>x.eliminatedRound===TOTAL-4},
-    {title:'📌 第一轮 · 第17-32名',f:x=>x.eliminatedRound===0},
-  ];
-  for(const grp of groups){
-    const r=Object.values(info).filter(grp.f);
-    if(!r.length)continue;
-    html+=`<div class="rank-section"><div class="rank-header">${grp.title}</div>
-      <table class="rank-table"><thead><tr><th>角色</th><th>晋级情况</th><th>败于</th></tr></thead><tbody>`;
-    for(const x of r){
-      const isC=x.reached===TOTAL;
-      const stage=isC?'🥇 第一名':x.eliminatedRound!==null?STAGE_NAMES[x.eliminatedRound]:'进行中';
-      html+=`<tr>
-        <td class="rname" style="${isC?'color:var(--gold-bright)':''}">${x.name}</td>
-        <td class="rstage">${isC?`<span class="badge-champ">我最喜欢的角色</span>`:stage}</td>
-        <td class="rby">${isC?'—':x.eliminatedBy??'—'}</td>
-      </tr>`;
-    }
-    html+=`</tbody></table></div>`;
-  }
-  const pending=Object.values(info).filter(x=>x.reached===0&&x.eliminatedRound===null);
-  if(pending.length)html+=`<div class="rank-section"><div class="rank-header" style="color:var(--text-dim);border-color:rgba(200,160,40,0.2)">⏳ 待确定 (${pending.length}个)</div><div style="padding:8px 0;color:var(--text-dim);font-size:12px;">${pending.map(x=>x.name).join(' · ')}</div></div>`;
-  document.getElementById('resultsContent').innerHTML=html;
-}
-
-function exportResults(){
-  const {info,champ}=computeRankings();
-  const s=getActiveSeason();
-  const lines=[`【${s.name}】排行榜结果`,`生成时间：${new Date().toLocaleString('zh-CN')}`,''];
-  if(champ)lines.push(`🥇 我最喜欢的角色：${champ}`,'');
-  const groups=[
-    {title:'决赛 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
-    {title:'半决赛 第3-4名',f:x=>x.eliminatedRound===TOTAL-2},
-    {title:'四强赛 第5-8名',f:x=>x.eliminatedRound===TOTAL-3},
-    {title:'第二轮 第9-16名',f:x=>x.eliminatedRound===TOTAL-4},
-    {title:'第一轮 第17-32名',f:x=>x.eliminatedRound===0},
-  ];
-  for(const grp of groups){
-    const r=Object.values(info).filter(grp.f); if(!r.length)continue;
-    lines.push(grp.title+'：');
-    r.forEach(x=>lines.push(`  ${x.name}${x.eliminatedBy?' (败于'+x.eliminatedBy+')':''}`));
-    lines.push('');
-  }
-  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`${s.name}_结果.txt`;a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ════════════════════════════════════════════════
-// MODAL
-// ════════════════════════════════════════════════
-function closeModal(id){document.getElementById(id).classList.remove('show');}
-document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');});
-});
-
-
-// ════════════════════════════════════════════════
-// 生成结果图
-// ════════════════════════════════════════════════
-function generateImage(){
-  const {info, champ} = computeRankings();
-  if(!champ){ alert('请先完成所有对阵，选出最喜欢的角色！'); return; }
-
-  const s = getActiveSeason();
-  const finalist = Object.values(info).find(x=>x.eliminatedRound===TOTAL-1);
-  const thirds = Object.values(info).filter(x=>x.eliminatedRound===TOTAL-2);
-
-  const STAGE_LABELS = ['第一轮','第二轮','第三轮','半决赛','决赛落败'];
-  const groups = [
-    {title:'🥈 第二喜欢的角色', f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
-    {title:'🥉 第三喜欢的角色 (第3-4名)', f:x=>x.eliminatedRound===TOTAL-2},
-    {title:'第5-8名', f:x=>x.eliminatedRound===TOTAL-3},
-    {title:'第9-16名', f:x=>x.eliminatedRound===TOTAL-4},
-    {title:'第17-32名', f:x=>x.eliminatedRound===0},
-  ];
-
-  let tableHTML = '';
-  for(const grp of groups){
-    const roles = Object.values(info).filter(grp.f);
-    if(!roles.length) continue;
-    tableHTML += `<div class="rc-sec-title">${grp.title}</div>
-      <table class="rc-table">
-        <thead><tr><th>角色</th><th>晋级情况</th><th>败于</th></tr></thead>
-        <tbody>`;
-    for(const r of roles){
-      const stage = r.eliminatedRound !== null ? STAGE_LABELS[r.eliminatedRound] : '进行中';
-      tableHTML += `<tr>
-        <td style="font-weight:700;letter-spacing:2px;">${r.name}</td>
-        <td style="color:rgba(200,160,40,0.55);font-size:12px;">${stage}</td>
-        <td style="color:rgba(200,160,40,0.4);font-size:12px;">${r.eliminatedBy||'—'}</td>
-      </tr>`;
-    }
-    tableHTML += `</tbody></table>`;
-  }
-
-  const now = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
-
-  document.getElementById('resultCard').innerHTML = `
-    <div class="rc-logo">北美盗梦空间狼人杀联赛</div>
-    <div class="rc-title">我最喜欢玩的角色排行榜！ · 完整结果</div>
-    <div class="rc-season">${s.name} · ${now}</div>
-    <div class="rc-podium">
-      ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">第二喜欢的角色</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
-      <div class="rc-p p1"><div class="rc-icon">🏆</div><div class="rc-rank">我最喜欢的角色</div><div class="rc-name">${champ}</div><div class="rc-note">我最喜欢的角色</div></div>
-      ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">第三喜欢的角色</div><div class="rc-name">${thirds[0].name}</div><div class="rc-note">败于 ${thirds[0].eliminatedBy}</div></div>`:''}
+<!-- 排行榜页 -->
+<div class="bracket-page" id="bracketPage">
+  <div class="b-topbar">
+    <div>
+      <div class="b-topname" id="topName"></div>
+      <div class="b-topbadge">北美盗梦空间狼人杀联赛</div>
     </div>
-    ${tableHTML}
-    <div class="rc-footer">北美盗梦空间狼人杀联赛 · 不完美的人，才是真赢家</div>
-  `;
+    <button class="b-change" onclick="changeName()">换人</button>
+  </div>
 
-  // 移到可见区域截图
-  const card = document.getElementById('resultCard');
-  card.style.left = '-9999px';
-  card.style.top = '0';
+  <div class="b-header">
+    <div class="b-emoji" id="headerEmoji"></div>
+    <div class="b-name" id="headerName"></div>
+    <div class="b-title">我最喜欢玩的角色排行榜！</div>
+  </div>
 
-  const overlay = document.getElementById('genOverlay');
-  overlay.classList.add('show');
+  <!-- 前三名（完成后显示） -->
+  <div id="podiumWrap" style="display:none;">
+    <div class="podium" id="podium"></div>
+    <button class="m-reset" onclick="resetBracket()">重新选择</button>
+  </div>
 
-  setTimeout(()=>{
-    html2canvas(card, {
-      scale: 2,
-      backgroundColor: null,
-      useCORS: true,
-      logging: false
-    }).then(canvas => {
-      overlay.classList.remove('show');
-      canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${s.name}_排行榜结果.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }, 'image/png');
-    }).catch(err => {
-      overlay.classList.remove('show');
-      alert('生成失败，请截图保存 😅\n错误：' + err.message);
-    });
-  }, 300);
-}
-
-
-// ════════════════════════════════════════════════
-// 手机端视图
-// ════════════════════════════════════════════════
-let mobileRound = 0;
-let mobileUserNavigated = false; // 用户是否已手动切换轮次
-
-function isMobile(){ return window.innerWidth < 768; }
-
-function initMobileRound(){
-  if(mobileUserNavigated) return; // 用户已手动切换，不强制重置
-  const wins=getWins();
-  for(let ri=0;ri<TOTAL;ri++){
-    const done=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-    if(done < N[ri]){ mobileRound=ri; return; }
-  }
-  mobileRound=TOTAL-1;
-}
-
-function renderMobile(){
-  if(!isMobile()) return;
-  renderMobileTabs();
-  renderMobileMatches();
-}
-
-function renderMobileTabs(){
-  const el=document.getElementById('mobileTabs');
-  if(!el) return;
-  const wins=getWins();
-  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
-  el.innerHTML=RNAMES.map((name,ri)=>{
-    const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-    const done=cnt===N[ri];
-    const active=ri===mobileRound;
-    const ok=ri===0||Object.values(wins[ri-1]||{}).filter(v=>v&&typeof v==='string').length===N[ri-1];
-    return `<div class="mtab${active?' active':''}${done?' done':''}${!ok?' locked':''}"
-      onclick="${ok?`setMobileRound(${ri})`:''}">${name}${done?' ✓':` ${cnt}/${N[ri]}`}</div>`;
-  }).join('');
-}
-
-function setMobileRound(ri){
-  mobileUserNavigated=true; // 标记用户已手动导航
-  mobileRound=ri;
-  renderMobile();
-  const el=document.getElementById('mobileMatches');
-  if(el) el.scrollTop=0;
-}
-
-function renderMobileMatches(){
-  const el=document.getElementById('mobileMatches');
-  if(!el) return;
-  const wins=getWins();
-  const ri=mobileRound;
-  const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
-  const ok=ri===0||Object.values(wins[ri-1]||{}).filter(v=>v&&typeof v==='string').length===N[ri-1];
-  const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-
-  let html=`<div class="m-rhead">
-    <div class="m-rtitle">${RNAMES[ri]}</div>
-    <div class="m-rprog">${cnt} / ${N[ri]} 场</div>
-  </div>`;
-
-  if(!ok){
-    html+=`<div class="m-locked">请先完成上一轮对阵<br>才能进入${RNAMES[ri]}</div>`;
-  } else {
-    for(let mi=0;mi<N[ri];mi++){
-      const t0=getTeam(ri,mi,0), t1=getTeam(ri,mi,1);
-      const round=wins[ri]||{};
-      const cur=round[mi]??round[String(mi)]??null;
-      const canSel=ok&&t0&&t1&&t0!==t1;
-
-      const slot=(team,s)=>{
-        if(!team) return `<div class="m-slot pending">待定</div>`;
-        const isW=cur===team, isL=cur&&cur!==team;
-        return `<div class="m-slot${isW?' winner':isL?' loser':''}"
-          onclick="${canSel&&!isL?`mobileSelect(${ri},${mi},${s})`:''}">${isW?'▶ ':''}${team}</div>`;
-      };
-
-      html+=`<div class="m-card${cur?' decided':''}">
-        <div class="m-num">第 ${mi+1} 场 / ${N[ri]}</div>
-        ${slot(t0,0)}
-        <div class="m-vs">VS</div>
-        ${slot(t1,1)}
-      </div>`;
-    }
-
-    // 下一轮按钮
-    if(cnt===N[ri]&&ri<TOTAL-1){
-      html+=`<div class="m-next">
-        <button class="m-next-btn" onclick="setMobileRound(${ri+1})">
-          全部填完 · 进入${['第二轮','第三轮','半决赛','决赛'][ri]} →
-        </button></div>`;
-    }
-
-    // 冠军展示
-    if(ri===TOTAL-1&&cnt===N[ri]){
-      const champ=wins[TOTAL-1]?.[0]??wins[TOTAL-1]?.['0']??null;
-      if(champ) html+=`<div class="m-champ">
-        <div class="m-champ-icon">🏆</div>
-        <div class="m-champ-label">我最喜欢的角色</div>
-        <div class="m-champ-name">${champ}</div>
-        <div class="m-champ-note">🎉 这是你最喜欢的角色！</div>
-        <button class="m-champ-img-btn" onclick="generateImage()">🖼 生成结果图</button>
-      </div>`;
-    }
-  }
-  el.innerHTML=html;
-}
-
-function mobileSelect(ri,mi,s){
-  lastUserInteraction=Date.now();
-  const wins=getWins();
-  if(!prevRoundComplete(ri,wins)){ showToast('请先完成上一轮'); return; }
-  const t0=getTeam(ri,mi,0),t1=getTeam(ri,mi,1);
-  if(!t0||!t1||t0===t1) return;
-  const team=getTeam(ri,mi,s);
-  if(!team) return;
-  const round=wins[ri]||{};
-  const cur=round[mi]??round[String(mi)]??null;
-  if(cur===team){ delete wins[ri][mi]; delete wins[ri][String(mi)]; clearDown(wins,ri,mi); }
-  else if(cur&&cur!==team){ return; }
-  else { wins[ri][mi]=team; }
-  renderMobileMatches();
-  renderMobileTabs();
-  renderChampion(); renderProgress();
-  saveToFirebase();
-}
-
-window.addEventListener('resize',()=>{ renderMobile(); });
-
-// ════════════════════════════════════════════════
-// INIT — 先显示空对阵，Firebase加载后再更新
-// ════════════════════════════════════════════════
-buildBracket();
-renderAll();
-initMobileRound();
-renderMobile();
-initFirebase().then(()=>{
-  buildBracket();
-  renderAll();
-  if(!mobileUserNavigated) initMobileRound();
-  renderMobile();
-});
-</script>
-
-<!-- 结果图卡片（截图用，隐藏在屏幕外）-->
-<div class="result-card" id="resultCard"></div>
-
-<!-- 生成中遮罩 -->
-<div class="generating-overlay" id="genOverlay">
-  <div class="gen-text">🎨 正在生成结果图...</div>
-  <div class="gen-sub">请稍候</div>
+  <!-- 对阵区 -->
+  <div id="bracketArea" style="margin-top:20px;">
+    <div class="round-tabs" id="roundTabs"></div>
+    <div class="bracket-wrap" id="matchArea"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<script>
+// ══ Firebase ══
+const DB='https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
+const PATH='tournament/playerBrackets';
+const fb={
+  async get(p){try{const r=await fetch(`${DB}/${p}.json`);return r.ok?await r.json():null;}catch{return null;}},
+  async put(p,d){try{await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{}}
+};
+
+// ══ Roles ══
+const ROLES=["混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士","摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者","蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼","机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"];
+const N=[16,8,4,2,1],TOTAL=5;
+const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
+const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
+
+// ══ State ══
+let curName='', curEmoji='🎭', isNew=false;
+let wins=[{},{},{},{},{}], curRound=0, navd=false;
+
+// ══ Name Page ══
+function onName(val){
+  const name=val.trim();
+  const hint=document.getElementById('nameHint');
+  const btn=document.getElementById('enterBtn');
+  const ew=document.getElementById('emojiWrap');
+  document.getElementById('nameErr').style.display='none';
+
+  if(!name){
+    hint.textContent=''; hint.className='n-hint';
+    btn.className='n-btn'; ew.style.display='none'; isNew=false; return;
+  }
+  // Check Firebase in background (we'll check on submit)
+  hint.textContent=''; hint.className='n-hint';
+  btn.className='n-btn ready';
+  curName=name;
+}
+
+async function enter(){
+  const name=document.getElementById('nameInput').value.trim();
+  if(!name) return;
+  curName=name;
+  const err=document.getElementById('nameErr');
+  err.style.display='none';
+
+  // Encode name for Firebase key (replace special chars)
+  const key=encodePlayerKey(name);
+
+  // Load existing data
+  const data=await fb.get(`${PATH}/${key}`);
+  if(data){
+    // 已有玩家
+    curEmoji=data.emoji||'🎭';
+    wins=normWins(data.wins);
+    isNew=false;
+  } else {
+    // 新玩家 - 选头像
+    const ew=document.getElementById('emojiWrap');
+    const eg=document.getElementById('emojiGrid');
+    if(!eg.children.length){
+      eg.innerHTML=EMOJIS.map(e=>`<button class="n-emoji-btn${e===curEmoji?' sel':''}" onclick="pickEmoji('${e}',this)">${e}</button>`).join('');
+    }
+    ew.style.display='block';
+    const hint=document.getElementById('nameHint');
+    hint.textContent='✨ 新玩家，选个头像再进入';
+    hint.className='n-hint new';
+    isNew=true;
+    // Wait for emoji selection then user clicks enter again
+    return;
+  }
+
+  goToBracket();
+}
+
+function pickEmoji(e,btn){
+  curEmoji=e;
+  document.querySelectorAll('.n-emoji-btn').forEach(b=>{b.className='n-emoji-btn';});
+  btn.className='n-emoji-btn sel';
+  // Now allow entering
+  goToBracket();
+}
+
+function goToBracket(){
+  // Save player info
+  const key=encodePlayerKey(curName);
+  fb.put(`${PATH}/${key}`,{name:curName,emoji:curEmoji,wins,updated:new Date().toISOString()});
+
+  // Show bracket page
+  document.getElementById('namePage').style.display='none';
+  document.getElementById('bracketPage').style.display='flex';
+  document.getElementById('topName').textContent=`${curEmoji} ${curName}`;
+  document.getElementById('headerEmoji').textContent=curEmoji;
+  document.getElementById('headerName').textContent=curName;
+  window.scrollTo(0,0);
+  navd=false;
+  initRound();
+  renderBracket();
+}
+
+function changeName(){
+  document.getElementById('bracketPage').style.display='none';
+  document.getElementById('namePage').style.display='flex';
+  document.getElementById('nameInput').value='';
+  document.getElementById('nameHint').textContent='';
+  document.getElementById('nameHint').className='n-hint';
+  document.getElementById('emojiWrap').style.display='none';
+  document.getElementById('enterBtn').className='n-btn';
+  document.getElementById('emojiGrid').innerHTML='';
+  wins=[{},{},{},{},{}]; navd=false;
+  setTimeout(()=>document.getElementById('nameInput').focus(),200);
+}
+
+function encodePlayerKey(name){
+  return name.replace(/[.#$\/\[\] ]/g,'_');
+}
+
+// ══ Bracket ══
+function normWins(raw){
+  if(!raw) return [{},{},{},{},{}];
+  const arr=Array.isArray(raw)?raw:[0,1,2,3,4].map(i=>raw[i]||{});
+  while(arr.length<5) arr.push({});
+  return arr.map(r=>(!r||typeof r!=='object'||Array.isArray(r))?{}:r);
+}
+
+function gT(ri,mi,s){
+  if(ri===0) return ROLES[mi*2+s];
+  const r=wins[ri-1]||{};
+  return r[mi*2+s]??r[String(mi*2+s)]??null;
+}
+
+function gW(ri,mi){ const r=wins[ri]||{}; return r[mi]??r[String(mi)]??null; }
+
+function prevDone(ri){
+  if(ri===0) return true;
+  const p=wins[ri-1]||{};
+  for(let i=0;i<N[ri-1];i++) if(!p[i]&&!p[String(i)]) return false;
+  return true;
+}
+
+function top3(){
+  const champ=wins[TOTAL-1]?.[0]??wins[TOTAL-1]?.['0']??null;
+  const t0=gT(TOTAL-1,0,0), t1=gT(TOTAL-1,0,1);
+  const finalist=champ?(champ===t0?t1:t0):null;
+  const thirds=[];
+  for(let mi=0;mi<N[TOTAL-2];mi++){
+    const w=gW(TOTAL-2,mi);
+    if(w){const a=gT(TOTAL-2,mi,0),b=gT(TOTAL-2,mi,1);thirds.push(w===a?b:a);}
+  }
+  return{champ,finalist,thirds:thirds.filter(Boolean)};
+}
+
+function initRound(){
+  if(navd) return;
+  for(let ri=0;ri<TOTAL;ri++){
+    const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+    if(cnt<N[ri]){curRound=ri;return;}
+  }
+  curRound=TOTAL-1;
+}
+
+function setRound(ri){ navd=true; curRound=ri; renderBracket(); }
+
+function select(ri,mi,s){
+  if(!prevDone(ri)){showToast('请先完成上一轮');return;}
+  const t0=gT(ri,mi,0),t1=gT(ri,mi,1);
+  if(!t0||!t1||t0===t1) return;
+  const team=gT(ri,mi,s); if(!team) return;
+  const cur=gW(ri,mi);
+  if(cur===team){
+    delete wins[ri][mi]; delete wins[ri][String(mi)];
+    clrDown(ri,mi);
+  } else if(cur&&cur!==team){ return; }
+  else { wins[ri][mi]=team; }
+  save(); renderBracket();
+}
+
+function clrDown(ri,mi){
+  let m=mi;
+  for(let r=ri+1;r<TOTAL;r++){m=Math.floor(m/2);delete wins[r][m];delete wins[r][String(m)];}
+}
+
+function save(){
+  const key=encodePlayerKey(curName);
+  fb.put(`${PATH}/${key}`,{name:curName,emoji:curEmoji,wins,updated:new Date().toISOString()});
+}
+
+function resetBracket(){
+  if(!confirm('重新选择角色排行？')) return;
+  wins=[{},{},{},{},{}]; navd=false;
+  save(); renderBracket();
+}
+
+function renderBracket(){
+  const {champ,finalist,thirds}=top3();
+
+  // 前三名
+  const pw=document.getElementById('podiumWrap');
+  if(champ){
+    pw.style.display='block';
+    document.getElementById('podium').innerHTML=`
+      ${finalist?`<div class="pod-card p2"><div class="pod-icon">🥈</div><div class="pod-rank">第二喜欢</div><div class="pod-role">${finalist}</div></div>`:''}
+      <div class="pod-card p1"><div class="pod-icon">🥇</div><div class="pod-rank">最喜欢</div><div class="pod-role">${champ}</div></div>
+      ${thirds[0]?`<div class="pod-card p3"><div class="pod-icon">🥉</div><div class="pod-rank">第三喜欢</div><div class="pod-role">${thirds[0]}</div></div>`:''}`;
+  } else {
+    pw.style.display='none';
+  }
+
+  // 轮次标签
+  const ri=curRound;
+  document.getElementById('roundTabs').innerHTML=RNAMES.map((name,i)=>{
+    const cnt=Object.values(wins[i]||{}).filter(v=>v&&typeof v==='string').length;
+    const done=cnt===N[i], locked=!prevDone(i);
+    return`<div class="rtab${i===ri?' active':''}${done?' done':''}${locked?' locked':''}"
+      onclick="${!locked?`setRound(${i})`:''}">${name}${done?' ✓':` ${cnt}/${N[i]}`}</div>`;
+  }).join('');
+
+  // 对阵卡片
+  const ok=prevDone(ri);
+  const cnt=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+  const ma=document.getElementById('matchArea');
+
+  if(!ok){
+    ma.innerHTML=`<div class="m-locked">请先完成上一轮对阵</div>`;
+    return;
+  }
+
+  let html='<div class="round-header" style="padding:0 0 12px;"><div class="round-title">'
+    +RNAMES[ri]+'</div><div class="round-prog">'+cnt+'/'+N[ri]+' 场</div></div>';
+
+  for(let mi=0;mi<N[ri];mi++){
+    const t0=gT(ri,mi,0),t1=gT(ri,mi,1);
+    const cur=gW(ri,mi);
+    const canSel=ok&&t0&&t1&&t0!==t1;
+    const slot=(team,s)=>{
+      if(!team) return`<div class="m-slot pending">待定</div>`;
+      const isW=cur===team,isL=cur&&cur!==team;
+      return`<div class="m-slot${isW?' winner':isL?' loser':''}"
+        onclick="${canSel&&!isL?`select(${ri},${mi},${s})`:''}">${isW?'▶ ':''}${team}</div>`;
+    };
+    html+=`<div class="match-card${cur?' decided':''}">
+      <div class="match-num">第${mi+1}场 / ${N[ri]}</div>
+      ${slot(t0,0)}<div class="m-vs">VS</div>${slot(t1,1)}
+    </div>`;
+  }
+
+  if(cnt===N[ri]&&ri<TOTAL-1){
+    html+=`<div class="m-next"><button class="m-next-btn" onclick="setRound(${ri+1})">
+      全部选完 · 进入${RNAMES[ri+1]} →</button></div>`;
+  }
+  if(ri===TOTAL-1&&cnt===N[ri]&&champ){
+    html+=`<div class="m-champ"><div class="m-champ-icon">🏆</div>
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px">我最喜欢玩的角色</div>
+      <div class="m-champ-name">${champ}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:6px">结果已保存 ✓</div></div>
+      <button class="m-reset" onclick="resetBracket()">重新选择</button>`;
+  }
+
+  ma.innerHTML=html;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';
+  setTimeout(()=>t.className='toast',2000);
+}
+
+// 页面加载完直接聚焦输入框
+window.addEventListener('load',()=>setTimeout(()=>document.getElementById('nameInput').focus(),300));
+</script>
 </body>
 </html>
