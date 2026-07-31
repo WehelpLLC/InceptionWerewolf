@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>积分管理 · 北美盗梦空间狼人杀联赛</title>
+<style>
+:root{
+  --bg:#0C0F16;--panel:#141925;--panel2:#1B2231;--line:#262E40;
+  --moon:#F3EBDA;--muted:#7C8499;--wolf:#B5453A;--wolf-dim:#5C2620;
+  --good:#5C9270;--good-dim:#27402F;--gold:#E0B463;--text:#EDEAE0;
+  --gold2:#fdd840;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Serif SC','Segoe UI',system-ui,sans-serif;padding:0 0 80px;}
+
+/* Lock */
+.lock{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;}
+.lock-title{font-size:18px;letter-spacing:4px;color:var(--gold);font-weight:700;}
+.lock-sub{font-size:12px;color:var(--muted);letter-spacing:2px;}
+.lock input{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 18px;color:var(--text);font-size:16px;outline:none;text-align:center;letter-spacing:4px;width:220px;}
+.lock input:focus{border-color:var(--gold);}
+.lock button{background:var(--gold);color:#2B1F0A;border:none;border-radius:8px;padding:12px 32px;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:2px;font-family:'Noto Serif SC',sans-serif;}
+
+/* Topbar */
+.topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-size:11px;letter-spacing:4px;color:var(--gold);font-weight:700;}
+.topbar-sub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;}
+.conn-dot.on{background:#5C9270;}
+.conn-status{font-size:11px;color:var(--muted);letter-spacing:1px;}
+
+.wrap{max-width:840px;margin:0 auto;padding:0 16px;}
+
+/* Section */
+.sec{margin-top:28px;}
+.sec-title{font-size:11px;letter-spacing:3px;color:var(--muted);display:flex;align-items:center;gap:10px;margin-bottom:14px;text-transform:uppercase;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--line);}
+
+/* Leaderboard */
+.lb-row{display:grid;grid-template-columns:32px 1fr 60px 68px 68px 70px 72px;align-items:center;gap:10px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:13px;}
+.lb-row.top{border-color:var(--gold);}
+.lb-rank{font-family:Consolas,monospace;font-weight:800;color:var(--muted);text-align:center;}
+.lb-row.top .lb-rank{color:var(--gold);}
+.lb-name{font-weight:700;font-size:14px;}
+.lb-num{font-family:Consolas,monospace;text-align:right;color:var(--muted);font-size:12px;}
+.lb-score{font-family:Consolas,monospace;font-weight:800;color:var(--moon);font-size:15px;text-align:right;}
+.lb-share{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;letter-spacing:1px;}
+.lb-share:hover{border-color:var(--gold);color:var(--gold);}
+.lb-head{display:grid;grid-template-columns:32px 1fr 60px 68px 68px 70px 72px;gap:10px;padding:6px 14px;font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+/* Players */
+.addbar{display:flex;gap:8px;margin-bottom:10px;}
+.addbar input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;}
+.addbar input:focus{border-color:var(--gold);}
+.addbar button,.btn-gold{background:var(--gold);color:#2B1F0A;border:none;border-radius:6px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Noto Serif SC',sans-serif;}
+.taglist{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:6px 8px 6px 12px;font-size:13px;display:flex;align-items:center;gap:6px;}
+.tag .emoji{font-size:16px;}
+.tag button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;}
+.tag button:hover{color:var(--wolf);}
+
+/* Match Form */
+.match-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+.match-meta{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end;}
+.meta-field{display:flex;flex-direction:column;gap:5px;}
+.meta-label{font-size:10px;color:var(--muted);letter-spacing:1px;}
+.meta-field input[type=date],.meta-field input[type=number],.meta-field select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;outline:none;font-family:'Noto Serif SC',sans-serif;}
+.meta-field input:focus,.meta-field select:focus{border-color:var(--gold);}
+.camp-toggle{display:flex;gap:6px;}
+.camp-btn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Serif SC',sans-serif;}
+.camp-btn.wolf.active{background:var(--wolf-dim);border-color:var(--wolf);color:#F0C2BC;}
+.camp-btn.good.active{background:var(--good-dim);border-color:var(--good);color:#BFE3CC;}
+
+/* Entry */
+.entry{border-bottom:1px solid var(--line);padding:14px 0;}
+.entry:last-child{border-bottom:none;}
+.entry-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.entry-seat{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 8px;font-size:13px;width:72px;font-family:Consolas,monospace;font-weight:700;outline:none;}
+.entry-seat.dup{border-color:var(--wolf);color:#F0C2BC;}
+.entry-name{font-weight:700;font-size:15px;flex:1;}
+.role-sel{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 10px;font-size:13px;outline:none;font-family:'Noto Serif SC',sans-serif;}
+.result-badge{font-size:12px;font-weight:700;padding:5px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);}
+.result-badge.win{background:var(--good-dim);border-color:var(--good);color:#BFE3CC;}
+.result-badge.lose{background:var(--wolf-dim);border-color:var(--wolf);color:#F0C2BC;}
+.btn-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;}
+.btn-remove:hover{color:var(--wolf);}
+.abilities{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.ab-btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;cursor:default;display:flex;align-items:center;gap:6px;}
+.ab-btn.pos{border-color:var(--good-dim);}
+.ab-btn.neg{border-color:var(--wolf-dim);}
+.ab-count{background:var(--bg);border-radius:8px;padding:1px 6px;font-family:Consolas,monospace;font-size:11px;color:var(--gold);}
+.ab-ctrl{background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;color:var(--muted);}
+.ab-ctrl:hover{color:var(--gold);}
+.score-row{font-family:Consolas,monospace;font-size:12px;color:var(--muted);margin-top:8px;}
+.score-row b{color:var(--moon);font-size:14px;}
+
+.btn-add-entry{width:100%;border:1px dashed var(--line);background:none;color:var(--muted);border-radius:7px;padding:10px;font-size:13px;cursor:pointer;margin-top:8px;font-family:'Noto Serif SC',sans-serif;}
+.btn-add-entry:hover{color:var(--gold);border-color:var(--gold);}
+.match-actions{display:flex;gap:10px;margin-top:14px;}
+.btn-primary{background:var(--gold);color:#2B1F0A;border:none;border-radius:7px;padding:12px 20px;font-weight:700;font-size:14px;cursor:pointer;flex:1;font-family:'Noto Serif SC',sans-serif;}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-secondary{background:none;border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:12px 16px;font-size:13px;cursor:pointer;font-family:'Noto Serif SC',sans-serif;}
+.btn-secondary:hover{color:var(--text);border-color:var(--muted);}
+
+/* History */
+.hist-item{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:8px;font-size:13px;}
+.hist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:700;}
+.hist-head button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;}
+.hist-head button:hover{color:var(--wolf);}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table td{padding:5px 8px;border-bottom:1px solid var(--line);}
+.hist-table tr:last-child td{border-bottom:none;}
+.pos{color:#BFE3CC;}.neg{color:#F0C2BC;}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(80,200,120,0.9);color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.err{background:rgba(181,69,58,0.9);}
+.toast.show{opacity:1;}
+
+/* AI */
+.ai-area{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;}
+.ai-area textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:10px 12px;font-size:13px;min-height:100px;outline:none;resize:vertical;font-family:'Noto Serif SC',sans-serif;margin-bottom:10px;}
+.ai-status{font-size:12px;margin-top:8px;color:var(--muted);white-space:pre-line;}
+.ai-status.ok{color:#BFE3CC;}.ai-status.err{color:#F0C2BC;}
+
+@media(max-width:600px){
+  .lb-row{grid-template-columns:28px 1fr 55px 60px;}.lb-row>*:nth-child(n+4):not(:last-child){display:none;}
+  .lb-head{display:none;}
+  .entry-head{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+
+<!-- 锁屏 -->
+<div class="lock" id="lockScreen">
+  <div class="lock-title">北美盗梦空间狼人杀联赛</div>
+  <div class="lock-sub">管理员登录</div>
+  <input type="password" id="pwInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')tryLogin()">
+  <button onclick="tryLogin()">进入管理后台</button>
+</div>
+
+<!-- 主应用 -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">INCEPTION · 北美盗梦空间狼人杀联赛</div>
+      <div class="topbar-sub">Season 3 积分管理后台</div>
+    </div>
+    <div class="conn-status"><span class="conn-dot" id="connDot"></span><span id="connTxt">连接中</span></div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- 积分榜 -->
+    <div class="sec">
+      <div class="sec-title">🏆 本赛季积分榜</div>
+      <div class="lb-head">
+        <div></div><div>玩家</div><div style="text-align:right">场次</div>
+        <div style="text-align:right">胜率</div><div style="text-align:right">狼人率</div>
+        <div style="text-align:right">好人率</div><div style="text-align:right">总积分</div>
+      </div>
+      <div id="leaderboard"><div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">加载中...</div></div>
+    </div>
+
+    <!-- 玩家管理 -->
+    <div class="sec">
+      <div class="sec-title">👥 玩家管理</div>
+      <div class="addbar">
+        <input type="text" id="newPlayerName" placeholder="输入玩家昵称" onkeydown="if(event.key==='Enter')addPlayer()">
+        <button onclick="addPlayer()">添加玩家</button>
+      </div>
+      <div class="taglist" id="playerTags"></div>
+    </div>
+
+    <!-- 新建比赛 -->
+    <div class="sec">
+      <div class="sec-title">📝 录入比赛结果</div>
+      <div class="match-card">
+        <div class="match-meta">
+          <div class="meta-field">
+            <div class="meta-label">比赛日期</div>
+            <input type="date" id="matchDate">
+          </div>
+          <div class="meta-field">
+            <div class="meta-label">第几局</div>
+            <input type="number" id="matchOrder" min="1" max="20" value="1" style="width:80px">
+          </div>
+          <div class="meta-field">
+            <div class="meta-label">获胜阵营</div>
+            <div class="camp-toggle">
+              <button class="camp-btn wolf" id="campWolf" onclick="setCamp('wolf')">狼人阵营</button>
+              <button class="camp-btn good" id="campGood" onclick="setCamp('good')">好人阵营</button>
+            </div>
+          </div>
+        </div>
+        <div id="entries"></div>
+        <div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;" id="emptyNote">点击下方按钮添加参赛玩家</div>
+        <button class="btn-add-entry" onclick="openPlayerPicker()">+ 添加参赛玩家</button>
+        <div class="match-actions" id="matchActions" style="display:none">
+          <button class="btn-secondary" onclick="clearMatch()">清空本场</button>
+          <button class="btn-primary" onclick="commitMatch()">✓ 结算并保存</button>
+        </div>
+      </div>
+
+      <!-- 玩家选择器 -->
+      <div id="pickerWrap" style="display:none;background:var(--panel);border:1px solid var(--gold);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;">选择参赛玩家（点击添加）</div>
+        <div id="pickerList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        <button class="btn-secondary" style="margin-top:12px;" onclick="closePicker()">关闭</button>
+      </div>
+    </div>
+
+    <!-- AI解析 -->
+    <div class="sec">
+      <div class="sec-title">✨ AI 解析战报</div>
+      <div class="ai-area">
+        <textarea id="aiInput" placeholder="把战报文字粘贴到这里，AI会自动识别玩家/角色/胜负..."></textarea>
+        <button class="btn-gold" id="aiBtn" onclick="parseWithAI()">✨ AI 解析并填入</button>
+        <div class="ai-status" id="aiStatus"></div>
+      </div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="sec">
+      <div class="sec-title">📋 比赛历史</div>
+      <div id="history"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">暂无记录</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 玩家选择弹窗 (modal) -->
+<script>
+// ═══════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════
+const DB = 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
+const SEASON = 's3';
+const PATH = `playerProfiles/${SEASON}`;
+const ADMIN_PW = 'inception2026';
+
+const fb = {
+  async get(p){ try{ const r=await fetch(`${DB}/${p}.json`); return r.ok?await r.json():null; }catch{return null;} },
+  async put(p,d){ try{ const r=await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch{return false;} },
+  async patch(p,d){ try{ const r=await fetch(`${DB}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch{return false;} },
+  async del(p){ try{ await fetch(`${DB}/${p}.json`,{method:'DELETE'}); }catch{} }
+};
+
+// ═══════════════════════════════════════════
+// ROLES & SCORING
+// ═══════════════════════════════════════════
+const WIN=3, LOSE=-1;
+const ROLE_INFO = {
+  '狼人':   {camp:'wolf',ab:[]},
+  '狼王':   {camp:'wolf',ab:[{k:'king_shot_wolf',l:'王刀狼人',d:1},{k:'king_shot_good',l:'王刀好人',d:-0.5}]},
+  '白狼王': {camp:'wolf',ab:[]},
+  '狼美人': {camp:'wolf',ab:[]},
+  '石像鬼': {camp:'wolf',ab:[]},
+  '隐狼':   {camp:'wolf',ab:[]},
+  '机械狼': {camp:'wolf',ab:[]},
+  '恶灵骑士':{camp:'wolf',ab:[]},
+  '梦魔':   {camp:'wolf',ab:[]},
+  '血月使徒':{camp:'wolf',ab:[]},
+  '诡术师': {camp:'wolf',ab:[]},
+  '假面':   {camp:'wolf',ab:[]},
+  '盗宝大师':{camp:'wolf',ab:[]},
+  '狼术师': {camp:'wolf',ab:[]},
+  '平民':   {camp:'good',ab:[]},
+  '混血儿': {camp:'good',ab:[]},
+  '预言家': {camp:'good',ab:[{k:'check_wolf',l:'查验命中狼',d:0.5}]},
+  '女巫':   {camp:'good',ab:[{k:'poison_wolf',l:'毒杀狼人',d:1},{k:'poison_good',l:'误毒好人',d:-0.5},{k:'save',l:'救人成功',d:0.5}]},
+  '猎人':   {camp:'good',ab:[{k:'shoot_wolf',l:'枪毙狼人',d:1},{k:'shoot_good',l:'误击好人',d:-0.5}]},
+  '白神':   {camp:'good',ab:[{k:'white_shot',l:'自爆命中狼',d:1}]},
+  '守卫':   {camp:'good',ab:[{k:'guard_save',l:'成功守护',d:0.5}]},
+  '骑士':   {camp:'good',ab:[{k:'knight_wolf',l:'决斗命中狼',d:1}]},
+  '摄梦人': {camp:'good',ab:[]},
+  '魔术师': {camp:'good',ab:[]},
+  '通灵师': {camp:'good',ab:[{k:'medium',l:'通灵命中',d:0.5}]},
+  '守墓人': {camp:'good',ab:[]},
+  '猎魔人': {camp:'good',ab:[{k:'hunt_wolf',l:'猎杀命中狼',d:1}]},
+  '定序王子':{camp:'good',ab:[]},
+  '奇迹商人':{camp:'good',ab:[]},
+  '舞者':   {camp:'good',ab:[]},
+  '蒙面人': {camp:'good',ab:[]},
+  '禁言长老':{camp:'good',ab:[]},
+};
+const ROLE_LIST = Object.keys(ROLE_INFO);
+const EMOJIS = ['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸'];
+
+function calcScore(entry, winCamp){
+  const info = ROLE_INFO[entry.role]||{camp:'good',ab:[]};
+  const won = info.camp === winCamp;
+  const camp = won ? WIN : LOSE;
+  let ab = 0;
+  (info.ab||[]).forEach(a=>{ ab += (entry.ab?.[a.k]||0)*a.d; });
+  let vote = 0;
+  if(info.camp==='good'){
+    vote += (entry.votes?.good||0)*0.5;
+    vote += (entry.votes?.bad||0)*(-0.5);
+  }
+  return {camp, ab, vote, total:+(camp+ab+vote).toFixed(1), result:won?'win':'lose'};
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let players = {};    // {id: {id,name,emoji,created}}
+let matches = {};    // {id: {id,date,round,winCamp,entries:[...]}}
+let nextId = 1;
+let winCamp = '';
+let entries = [];    // current match entries
+let saving = false;
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function tryLogin(){
+  const pw = document.getElementById('pwInput').value;
+  if(pw === ADMIN_PW){
+    document.getElementById('lockScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  } else {
+    showToast('密码错误',true);
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init(){
+  setConn(false,'连接中...');
+  const [pData, mData] = await Promise.all([
+    fb.get(`${PATH}/players`),
+    fb.get(`${PATH}/matches`)
+  ]);
+  if(pData) players = pData;
+  if(mData) matches = mData;
+  // Set next ID
+  const allIds = [...Object.keys(players), ...Object.keys(matches)].map(Number).filter(Boolean);
+  nextId = allIds.length ? Math.max(...allIds)+1 : 1;
+  // Default date
+  document.getElementById('matchDate').value = new Date().toISOString().slice(0,10);
+  setConn(true,'已连接');
+  renderAll();
+}
+
+function setConn(on, txt){
+  document.getElementById('connDot').className='conn-dot'+(on?' on':'');
+  document.getElementById('connTxt').textContent=txt;
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function renderAll(){ renderLeaderboard(); renderPlayerTags(); renderEntries(); renderHistory(); }
+
+function getPlayerStats(pid){
+  const myEntries = [];
+  Object.values(matches).forEach(m=>{
+    const e = m.entries?.find(e=>e.playerId===pid);
+    if(e) myEntries.push({m, e});
+  });
+  const total = myEntries.length;
+  const wins = myEntries.filter(x=>x.e.result==='win').length;
+  const score = myEntries.reduce((s,x)=>s+x.e.total,0);
+  const wolfE = myEntries.filter(x=>(ROLE_INFO[x.e.role]||{}).camp==='wolf');
+  const goodE = myEntries.filter(x=>(ROLE_INFO[x.e.role]||{}).camp==='good');
+  const wolfW = wolfE.filter(x=>x.e.result==='win').length;
+  const goodW = goodE.filter(x=>x.e.result==='win').length;
+  return {
+    games:total, wins, score:+score.toFixed(1),
+    winRate:total?Math.round(wins/total*100):0,
+    wolfRate:wolfE.length?Math.round(wolfW/wolfE.length*100):'-',
+    goodRate:goodE.length?Math.round(goodW/goodE.length*100):'-',
+  };
+}
+
+function renderLeaderboard(){
+  const lb = document.getElementById('leaderboard');
+  const pList = Object.values(players);
+  if(!pList.length){ lb.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">还没有玩家，先在下方添加</div>'; return; }
+  const stats = pList.map(p=>({p, s:getPlayerStats(p.id)}));
+  stats.sort((a,b)=>b.s.score-a.s.score);
+  lb.innerHTML = stats.map(({p,s},i)=>`
+    <div class="lb-row${i===0?' top':''}">
+      <div class="lb-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
+      <div class="lb-name">${p.emoji||'🎭'} ${esc(p.name)}</div>
+      <div class="lb-num">${s.games}场</div>
+      <div class="lb-num">${s.winRate}%</div>
+      <div class="lb-num">${s.wolfRate==='−'?'−':s.wolfRate+'%'}</div>
+      <div class="lb-num">${s.goodRate==='−'?'−':s.goodRate+'%'}</div>
+      <div class="lb-score">${s.score>=0?'+':''}${s.score}</div>
+    </div>
+  `).join('')+`
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+      ${stats.map(({p})=>`<button class="lb-share" onclick="copyProfileLink('${p.id}','${esc(p.name)}')">🔗 ${esc(p.name)} 档案</button>`).join('')}
+    </div>`;
+}
+
+function renderPlayerTags(){
+  const list = Object.values(players);
+  const el = document.getElementById('playerTags');
+  if(!list.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px;">还没有玩家</div>'; return; }
+  el.innerHTML = list.map(p=>`
+    <div class="tag">
+      <span class="emoji">${p.emoji||'🎭'}</span>
+      ${esc(p.name)}
+      <button onclick="removePlayer('${p.id}')" title="删除">✕</button>
+    </div>`).join('');
+}
+
+function renderEntries(){
+  const box = document.getElementById('entries');
+  const emptyNote = document.getElementById('emptyNote');
+  const actions = document.getElementById('matchActions');
+  if(!entries.length){ box.innerHTML=''; emptyNote.style.display='block'; actions.style.display='none'; return; }
+  emptyNote.style.display='none'; actions.style.display='flex';
+  const seatCount = {};
+  entries.forEach(e=>{ if(e.seat) seatCount[e.seat]=(seatCount[e.seat]||0)+1; });
+  const sorted = [...entries].sort((a,b)=>(a.seat||99)-(b.seat||99));
+  box.innerHTML = sorted.map(e=>{
+    const p = players[e.playerId];
+    const info = ROLE_INFO[e.role]||{camp:'good',ab:[]};
+    const s = calcScore(e, winCamp);
+    const dup = e.seat && seatCount[e.seat]>1;
+    const roleOpts = ROLE_LIST.map(r=>`<option value="${r}" ${r===e.role?'selected':''}>${r}</option>`).join('');
+    const seatOpts = '<option value="">座</option>'+Array.from({length:12},(_,i)=>i+1).map(n=>`<option value="${n}" ${e.seat===n?'selected':''}>${n}</option>`).join('');
+    const abHtml = (info.ab||[]).map(a=>`
+      <div class="ab-btn ${a.d>0?'pos':'neg'}">
+        ${a.l}(${a.d>0?'+':''}${a.d})
+        <button class="ab-ctrl" onclick="bumpAb('${e.id}','${a.k}',-1)">−</button>
+        <span class="ab-count">${e.ab?.[a.k]||0}</span>
+        <button class="ab-ctrl" onclick="bumpAb('${e.id}','${a.k}',1)">+</button>
+      </div>`).join('');
+    const voteHtml = info.camp==='good'?`
+      <div class="ab-btn pos">好票·投中狼(+0.5)
+        <button class="ab-ctrl" onclick="bumpVote('${e.id}','good',-1)">−</button>
+        <span class="ab-count">${e.votes?.good||0}</span>
+        <button class="ab-ctrl" onclick="bumpVote('${e.id}','good',1)">+</button>
+      </div>
+      <div class="ab-btn neg">坏票·投中好(-0.5)
+        <button class="ab-ctrl" onclick="bumpVote('${e.id}','bad',-1)">−</button>
+        <span class="ab-count">${e.votes?.bad||0}</span>
+        <button class="ab-ctrl" onclick="bumpVote('${e.id}','bad',1)">+</button>
+      </div>`:'';
+    return `<div class="entry">
+      <div class="entry-head">
+        <select class="entry-seat${dup?' dup':''}" onchange="setSeat('${e.id}',this.value)">${seatOpts}</select>
+        <div class="entry-name">${(p?.emoji||'🎭')} ${esc(p?.name||'?')}</div>
+        <select class="role-sel" onchange="setRole('${e.id}',this.value)">${roleOpts}</select>
+        <div class="result-badge ${winCamp?s.result:''}">${winCamp?(s.result==='win'?'胜':'负'):'待定阵营'}</div>
+        <button class="btn-remove" onclick="removeEntry('${e.id}')">移出 ✕</button>
+      </div>
+      ${dup?'<div style="color:#F0C2BC;font-size:12px;margin-bottom:6px">⚠ 座位号重复</div>':''}
+      <div class="abilities">${abHtml}${voteHtml}</div>
+      <div class="score-row">
+        阵营 ${s.camp>=0?'+':''}${s.camp} &nbsp;技能 ${s.ab>=0?'+':''}${s.ab.toFixed(1)} &nbsp;投票 ${s.vote>=0?'+':''}${s.vote.toFixed(1)} &nbsp;本场合计 <b>${s.total>=0?'+':''}${s.total}</b>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory(){
+  const box = document.getElementById('history');
+  const mList = Object.values(matches).sort((a,b)=>{
+    if(a.date!==b.date) return b.date.localeCompare(a.date);
+    return b.round - a.round;
+  });
+  if(!mList.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">暂无记录</div>'; return; }
+  box.innerHTML = mList.slice(0,30).map(m=>`
+    <div class="hist-item">
+      <div class="hist-head">
+        <span>${m.date} 第${m.round}局 · ${m.winCamp||'?'}获胜</span>
+        <button onclick="deleteMatch('${m.id}')">撤销 ✕</button>
+      </div>
+      <table class="hist-table">
+        ${(m.entries||[]).sort((a,b)=>(a.seat||99)-(b.seat||99)).map(e=>`
+          <tr>
+            <td style="color:var(--muted);width:40px">${e.seat||'-'}号</td>
+            <td style="font-weight:700">${esc(players[e.playerId]?.name||'?')}</td>
+            <td style="color:var(--muted)">${e.role}</td>
+            <td class="${e.result==='win'?'pos':'neg'}">${e.result==='win'?'胜':'负'}</td>
+            <td class="${e.total>=0?'pos':'neg'}" style="font-family:Consolas;text-align:right">${e.total>=0?'+':''}${e.total}</td>
+          </tr>`).join('')}
+      </table>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// PLAYER MGMT
+// ═══════════════════════════════════════════
+async function addPlayer(){
+  const inp = document.getElementById('newPlayerName');
+  const name = inp.value.trim();
+  if(!name){ showToast('请输入玩家昵称',true); return; }
+  if(Object.values(players).find(p=>p.name===name)){ showToast('玩家已存在',true); return; }
+  const emoji = EMOJIS[Object.keys(players).length % EMOJIS.length];
+  const id = 'p'+Date.now();
+  const player = {id, name, emoji, created: new Date().toLocaleDateString('zh-CN')};
+  players[id] = player;
+  inp.value = '';
+  await fb.patch(`${PATH}/players`, {[id]: player});
+  renderAll();
+  showToast(`已添加玩家：${name}`);
+}
+
+async function removePlayer(id){
+  const p = players[id];
+  if(!confirm(`删除玩家「${p.name}」？该玩家的历史战绩仍保留。`)) return;
+  delete players[id];
+  await fb.del(`${PATH}/players/${id}`);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════
+// PLAYER PICKER
+// ═══════════════════════════════════════════
+function openPlayerPicker(){
+  const pList = Object.values(players);
+  if(!pList.length){ showToast('请先添加玩家',true); return; }
+  const inMatch = new Set(entries.map(e=>e.playerId));
+  document.getElementById('pickerList').innerHTML = pList.map(p=>`
+    <button onclick="addEntry('${p.id}')" style="
+      background:${inMatch.has(p.id)?'var(--good-dim)':'var(--panel2)'};
+      border:1px solid ${inMatch.has(p.id)?'var(--good)':'var(--line)'};
+      color:${inMatch.has(p.id)?'#BFE3CC':'var(--text)'};
+      border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;
+      font-family:'Noto Serif SC',sans-serif;
+    ">${p.emoji||'🎭'} ${esc(p.name)}${inMatch.has(p.id)?' ✓':''}</button>`).join('');
+  document.getElementById('pickerWrap').style.display='block';
+}
+
+function closePicker(){ document.getElementById('pickerWrap').style.display='none'; }
+
+function addEntry(pid){
+  if(entries.find(e=>e.playerId===pid)){ showToast('该玩家已在本场',true); return; }
+  const usedSeats = new Set(entries.map(e=>e.seat).filter(Boolean));
+  let seat = null;
+  for(let i=1;i<=12;i++){ if(!usedSeats.has(i)){seat=i;break;} }
+  entries.push({id:'e'+Date.now()+Math.random(), playerId:pid, role:'平民', seat, ab:{}, votes:{good:0,bad:0}});
+  renderEntries();
+  openPlayerPicker();
+}
+
+function removeEntry(eid){ entries=entries.filter(e=>e.id!==eid); renderEntries(); }
+function setSeat(eid, v){ const e=entries.find(x=>x.id===eid); if(e) e.seat=parseInt(v)||null; renderEntries(); }
+function setRole(eid, v){ const e=entries.find(x=>x.id===eid); if(e){e.role=v;e.ab={};} renderEntries(); }
+function bumpAb(eid,k,d){ const e=entries.find(x=>x.id===eid); if(e){if(!e.ab)e.ab={};e.ab[k]=Math.max(0,(e.ab[k]||0)+d);} renderEntries(); }
+function bumpVote(eid,k,d){ const e=entries.find(x=>x.id===eid); if(e){if(!e.votes)e.votes={};e.votes[k]=Math.max(0,(e.votes[k]||0)+d);} renderEntries(); }
+
+function setCamp(c){
+  winCamp=c;
+  document.getElementById('campWolf').className='camp-btn wolf'+(c==='wolf'?' active':'');
+  document.getElementById('campGood').className='camp-btn good'+(c==='good'?' active':'');
+  renderEntries();
+}
+
+function clearMatch(){ entries=[]; winCamp=''; setCamp(''); renderEntries(); }
+
+// ═══════════════════════════════════════════
+// COMMIT MATCH
+// ═══════════════════════════════════════════
+async function commitMatch(){
+  if(!winCamp){ showToast('请先选择获胜阵营',true); return; }
+  if(entries.length<2){ showToast('至少添加2名玩家',true); return; }
+  const date = document.getElementById('matchDate').value || new Date().toISOString().slice(0,10);
+  const round = parseInt(document.getElementById('matchOrder').value)||1;
+  if(saving){ return; }
+  saving=true;
+  setConn(false,'保存中...');
+
+  const mId = 'm'+Date.now();
+  const rows = entries.map(e=>{
+    const s = calcScore(e, winCamp);
+    return {...e, ...s};
+  });
+  const match = {id:mId, date, round, winCamp, entries:rows};
+  matches[mId] = match;
+
+  // Update player totals cache in Firebase
+  await fb.patch(`${PATH}/matches`, {[mId]: match});
+  saving=false;
+  setConn(true,'已保存');
+  clearMatch();
+  renderAll();
+  showToast('✓ 比赛结果已保存！');
+}
+
+// ═══════════════════════════════════════════
+// DELETE MATCH
+// ═══════════════════════════════════════════
+async function deleteMatch(mid){
+  if(!confirm('撤销这场比赛记录？此操作不可撤销。')) return;
+  delete matches[mid];
+  await fb.del(`${PATH}/matches/${mid}`);
+  renderAll();
+  showToast('已撤销比赛记录');
+}
+
+// ═══════════════════════════════════════════
+// COPY PROFILE LINK
+// ═══════════════════════════════════════════
+function copyProfileLink(pid, name){
+  const base = window.location.href.replace('scores.html','');
+  const url = `${base}profile.html?id=${pid}`;
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast(`✓ 已复制 ${name} 的档案链接`);
+  }).catch(()=>{
+    prompt(`${name} 的档案链接（手动复制）：`, url);
+  });
+}
+
+// ═══════════════════════════════════════════
+// AI PARSE
+// ═══════════════════════════════════════════
+async function parseWithAI(){
+  const input = document.getElementById('aiInput').value.trim();
+  const status = document.getElementById('aiStatus');
+  const btn = document.getElementById('aiBtn');
+  if(!input){ status.className='ai-status err'; status.textContent='请先粘贴战报文字'; return; }
+  btn.disabled=true; btn.textContent='解析中...'; status.className='ai-status'; status.textContent='';
+  const sys=`你是狼人杀比赛记录助手。从用户粘贴的文字提取结构化信息，只输出JSON，不要任何其他文字、不要markdown代码块。
+JSON格式：{"date":"YYYY-MM-DD或null","round":数字或null,"winCamp":"狼人阵营"或"好人阵营"或null,"entries":[{"seat":1-12或null,"playerName":"昵称","role":"角色名","abilityCounts":{},"votes":{"good":0,"bad":0}}]}
+角色列表：${ROLE_LIST.join('、')}。如果文字角色不在列表里，用最接近的。非狼人角色才有votes。没有的字段填null或{}。`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:sys,messages:[{role:'user',content:input}]})});
+    const data=await r.json();
+    let txt=(data.content||[]).map(b=>b.text||'').join('').trim().replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim();
+    const parsed=JSON.parse(txt);
+    clearMatch();
+    if(parsed.date) document.getElementById('matchDate').value=parsed.date;
+    if(parsed.round) document.getElementById('matchOrder').value=parsed.round;
+    if(parsed.winCamp) setCamp(parsed.winCamp==='狼人阵营'?'wolf':'good');
+    const warns=[];
+    (parsed.entries||[]).forEach(item=>{
+      const name=(item.playerName||'').trim(); if(!name)return;
+      let p=Object.values(players).find(x=>x.name===name);
+      if(!p){
+        const id='p'+Date.now()+Math.random();
+        p={id,name,emoji:EMOJIS[Object.keys(players).length%EMOJIS.length],created:new Date().toLocaleDateString('zh-CN')};
+        players[id]=p;
+        fb.patch(`${PATH}/players`,{[id]:p});
+        warns.push(`新玩家「${name}」已自动添加`);
+      }
+      const role=ROLE_LIST.includes(item.role)?item.role:'平民';
+      if(!ROLE_LIST.includes(item.role)) warns.push(`「${name}」角色"${item.role}"不识别，设为平民`);
+      const ab={}; if(item.abilityCounts) Object.keys(item.abilityCounts).forEach(k=>{const v=parseInt(item.abilityCounts[k])||0;if(v>0)ab[k]=v;});
+      const votes={good:parseInt(item.votes?.good)||0,bad:parseInt(item.votes?.bad)||0};
+      const usedSeats=new Set(entries.map(e=>e.seat).filter(Boolean));
+      let seat=item.seat?parseInt(item.seat):null;
+      if(seat&&entries.find(e=>e.seat===seat))seat=null;
+      if(!seat){for(let i=1;i<=12;i++){if(!usedSeats.has(i)){seat=i;break;}}}
+      entries.push({id:'e'+Date.now()+Math.random(),playerId:p.id,role,seat,ab,votes});
+    });
+    renderAll();
+    status.className='ai-status ok';
+    status.textContent='✓ 解析完成，请核对后点「结算并保存」\n'+(warns.length?warns.join('\n'):'');
+  }catch(err){
+    status.className='ai-status err';
+    status.textContent='解析失败：'+err.message;
+  }finally{
+    btn.disabled=false;btn.textContent='✨ AI 解析并填入';
+  }
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function esc(s){ if(!s)return''; const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function showToast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(err?' err':'')+' show';
+  setTimeout(()=>t.className='toast'+(err?' err':''),2500);
+}
+
+// Set today's date default
+document.getElementById('matchDate').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
