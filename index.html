@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我最喜欢玩的角色排行榜 · 北美盗梦空间狼人杀联赛</title>
+<title>我最喜欢玩的角色排行榜！ · 北美盗梦空间狼人杀联赛</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -207,7 +207,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 <body>
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo" style="font-size:11px;letter-spacing:3px;">北美盗梦空间狼人杀联赛</div>
+    <div class="logo">INCEPTION</div><div style="font-size:9px;letter-spacing:2px;color:rgba(200,160,40,0.45);">北美盗梦空间狼人杀联赛</div>
     <select class="season-select" id="seasonSelect" onchange="switchSeason(this.value)"></select>
   </div>
   <div class="topbar-right">
@@ -218,7 +218,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 </div>
 <div class="header">
   <div style="font-size:10px;letter-spacing:3px;color:rgba(200,160,40,0.45);margin-bottom:6px;">北美盗梦空间狼人杀联赛</div>
-  <div class="header-title">我最喜欢玩的角色排行榜</div>
+  <div class="header-title">我最喜欢玩的角色排行榜！</div>
   <div class="season-name-display" id="seasonNameDisplay"></div>
   <div class="champion-box" id="chamBox"><div class="champion-tag" id="chamTag"></div></div>
   <div class="progress" id="progRow">
@@ -1010,7 +1010,7 @@ function generateImage(){
 
   document.getElementById('resultCard').innerHTML = `
     <div class="rc-logo">北美盗梦空间狼人杀联赛</div>
-    <div class="rc-title">我最喜欢玩的角色排行榜 · 完整结果</div>
+    <div class="rc-title">我最喜欢玩的角色排行榜！ · 完整结果</div>
     <div class="rc-season">${s.name} · ${now}</div>
     <div class="rc-podium">
       ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">亚军</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
