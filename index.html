@@ -505,7 +505,7 @@ const MATCH_H = SLOT_H*2+1; // 对阵框总高度 = 69px
 const ROW_GAP = 60;      // 轮次之间的垂直间距
 const ROW_H   = MATCH_H + ROW_GAP; // 每轮占据的总高度
 const BRACKET_W = LABEL_W + UNIT_W * 16; // 总宽度
-const CHAMP_Y = TOTAL * ROW_H + 10;      // 冠军框y坐标
+const CHAMP_Y = TOTAL * ROW_H + 10;      // 第一名y坐标
 const BRACKET_TOTAL_H = CHAMP_Y + 70;    // 总高度
 
 // 第ri轮第mi场的中心x
@@ -575,12 +575,12 @@ function buildBracket(){
     }
   }
 
-  // 冠军框（底部居中）
+  // 第一名（底部居中）
   const cx=mcx(TOTAL-1,0);
   const cb=document.createElement('div');
   cb.className='champ-box-b';
   cb.style.cssText=`left:${cx-55}px;top:${CHAMP_Y}px;width:110px;`;
-  cb.innerHTML=`<div class="champ-label">🏆 冠军</div><div class="champ-inner" id="champInner">???</div>`;
+  cb.innerHTML=`<div class="champ-label">🥇 我最喜欢的角色</div><div class="champ-inner" id="champInner">???</div>`;
   bracket.appendChild(cb);
   drawConnectors();
 }
@@ -601,7 +601,7 @@ function drawConnectors(){
       lines.push(`<line x1="${px}" y1="${midY}" x2="${px}" y2="${py}" ${S}/>`);
     }
   }
-  // 决赛→冠军框连线
+  // 决赛→第一名连线
   const fx=mcx(TOTAL-1,0);
   const fy=mty(TOTAL-1)+MATCH_H;
   lines.push(`<line x1="${fx}" y1="${fy}" x2="${fx}" y2="${CHAMP_Y}" ${S}/>`);
@@ -650,7 +650,7 @@ function renderChampion(){
   const el=document.getElementById('champInner');
   if(el){el.textContent=c??'???';el.className=c?'champ-inner filled':'champ-inner';}
   const cb=document.getElementById('chamBox'),ct=document.getElementById('chamTag');
-  if(c){cb.classList.add('show');ct.textContent='🏆 '+c+' · 最受喜爱角色';}
+  if(c){cb.classList.add('show');ct.textContent='🏆 '+c+' · 我最喜欢的角色';}
   else cb.classList.remove('show');
 }
 
@@ -900,15 +900,15 @@ function generateResults(){
   </div></div>`;
   if(champ||finalist||thirds.length){
     html+=`<div class="podium">`;
-    if(finalist)html+=`<div class="pc p2"><div class="pi">🥈</div><div class="pr">亚军</div><div class="pn">${finalist.name}</div><div class="pnote">败于 ${champ}</div></div>`;
-    if(champ)html+=`<div class="pc p1"><div class="pi">🏆</div><div class="pr">冠军</div><div class="pn">${champ}</div><div class="pnote">最受喜爱角色</div></div>`;
-    for(const t of thirds.slice(0,1))html+=`<div class="pc p3"><div class="pi">🥉</div><div class="pr">季军</div><div class="pn">${t.name}</div><div class="pnote">败于 ${t.eliminatedBy}</div></div>`;
+    if(finalist)html+=`<div class="pc p2"><div class="pi">🥈</div><div class="pr">第二喜欢的角色</div><div class="pn">${finalist.name}</div><div class="pnote">败于 ${champ}</div></div>`;
+    if(champ)html+=`<div class="pc p1"><div class="pi">🏆</div><div class="pr">我最喜欢的角色</div><div class="pn">${champ}</div><div class="pnote">我最喜欢的角色</div></div>`;
+    for(const t of thirds.slice(0,1))html+=`<div class="pc p3"><div class="pi">🥉</div><div class="pr">第三喜欢的角色</div><div class="pn">${t.name}</div><div class="pnote">败于 ${t.eliminatedBy}</div></div>`;
     html+=`</div>`;
   }
   const groups=[
-    {title:'🏆 冠军',f:x=>x.reached===TOTAL},
-    {title:'🥈 决赛 · 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
-    {title:'🥉 半决赛 · 第3-4名',f:x=>x.eliminatedRound===TOTAL-2},
+    {title:'🥇 我最喜欢的角色',f:x=>x.reached===TOTAL},
+    {title:'🥈 第二喜欢',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
+    {title:'🥉 第三&四喜欢',f:x=>x.eliminatedRound===TOTAL-2},
     {title:'⚔️ 四强赛 · 第5-8名',f:x=>x.eliminatedRound===TOTAL-3},
     {title:'🗡 第二轮 · 第9-16名',f:x=>x.eliminatedRound===TOTAL-4},
     {title:'📌 第一轮 · 第17-32名',f:x=>x.eliminatedRound===0},
@@ -920,10 +920,10 @@ function generateResults(){
       <table class="rank-table"><thead><tr><th>角色</th><th>晋级情况</th><th>败于</th></tr></thead><tbody>`;
     for(const x of r){
       const isC=x.reached===TOTAL;
-      const stage=isC?'🏆 夺冠':x.eliminatedRound!==null?STAGE_NAMES[x.eliminatedRound]:'进行中';
+      const stage=isC?'🥇 第一名':x.eliminatedRound!==null?STAGE_NAMES[x.eliminatedRound]:'进行中';
       html+=`<tr>
         <td class="rname" style="${isC?'color:var(--gold-bright)':''}">${x.name}</td>
-        <td class="rstage">${isC?`<span class="badge-champ">冠军</span>`:stage}</td>
+        <td class="rstage">${isC?`<span class="badge-champ">我最喜欢的角色</span>`:stage}</td>
         <td class="rby">${isC?'—':x.eliminatedBy??'—'}</td>
       </tr>`;
     }
@@ -938,7 +938,7 @@ function exportResults(){
   const {info,champ}=computeRankings();
   const s=getActiveSeason();
   const lines=[`【${s.name}】排行榜结果`,`生成时间：${new Date().toLocaleString('zh-CN')}`,''];
-  if(champ)lines.push(`🏆 冠军：${champ}`,'');
+  if(champ)lines.push(`🥇 我最喜欢的角色：${champ}`,'');
   const groups=[
     {title:'决赛 第2名',f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
     {title:'半决赛 第3-4名',f:x=>x.eliminatedRound===TOTAL-2},
@@ -972,7 +972,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
 // ════════════════════════════════════════════════
 function generateImage(){
   const {info, champ} = computeRankings();
-  if(!champ){ alert('请先完成所有对阵，选出冠军！'); return; }
+  if(!champ){ alert('请先完成所有对阵，选出最喜欢的角色！'); return; }
 
   const s = getActiveSeason();
   const finalist = Object.values(info).find(x=>x.eliminatedRound===TOTAL-1);
@@ -980,8 +980,8 @@ function generateImage(){
 
   const STAGE_LABELS = ['第一轮','第二轮','第三轮','半决赛','决赛落败'];
   const groups = [
-    {title:'🥈 亚军', f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
-    {title:'🥉 季军 (第3-4名)', f:x=>x.eliminatedRound===TOTAL-2},
+    {title:'🥈 第二喜欢的角色', f:x=>x.reached===TOTAL-1&&x.eliminatedRound===TOTAL-1},
+    {title:'🥉 第三喜欢的角色 (第3-4名)', f:x=>x.eliminatedRound===TOTAL-2},
     {title:'第5-8名', f:x=>x.eliminatedRound===TOTAL-3},
     {title:'第9-16名', f:x=>x.eliminatedRound===TOTAL-4},
     {title:'第17-32名', f:x=>x.eliminatedRound===0},
@@ -1013,9 +1013,9 @@ function generateImage(){
     <div class="rc-title">我最喜欢玩的角色排行榜！ · 完整结果</div>
     <div class="rc-season">${s.name} · ${now}</div>
     <div class="rc-podium">
-      ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">亚军</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
-      <div class="rc-p p1"><div class="rc-icon">🏆</div><div class="rc-rank">冠军</div><div class="rc-name">${champ}</div><div class="rc-note">最受喜爱角色</div></div>
-      ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">季军</div><div class="rc-name">${thirds[0].name}</div><div class="rc-note">败于 ${thirds[0].eliminatedBy}</div></div>`:''}
+      ${finalist?`<div class="rc-p p2"><div class="rc-icon">🥈</div><div class="rc-rank">第二喜欢的角色</div><div class="rc-name">${finalist.name}</div><div class="rc-note">败于 ${champ}</div></div>`:''}
+      <div class="rc-p p1"><div class="rc-icon">🏆</div><div class="rc-rank">我最喜欢的角色</div><div class="rc-name">${champ}</div><div class="rc-note">我最喜欢的角色</div></div>
+      ${thirds[0]?`<div class="rc-p p3"><div class="rc-icon">🥉</div><div class="rc-rank">第三喜欢的角色</div><div class="rc-name">${thirds[0].name}</div><div class="rc-note">败于 ${thirds[0].eliminatedBy}</div></div>`:''}
     </div>
     ${tableHTML}
     <div class="rc-footer">北美盗梦空间狼人杀联赛 · 不完美的人，才是真赢家</div>
@@ -1057,17 +1057,18 @@ function generateImage(){
 // 手机端视图
 // ════════════════════════════════════════════════
 let mobileRound = 0;
+let mobileUserNavigated = false; // 用户是否已手动切换轮次
 
 function isMobile(){ return window.innerWidth < 768; }
 
 function initMobileRound(){
-  // 自动定位到第一个未完成的轮次
+  if(mobileUserNavigated) return; // 用户已手动切换，不强制重置
   const wins=getWins();
   for(let ri=0;ri<TOTAL;ri++){
     const done=Object.values(wins[ri]||{}).filter(v=>v&&typeof v==='string').length;
     if(done < N[ri]){ mobileRound=ri; return; }
   }
-  mobileRound=TOTAL-1; // 全部完成，停在决赛
+  mobileRound=TOTAL-1;
 }
 
 function renderMobile(){
@@ -1092,9 +1093,11 @@ function renderMobileTabs(){
 }
 
 function setMobileRound(ri){
+  mobileUserNavigated=true; // 标记用户已手动导航
   mobileRound=ri;
   renderMobile();
-  document.getElementById('mobileMatches').scrollTop=0;
+  const el=document.getElementById('mobileMatches');
+  if(el) el.scrollTop=0;
 }
 
 function renderMobileMatches(){
@@ -1148,9 +1151,9 @@ function renderMobileMatches(){
       const champ=wins[TOTAL-1]?.[0]??wins[TOTAL-1]?.['0']??null;
       if(champ) html+=`<div class="m-champ">
         <div class="m-champ-icon">🏆</div>
-        <div class="m-champ-label">最受喜爱角色</div>
+        <div class="m-champ-label">我最喜欢的角色</div>
         <div class="m-champ-name">${champ}</div>
-        <div class="m-champ-note">恭喜夺冠！</div>
+        <div class="m-champ-note">🎉 这是你最喜欢的角色！</div>
         <button class="m-champ-img-btn" onclick="generateImage()">🖼 生成结果图</button>
       </div>`;
     }
@@ -1189,7 +1192,7 @@ renderMobile();
 initFirebase().then(()=>{
   buildBracket();
   renderAll();
-  initMobileRound();
+  if(!mobileUserNavigated) initMobileRound();
   renderMobile();
 });
 </script>
