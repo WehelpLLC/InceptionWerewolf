@@ -618,114 +618,91 @@ async function loadAdminData(){
   el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">加载中...</div>';
 
   const data=await fb.get('tournament/playerBrackets');
-  
-  // 先显示原始数据，帮助调试
-  if(data){
-    const players=Object.values(data);
-    let dbg='<div style="background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:16px;">';
-    dbg+='<div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:8px;">📦 Firebase 原始数据</div>';
-    players.forEach(p=>{
-      const wins=p.wins||{};
-      const r4=wins[4]||wins['4']||{};
-      const champ=r4[0]||r4['0']||'（空）';
-      dbg+=`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid rgba(200,160,40,0.08);">`;
-      dbg+=`${p.emoji||'?'} ${p.name} · 决赛冠军: <b style="color:var(--gold2)">${champ}</b>`;
-      dbg+=`</div>`;
-    });
-    dbg+='</div>';
-    el.innerHTML=dbg;
-  }
   if(!data||!Object.keys(data).length){
-    el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">暂无玩家数据</div>';
+    el.innerHTML='<div style="color:var(--dim);font-size:13px;text-align:center;padding:30px">暂无数据</div>';
     return;
   }
 
   const players=Object.values(data);
-
-  function normW(raw){
-    if(!raw)return[{},{},{},{},{}];
-    const arr=Array.isArray(raw)?raw:[0,1,2,3,4].map(i=>raw[i]||{});
-    while(arr.length<5)arr.push({});
-    return arr.map(r=>(!r||typeof r!=='object'||Array.isArray(r))?{}:r);
-  }
-
-  function getTop3(wins){
-    const w=normW(wins);
-    const champ=w[4]?.[0]??w[4]?.['0']??null;
-    function gT(ri,mi,s){
-      if(ri===0)return ROLES[mi*2+s];
-      const r=w[ri-1]||{};return r[mi*2+s]??r[String(mi*2+s)]??null;
-    }
-    function gW(ri,mi){const r=w[ri]||{};return r[mi]??r[String(mi)]??null;}
-    const t0=gT(4,0,0),t1=gT(4,0,1);
-    const finalist=champ?(champ===t0?t1:t0):null;
-    const thirds=[];
-    for(let mi=0;mi<N[3];mi++){
-      const ww=gW(3,mi);
-      if(ww){const a=gT(3,mi,0),b=gT(3,mi,1);thirds.push(ww===a?b:a);}
-    }
-    return{champ,finalist,thirds:thirds.filter(Boolean)};
-  }
-
-  // 统计热门角色
-  const roleCnt={};
-  players.forEach(p=>{
-    const{champ,finalist,thirds}=getTop3(p.wins);
-    if(champ)roleCnt[champ]=(roleCnt[champ]||0)+3;
-    if(finalist)roleCnt[finalist]=(roleCnt[finalist]||0)+2;
-    if(thirds[0])roleCnt[thirds[0]]=(roleCnt[thirds[0]]||0)+1;
-  });
-  const topRoles=Object.entries(roleCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxScore=topRoles[0]?.[1]||1;
-  const done=players.filter(p=>getTop3(p.wins).champ);
-  const notDone=players.filter(p=>!getTop3(p.wins).champ);
-
   let html='';
 
-  // 热门角色汇总
-  if(topRoles.length){
-    html+=`<div class="a-sec">
-      <div class="a-sec-title">🔥 最受欢迎角色 · 综合排名</div>
-      <div class="a-summary">
-        ${topRoles.map(([role,score])=>`
-          <div class="a-bar-row">
-            <div class="a-bar-role">${role}</div>
-            <div class="a-bar-wrap"><div class="a-bar-fill" style="width:${Math.round(score/maxScore*100)}%"></div></div>
-            <div class="a-bar-cnt">${score}分</div>
-          </div>`).join('')}
-        <div style="font-size:10px;color:var(--dim);margin-top:10px;letter-spacing:1px;">冠军+3分 · 亚军+2分 · 季军+1分</div>
+  // 每个玩家的原始数据统计
+  const results=players.map(p=>{
+    const wins=p.wins||{};
+    // 统计总共选了多少个胜者
+    let totalWinners=0;
+    let roundDetails=[];
+    for(let ri=0;ri<5;ri++){
+      const round=wins[ri]||wins[String(ri)]||{};
+      const count=Object.values(round).filter(v=>v&&typeof v==='string').length;
+      totalWinners+=count;
+      roundDetails.push(count);
+    }
+    // 决赛冠军
+    const finalRound=wins[4]||wins['4']||wins[4]||{};
+    const champ=finalRound[0]||finalRound['0']||null;
+    return{p, totalWinners, roundDetails, champ};
+  });
+
+  const done=results.filter(r=>r.champ);
+  const notDone=results.filter(r=>!r.champ);
+
+  html+=`<div style="font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:16px;">
+    已完成 ${done.length} 人 / 共 ${players.length} 人</div>`;
+
+  // 所有玩家详情（含进度）
+  html+=`<div style="margin-bottom:16px;">`;
+  results.forEach(({p,totalWinners,roundDetails,champ})=>{
+    const complete=champ!==null;
+    html+=`<div style="background:var(--panel);border:1px solid ${complete?'rgba(80,200,120,0.4)':'var(--line)'};
+      border-radius:8px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-weight:700;font-size:14px;">${p.emoji||'🎭'} ${p.name}</div>
+        <div style="font-size:12px;color:${complete?'rgba(80,200,120,0.9)':'rgba(255,150,50,0.8)'};">
+          ${complete?'✓ 已完成':'未完成'}</div>
       </div>
+      <div style="font-size:11px;color:var(--dim);letter-spacing:1px;">
+        进度：R1:${roundDetails[0]}/16 · R2:${roundDetails[1]}/8 · R3:${roundDetails[2]}/4 · 半决赛:${roundDetails[3]}/2 · 决赛:${roundDetails[4]}/1
+      </div>
+      ${champ?`<div style="font-size:13px;color:var(--gold2);margin-top:6px;">🥇 最喜欢：${champ}</div>`:''}
     </div>`;
-  }
-
-  // 玩家列表
-  html+=`<div class="a-sec">
-    <div class="a-sec-title">👥 玩家结果 · 已完成 ${done.length} 人 / 共 ${players.length} 人</div>`;
-
-  if(done.length){
-    html+=`<div style="display:grid;grid-template-columns:24px 1fr 80px 80px 80px;gap:8px;padding:5px 12px;font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px;">
-      <div></div><div>玩家</div><div>🥇最喜欢</div><div>🥈第二</div><div>🥉第三</div>
-    </div>`;
-    html+=done.map((p,i)=>{
-      const{champ,finalist,thirds}=getTop3(p.wins);
-      return`<div class="vote-row">
-        <div style="font-weight:700;color:var(--dim);text-align:center;font-family:'Courier Prime',monospace;font-size:11px;">${i+1}</div>
-        <div style="font-weight:700;font-size:13px;">${p.emoji||'🎭'} ${p.name||'?'}</div>
-        <div><span class="vtag p1">${champ||'—'}</span></div>
-        <div><span class="vtag p2">${finalist||'—'}</span></div>
-        <div><span class="vtag p3">${thirds[0]||'—'}</span></div>
-      </div>`;
-    }).join('');
-  }
-
-  if(notDone.length){
-    html+=`<div style="margin-top:14px;font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;">未完成（${notDone.length}人）：</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${notDone.map(p=>`<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px 12px;font-size:12px;">${p.emoji||'🎭'} ${p.name}</div>`).join('')}
-      </div>`;
-  }
-
+  });
   html+=`</div>`;
+
+  // 热门角色汇总
+  const roleCnt={};
+  results.forEach(({p,champ})=>{
+    const wins=p.wins||{};
+    function getFinalist(){
+      const w4=wins[4]||wins['4']||{};
+      const champ=w4[0]||w4['0']||null;
+      if(!champ)return null;
+      // 找亚军：决赛另一个队
+      const w3=wins[3]||wins['3']||{};
+      const sf0=w3[0]||w3['0']||null;
+      const sf1=w3[1]||w3['1']||null;
+      return champ===sf0?sf1:sf0;
+    }
+    const finalist=getFinalist();
+    if(champ)roleCnt[champ]=(roleCnt[champ]||0)+3;
+    if(finalist)roleCnt[finalist]=(roleCnt[finalist]||0)+2;
+  });
+  const topRoles=Object.entries(roleCnt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(topRoles.length){
+    const maxS=topRoles[0][1];
+    html+=`<div style="font-size:11px;color:var(--dim);letter-spacing:3px;margin-bottom:10px;">🔥 最受欢迎角色</div>`;
+    html+=`<div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;">`;
+    html+=topRoles.map(([role,score])=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(200,160,40,0.07);">
+        <div style="font-size:12px;min-width:65px;">${role}</div>
+        <div style="flex:1;background:rgba(200,160,40,0.1);border-radius:4px;height:5px;">
+          <div style="height:100%;border-radius:4px;background:var(--gold);width:${Math.round(score/maxS*100)}%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--dim);font-family:'Courier Prime',monospace;">${score}分</div>
+      </div>`).join('');
+    html+=`</div>`;
+  }
+
   el.innerHTML=html;
 }
 </script>
