@@ -3,57 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>玩家档案 · 北美盗梦空间狼人杀联赛</title>
+<title>我是谁 · 北美盗梦空间狼人杀联赛</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#06081a;--panel:rgba(20,25,37,0.9);--line:rgba(200,160,40,0.2);
+  --bg:#06081a;--panel:rgba(20,25,37,0.92);--line:rgba(200,160,40,0.2);
   --gold:#c8a030;--gold2:#fdd840;--text:rgba(232,210,130,0.9);--dim:rgba(200,160,40,0.4);
   --wolf:#B5453A;--good:#5C9270;--win-bg:rgba(255,215,60,0.14);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0d1138 0%,#06081a 70%);
-  color:var(--text);font-family:'Noto Serif SC',serif;min-height:100vh;padding:0 0 60px;}
+  color:var(--text);font-family:'Noto Serif SC',serif;min-height:100vh;}
 
-/* Loading */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:12px;}
+/* ── 加载 ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px;}
 .ld-row{display:flex;gap:8px;}
 .ld-dot{width:8px;height:8px;border-radius:50%;background:var(--gold2);animation:blink 1.2s infinite;}
 .ld-dot:nth-child(2){animation-delay:.2s;}.ld-dot:nth-child(3){animation-delay:.4s;}
 @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
 .ld-txt{font-size:12px;color:var(--dim);letter-spacing:2px;}
 
-/* Header */
-.hd{text-align:center;padding:32px 20px 24px;border-bottom:1px solid var(--line);}
-.hd-badge{font-size:10px;letter-spacing:4px;color:var(--dim);margin-bottom:10px;font-family:'Courier Prime',monospace;}
-.hd-emoji{font-size:52px;margin-bottom:10px;}
-.hd-name{font-size:26px;font-weight:900;letter-spacing:4px;color:var(--gold2);text-shadow:0 0 25px rgba(255,210,40,0.35);}
-.hd-rank{font-size:12px;letter-spacing:2px;color:var(--dim);margin-top:8px;}
+/* ── 选人页 ── */
+.select-page{display:none;flex-direction:column;min-height:100vh;padding:0 0 60px;}
+.s-header{text-align:center;padding:40px 20px 28px;}
+.s-badge{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:4px;color:var(--dim);margin-bottom:10px;}
+.s-title{font-size:22px;font-weight:900;letter-spacing:4px;color:var(--gold2);text-shadow:0 0 25px rgba(255,210,40,0.3);margin-bottom:6px;}
+.s-sub{font-size:13px;color:var(--dim);letter-spacing:2px;}
+.s-search-wrap{padding:0 20px 16px;max-width:500px;margin:0 auto;width:100%;}
+.s-search{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;color:var(--text);font-size:15px;outline:none;letter-spacing:1px;
+  font-family:'Noto Serif SC',serif;}
+.s-search:focus{border-color:var(--gold);}
+.s-search::placeholder{color:var(--dim);}
+.s-list{display:flex;flex-wrap:wrap;gap:10px;padding:0 20px;max-width:500px;margin:0 auto;justify-content:center;}
+.s-btn{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 18px;font-size:15px;font-weight:700;letter-spacing:1px;
+  color:var(--text);cursor:pointer;transition:all .15s;font-family:'Noto Serif SC',serif;
+  display:flex;align-items:center;gap:8px;}
+.s-btn:hover,.s-btn:active{background:rgba(200,160,40,0.15);border-color:var(--gold);color:var(--gold2);}
+.s-btn.me{background:rgba(255,215,60,0.12);border-color:var(--gold2);color:var(--gold2);}
+.s-empty{text-align:center;color:var(--dim);font-size:13px;padding:30px;width:100%;}
 
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px 16px;max-width:560px;margin:0 auto;}
-.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;}
-.stat-num{font-family:'Courier Prime',monospace;font-size:24px;font-weight:700;color:var(--gold2);}
-.stat-label{font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:4px;}
+/* ── 档案页 ── */
+.profile-page{display:none;flex-direction:column;min-height:100vh;padding:0 0 60px;}
 
-/* Rates */
-.rates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px;max-width:560px;margin:0 auto;}
-.rate-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
-.rate-num{font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:var(--gold2);}
-.rate-bar-wrap{background:rgba(200,160,40,0.1);border-radius:4px;height:5px;margin:6px 0 4px;overflow:hidden;}
+/* 顶栏 */
+.p-topbar{display:flex;align-items:center;padding:14px 16px;background:rgba(6,8,26,0.95);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);}
+.p-back{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;
+  padding:6px 10px 6px 0;letter-spacing:1px;font-family:'Noto Serif SC',serif;margin-right:8px;}
+.p-back:hover{color:var(--gold);}
+.p-topname{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--gold2);}
+.p-toprank{font-size:11px;color:var(--dim);letter-spacing:1px;margin-top:2px;}
+
+/* 头部 */
+.p-hd{text-align:center;padding:28px 20px 20px;border-bottom:1px solid var(--line);}
+.p-emoji{font-size:52px;margin-bottom:10px;}
+.p-name{font-size:24px;font-weight:900;letter-spacing:4px;color:var(--gold2);text-shadow:0 0 25px rgba(255,210,40,0.3);}
+.p-rank{font-size:12px;letter-spacing:2px;color:var(--dim);margin-top:8px;}
+
+/* 统计 */
+.p-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px;max-width:520px;margin:0 auto;}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;}
+.stat-n{font-family:'Courier Prime',monospace;font-size:22px;font-weight:700;color:var(--gold2);}
+.stat-l{font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:4px;}
+.p-rates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 12px;max-width:520px;margin:0 auto;}
+.rate{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+.rate-n{font-family:'Courier Prime',monospace;font-size:17px;font-weight:700;color:var(--gold2);}
+.rate-bar-w{background:rgba(200,160,40,0.1);border-radius:4px;height:5px;margin:6px 0 4px;overflow:hidden;}
 .rate-bar{height:100%;border-radius:4px;background:var(--gold);}
 .rate-bar.wolf{background:var(--wolf);}.rate-bar.good{background:var(--good);}
-.rate-label{font-size:10px;color:var(--dim);letter-spacing:1px;}
+.rate-l{font-size:10px;color:var(--dim);letter-spacing:1px;}
 
 /* Section */
-.section{max-width:560px;margin:0 auto;padding:0 16px 16px;}
-.sec-title{font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
-.sec-btn{font-size:10px;letter-spacing:1px;color:var(--dim);background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'Noto Serif SC',serif;}
+.section{max-width:520px;margin:0 auto;padding:0 16px 14px;}
+.sec-title{font-size:11px;letter-spacing:3px;color:var(--dim);margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.sec-btn{font-size:10px;color:var(--dim);background:none;border:1px solid var(--line);
+  border-radius:4px;padding:3px 8px;cursor:pointer;font-family:'Noto Serif SC',serif;}
 .sec-btn:hover{border-color:var(--gold);color:var(--gold);}
 
-/* Top 3 favourite roles */
-.fav-podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-bottom:16px;}
-.fav-card{text-align:center;padding:12px 14px;border-radius:8px;min-width:90px;}
+/* 最喜欢角色 */
+.fav-podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-bottom:14px;}
+.fav-card{text-align:center;padding:12px 14px;border-radius:8px;min-width:88px;}
 .fav-card.p1{background:rgba(255,215,60,0.14);border:1px solid rgba(255,215,60,0.45);order:2;}
 .fav-card.p2{background:rgba(180,180,180,0.07);border:1px solid rgba(180,180,180,0.25);order:1;}
 .fav-card.p3{background:rgba(180,120,40,0.07);border:1px solid rgba(180,120,40,0.25);order:3;}
@@ -64,51 +96,50 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .fav-card.p2 .fav-name{color:rgba(220,220,220,.85);}
 .fav-card.p3 .fav-name{color:rgba(220,160,60,.85);}
 
-/* Bracket (mobile round-by-round) */
+/* 对阵表 */
 .bracket-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;}
 .b-tabs{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
 .b-tabs::-webkit-scrollbar{display:none;}
 .b-tab{flex-shrink:0;padding:5px 10px;border-radius:12px;font-size:10px;letter-spacing:1px;
-  border:1px solid var(--line);color:var(--dim);cursor:pointer;font-family:'Noto Serif SC',serif;}
+  border:1px solid var(--line);color:var(--dim);cursor:pointer;font-family:'Noto Serif SC',serif;transition:all .12s;}
 .b-tab.active{background:rgba(200,160,40,0.15);border-color:var(--gold);color:var(--gold);}
 .b-tab.done{color:rgba(80,200,120,.8);border-color:rgba(80,200,120,.3);}
 .b-tab.locked{opacity:.3;cursor:not-allowed;}
 .b-rhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .b-rtitle{font-size:15px;font-weight:900;color:var(--gold2);letter-spacing:2px;}
 .b-rprog{font-size:11px;color:var(--dim);}
-.b-card{background:rgba(6,8,26,0.6);border:1px solid rgba(200,160,40,0.15);border-radius:8px;padding:12px 12px 10px;margin-bottom:8px;}
-.b-card.decided{border-color:rgba(200,160,40,0.08);}
+.b-card{background:rgba(6,8,26,0.6);border:1px solid rgba(200,160,40,0.13);border-radius:8px;padding:12px 12px 10px;margin-bottom:8px;}
+.b-card.decided{border-color:rgba(200,160,40,0.07);}
 .b-num{font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;font-family:'Courier Prime',monospace;}
-.b-slot{width:100%;padding:13px 14px;border-radius:6px;font-size:14px;font-weight:600;
-  letter-spacing:1px;text-align:center;cursor:pointer;transition:all .12s;
-  border:1px solid rgba(200,160,40,0.15);color:var(--text);margin:3px 0;
-  background:transparent;font-family:'Noto Serif SC',serif;}
+.b-slot{width:100%;padding:14px;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:1px;
+  text-align:center;cursor:pointer;transition:all .12s;border:1px solid rgba(200,160,40,0.14);
+  color:var(--text);margin:3px 0;background:transparent;font-family:'Noto Serif SC',serif;}
 .b-slot.winner{background:var(--win-bg);border-color:var(--gold2);color:var(--gold2);font-weight:900;}
-.b-slot.loser{color:rgba(200,160,40,0.15);text-decoration:line-through;
-  cursor:not-allowed;background:rgba(0,0,0,0.15);pointer-events:none;}
-.b-slot.pending{color:rgba(200,160,40,0.15);font-style:italic;cursor:not-allowed;}
-.b-vs{text-align:center;font-size:10px;color:rgba(200,160,40,0.25);letter-spacing:2px;}
+.b-slot.loser{color:rgba(200,160,40,0.14);text-decoration:line-through;cursor:not-allowed;
+  background:rgba(0,0,0,0.14);pointer-events:none;}
+.b-slot.pending{color:rgba(200,160,40,0.14);font-style:italic;cursor:not-allowed;}
+.b-vs{text-align:center;font-size:10px;color:rgba(200,160,40,0.22);letter-spacing:2px;}
 .b-next{text-align:center;padding:14px 0 4px;}
 .b-next-btn{padding:12px 0;background:rgba(255,215,60,0.1);border:1px solid rgba(255,215,60,0.35);
   color:var(--gold2);font-size:13px;letter-spacing:2px;border-radius:6px;cursor:pointer;
   font-family:'Noto Serif SC',serif;width:100%;}
 .b-champ{text-align:center;padding:20px;background:rgba(255,215,60,0.1);
-  border:1px solid rgba(255,215,60,0.35);border-radius:8px;margin-top:8px;}
+  border:1px solid rgba(255,215,60,0.32);border-radius:8px;margin-top:8px;}
 .b-champ-icon{font-size:32px;margin-bottom:8px;}
 .b-champ-name{font-size:22px;font-weight:900;color:var(--gold2);letter-spacing:3px;margin:6px 0;}
-.b-locked{text-align:center;padding:30px 16px;color:var(--dim);font-size:13px;}
+.b-locked{text-align:center;padding:28px 16px;color:var(--dim);font-size:13px;}
 
-/* Roles played */
+/* 常用角色 */
 .role-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(200,160,40,0.07);}
 .role-row:last-child{border-bottom:none;}
 .role-name{font-size:12px;min-width:65px;}
-.role-bar-wrap{flex:1;background:rgba(200,160,40,0.1);border-radius:4px;height:5px;}
-.role-bar{height:100%;border-radius:4px;background:var(--gold);}
+.role-bar-w{flex:1;background:rgba(200,160,40,0.1);border-radius:4px;height:5px;}
+.role-bar-f{height:100%;border-radius:4px;background:var(--gold);}
 .role-cnt{font-family:'Courier Prime',monospace;font-size:11px;color:var(--dim);min-width:28px;text-align:right;}
 .role-wr{font-size:10px;color:var(--dim);min-width:34px;text-align:right;}
 
-/* Recent matches */
-.match-row{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:7px;}
+/* 战绩 */
+.m-row{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:7px;}
 .m-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
 .m-date{font-size:10px;color:var(--dim);letter-spacing:1px;}
 .m-role{font-size:13px;font-weight:700;}
@@ -118,15 +149,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .m-score{font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;}
 .m-score.pos{color:var(--gold2);}.m-score.neg{color:rgba(181,69,58,.9);}
 .m-detail{font-size:10px;color:var(--dim);}
-
-/* Directory */
-.dir-card{display:flex;align-items:center;justify-content:space-between;
-  background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:12px 14px;margin-bottom:8px;cursor:pointer;text-decoration:none;
-  transition:border-color .15s;color:inherit;}
-.dir-card:hover{border-color:var(--gold);}
-
-.no-data{text-align:center;padding:30px;color:var(--dim);font-size:13px;}
+.no-data{text-align:center;padding:24px;color:var(--dim);font-size:13px;}
 .footer{text-align:center;padding:20px;font-size:10px;color:var(--dim);letter-spacing:3px;}
 
 /* Toast */
@@ -138,185 +161,159 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 </head>
 <body>
 
+<!-- 加载 -->
 <div class="loading" id="loading">
   <div class="ld-row"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div>
   <div class="ld-txt">加载中...</div>
 </div>
-<div id="app" style="display:none"></div>
+
+<!-- 选人页 -->
+<div class="select-page" id="selectPage">
+  <div class="s-header">
+    <div class="s-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
+    <div class="s-title">我最喜欢玩的角色！</div>
+    <div class="s-sub">你是哪位玩家？</div>
+  </div>
+  <div class="s-search-wrap">
+    <input class="s-search" id="searchInput" placeholder="🔍 搜索名字..." oninput="filterPlayers(this.value)">
+  </div>
+  <div class="s-list" id="playerList"></div>
+
+  <!-- 添加新玩家 -->
+  <div style="max-width:500px;margin:20px auto 0;padding:0 20px;width:100%;">
+    <div id="addToggle" style="text-align:center;">
+      <button onclick="showAddForm()" style="background:none;border:1px dashed var(--line);color:var(--dim);border-radius:10px;padding:12px 24px;font-size:13px;cursor:pointer;letter-spacing:1px;font-family:'Noto Serif SC',serif;width:100%;">
+        + 我的名字不在列表里，添加我
+      </button>
+    </div>
+    <div id="addForm" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;">
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:12px;">添加新玩家</div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;width:100%;">选个头像</div>
+        <div id="emojiPicker" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <input id="newNameInput" style="width:100%;background:rgba(6,8,26,0.6);border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--text);font-size:15px;outline:none;font-family:'Noto Serif SC',serif;margin-bottom:10px;letter-spacing:1px;" placeholder="输入你的昵称" maxlength="12" onkeydown="if(event.key==='Enter')confirmAdd()">
+      <div style="display:flex;gap:8px;">
+        <button onclick="confirmAdd()" style="flex:1;background:var(--gold2);color:#2B1F0A;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Noto Serif SC',serif;letter-spacing:1px;">确认添加</button>
+        <button onclick="hideAddForm()" style="background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:12px 16px;font-size:13px;cursor:pointer;font-family:'Noto Serif SC',serif;">取消</button>
+      </div>
+      <div id="addError" style="color:rgba(181,69,58,0.9);font-size:12px;margin-top:8px;display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 档案页 -->
+<div class="profile-page" id="profilePage">
+  <div class="p-topbar">
+    <button class="p-back" onclick="goBack()">← 换人</button>
+    <div>
+      <div class="p-topname" id="topName"></div>
+      <div class="p-toprank" id="topRank"></div>
+    </div>
+  </div>
+  <div id="profileContent"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ══ Firebase ══
-const DB = 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
-const SEASON = 's3';
-const PATH = `playerProfiles/${SEASON}`;
-
-const fb = {
-  async get(p){ try{ const r=await fetch(`${DB}/${p}.json`); return r.ok?await r.json():null; }catch{return null;} },
-  async put(p,d){ try{ const r=await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }catch{return false;} }
+const DB='https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
+const SEASON='s3', PATH=`playerProfiles/${SEASON}`;
+const fb={
+  async get(p){try{const r=await fetch(`${DB}/${p}.json`);return r.ok?await r.json():null;}catch{return null;}},
+  async put(p,d){try{const r=await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok;}catch{return false;}}
 };
 
 // ══ Roles ══
-const ROLES = [
-  "混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士",
-  "摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者",
-  "蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼",
-  "机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"
-];
-const N=[16,8,4,2,1], TOTAL=5;
+const ROLES=["混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士","摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者","蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼","机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"];
+const N=[16,8,4,2,1],TOTAL=5;
 const RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
-const WOLF_ROLES=new Set(['狼人','狼王','白狼王','狼美人','石像鬼','隐狼','机械狼','恶灵骑士','梦魔','血月使徒','诡术师','假面','盗宝大师','狼术师']);
+const WOLF=new Set(['狼人','狼王','白狼王','狼美人','石像鬼','隐狼','机械狼','恶灵骑士','梦魔','血月使徒','诡术师','假面','盗宝大师','狼术师']);
 
-// ══ Bracket logic ══
-let bWins = [{},{},{},{},{}];
-let bRound = 0;
-let pid = null;
-let bUserNavigated = false;
+// ══ State ══
+let allPlayers={}, allMatches={};
+let currentPid=null;
+let bWins=[{},{},{},{},{}], bRound=0, bNav=false;
 
-function bNorm(raw){ // Firebase array→object fix
-  if(!raw) return [{},{},{},{},{}];
-  const arr = Array.isArray(raw)?raw:[0,1,2,3,4].map(i=>raw[i]||{});
-  while(arr.length<5) arr.push({});
-  return arr.map(r=>(!r||typeof r!=='object'||Array.isArray(r))?{}:r);
-}
+// ══ Init ══
+async function init(){
+  const [pd,md]=await Promise.all([fb.get(`${PATH}/players`),fb.get(`${PATH}/matches`)]);
+  allPlayers=pd||{};
+  allMatches=md||{};
+  document.getElementById('loading').style.display='none';
 
-function bGetTeam(ri,mi,s){
-  if(ri===0) return ROLES[mi*2+s];
-  const r=bWins[ri-1]||{};
-  return r[mi*2+s]??r[String(mi*2+s)]??null;
-}
-
-function bPrevDone(ri){
-  if(ri===0) return true;
-  const p=bWins[ri-1]||{};
-  for(let i=0;i<N[ri-1];i++) if(!p[i]&&!p[String(i)]) return false;
-  return true;
-}
-
-function bWinner(ri,mi){ const r=bWins[ri]||{}; return r[mi]??r[String(mi)]??null; }
-
-function bSelect(ri,mi,s){
-  if(!bPrevDone(ri)){showToast('请先完成上一轮');return;}
-  const t0=bGetTeam(ri,mi,0), t1=bGetTeam(ri,mi,1);
-  if(!t0||!t1||t0===t1) return;
-  const team=bGetTeam(ri,mi,s); if(!team) return;
-  const cur=bWinner(ri,mi);
-  if(cur===team){ delete bWins[ri][mi]; delete bWins[ri][String(mi)]; bClearDown(ri,mi); }
-  else if(cur&&cur!==team){ return; }
-  else { bWins[ri][mi]=team; }
-  saveBracket();
-  renderBracketSection(document.getElementById('bracketSection'));
-}
-
-function bClearDown(ri,mi){ let m=mi; for(let r=ri+1;r<TOTAL;r++){m=Math.floor(m/2);delete bWins[r][m];delete bWins[r][String(m)];} }
-
-function bSetRound(ri){ bUserNavigated=true; bRound=ri; renderBracketSection(document.getElementById('bracketSection')); }
-
-function bInitRound(){
-  if(bUserNavigated) return;
-  for(let ri=0;ri<TOTAL;ri++){
-    const cnt=Object.values(bWins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-    if(cnt<N[ri]){bRound=ri;return;}
-  }
-  bRound=TOTAL-1;
-}
-
-async function saveBracket(){
-  if(!pid) return;
-  await fb.put(`${PATH}/brackets/${pid}`,{wins:bWins,updated:new Date().toISOString()});
-}
-
-function bGetTop3(){
-  const champ=bWins[TOTAL-1]?.[0]??bWins[TOTAL-1]?.['0']??null;
-  const finalist=champ?Object.values({0:bGetTeam(TOTAL-1,0,0),1:bGetTeam(TOTAL-1,0,1)}).find(t=>t&&t!==champ):null;
-  const thirds=[];
-  for(let mi=0;mi<N[TOTAL-2];mi++){
-    const w=bWinner(TOTAL-2,mi);
-    const t0=bGetTeam(TOTAL-2,mi,0),t1=bGetTeam(TOTAL-2,mi,1);
-    if(w){thirds.push(w===t0?t1:t0);}
-  }
-  return {champ, finalist, thirds:thirds.filter(Boolean)};
-}
-
-function renderBracketSection(el){
-  if(!el) return;
-  const {champ, finalist, thirds}=bGetTop3();
-  const isComplete=champ!==null;
-
-  // Top 3 podium (if complete)
-  const podiumHtml = isComplete ? `
-    <div class="fav-podium">
-      ${finalist?`<div class="fav-card p2"><div class="fav-icon">🥈</div><div class="fav-rank">第二喜欢</div><div class="fav-name">${finalist}</div></div>`:''}
-      <div class="fav-card p1"><div class="fav-icon">🥇</div><div class="fav-rank">最喜欢</div><div class="fav-name">${champ}</div></div>
-      ${thirds[0]?`<div class="fav-card p3"><div class="fav-icon">🥉</div><div class="fav-rank">第三喜欢</div><div class="fav-name">${thirds[0]}</div></div>`:''}
-    </div>` : '';
-
-  // Bracket UI
-  const tabsHtml=RNAMES.map((name,ri)=>{
-    const cnt=Object.values(bWins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-    const done=cnt===N[ri];
-    const ok=bPrevDone(ri);
-    return `<div class="b-tab${ri===bRound?' active':''}${done?' done':''}${!ok?' locked':''}"
-      onclick="${ok?`bSetRound(${ri})`:''}">${name}${done?' ✓':` ${cnt}/${N[ri]}`}</div>`;
-  }).join('');
-
-  const ri=bRound;
-  const ok=bPrevDone(ri);
-  const cnt=Object.values(bWins[ri]||{}).filter(v=>v&&typeof v==='string').length;
-
-  let matchesHtml='';
-  if(!ok){
-    matchesHtml=`<div class="b-locked">请先完成上一轮，才能填这一轮</div>`;
+  // Check localStorage for remembered player
+  const savedPid=localStorage.getItem('inception_pid');
+  if(savedPid&&allPlayers[savedPid]){
+    await openProfile(savedPid);
   } else {
-    for(let mi=0;mi<N[ri];mi++){
-      const t0=bGetTeam(ri,mi,0),t1=bGetTeam(ri,mi,1);
-      const cur=bWinner(ri,mi);
-      const canSel=ok&&t0&&t1&&t0!==t1;
-      const slot=(team,s)=>{
-        if(!team) return `<div class="b-slot pending">待定</div>`;
-        const isW=cur===team,isL=cur&&cur!==team;
-        return `<div class="b-slot${isW?' winner':isL?' loser':''}"
-          onclick="${canSel&&!isL?`bSelect(${ri},${mi},${s})`:''}">${isW?'▶ ':''}${team}</div>`;
-      };
-      matchesHtml+=`<div class="b-card${cur?' decided':''}">
-        <div class="b-num">第${mi+1}场 / ${N[ri]}</div>
-        ${slot(t0,0)}<div class="b-vs">VS</div>${slot(t1,1)}
-      </div>`;
-    }
-    if(cnt===N[ri]&&ri<TOTAL-1){
-      matchesHtml+=`<div class="b-next"><button class="b-next-btn" onclick="bSetRound(${ri+1})">全部选完 · 进入${RNAMES[ri+1]} →</button></div>`;
-    }
-    if(ri===TOTAL-1&&cnt===N[ri]&&champ){
-      matchesHtml+=`<div class="b-champ"><div class="b-champ-icon">🏆</div><div style="font-size:11px;color:var(--dim);letter-spacing:2px;">我最喜欢玩的角色</div><div class="b-champ-name">${champ}</div></div>`;
-    }
+    showSelectPage();
   }
-
-  el.innerHTML = `
-    ${podiumHtml}
-    <div class="bracket-wrap">
-      <div class="b-tabs">${tabsHtml}</div>
-      <div class="b-rhead"><div class="b-rtitle">${RNAMES[ri]}</div><div class="b-rprog">${cnt}/${N[ri]} 场</div></div>
-      ${matchesHtml}
-    </div>`;
 }
 
-// ══ Main profile render ══
-async function renderProfile(pData, allMatches, allPlayers){
-  const matches = allMatches ? Object.values(allMatches) : [];
+// ══ Select Page ══
+function showSelectPage(){
+  document.getElementById('selectPage').style.display='flex';
+  document.getElementById('profilePage').style.display='none';
+  renderPlayerList('');
+  setTimeout(()=>document.getElementById('searchInput').value='',100);
+}
 
-  // My match entries
-  const myEntries=[];
-  matches.forEach(m=>{ const e=m.entries?.find(e=>e.playerId===pid); if(e) myEntries.push({m,e}); });
-  myEntries.sort((a,b)=>{
-    if(a.m.date!==b.m.date) return b.m.date.localeCompare(a.m.date);
-    return b.m.round-a.m.round;
-  });
+function renderPlayerList(filter){
+  const list=document.getElementById('playerList');
+  const players=Object.values(allPlayers);
+  if(!players.length){
+    list.innerHTML='<div class="s-empty">暂无玩家数据<br>请联系管理员添加</div>';
+    return;
+  }
+  const filtered=filter?players.filter(p=>p.name.includes(filter)):players;
+  if(!filtered.length){
+    list.innerHTML='<div class="s-empty">找不到「'+esc(filter)+'」</div>';
+    return;
+  }
+  list.innerHTML=filtered.map(p=>`
+    <button class="s-btn" onclick="selectPlayer('${p.id}')">
+      <span style="font-size:20px">${p.emoji||'🎭'}</span>
+      ${esc(p.name)}
+    </button>`).join('');
+}
 
-  const total=myEntries.length;
-  const wins=myEntries.filter(x=>x.e.result==='win').length;
-  const score=+myEntries.reduce((s,x)=>s+x.e.total,0).toFixed(1);
-  const wolfE=myEntries.filter(x=>WOLF_ROLES.has(x.e.role));
-  const goodE=myEntries.filter(x=>!WOLF_ROLES.has(x.e.role));
+function filterPlayers(v){ renderPlayerList(v.trim()); }
+
+async function selectPlayer(pid){
+  localStorage.setItem('inception_pid',pid);
+  await openProfile(pid);
+}
+
+function goBack(){
+  localStorage.removeItem('inception_pid');
+  document.getElementById('profilePage').style.display='none';
+  showSelectPage();
+}
+
+// ══ Profile Page ══
+async function openProfile(pid){
+  currentPid=pid;
+  const pData=allPlayers[pid];
+  if(!pData) return;
+
+  // Load bracket data
+  const bData=await fb.get(`${PATH}/brackets/${pid}`);
+  bWins=bNorm(bData?.wins);
+  bNav=false;
+
+  // Compute stats
+  const matches=Object.values(allMatches);
+  const myE=[];
+  matches.forEach(m=>{const e=m.entries?.find(e=>e.playerId===pid);if(e)myE.push({m,e});});
+  myE.sort((a,b)=>{if(a.m.date!==b.m.date)return b.m.date.localeCompare(a.m.date);return b.m.round-a.m.round;});
+
+  const total=myE.length;
+  const wins=myE.filter(x=>x.e.result==='win').length;
+  const score=+myE.reduce((s,x)=>s+x.e.total,0).toFixed(1);
+  const wolfE=myE.filter(x=>WOLF.has(x.e.role));
+  const goodE=myE.filter(x=>!WOLF.has(x.e.role));
   const wolfW=wolfE.filter(x=>x.e.result==='win').length;
   const goodW=goodE.filter(x=>x.e.result==='win').length;
   const wr=total?Math.round(wins/total*100):0;
@@ -324,73 +321,68 @@ async function renderProfile(pData, allMatches, allPlayers){
   const goodR=goodE.length?Math.round(goodW/goodE.length*100):null;
 
   // Rank
-  let rank='-', tp='-';
-  if(allPlayers){
-    tp=Object.keys(allPlayers).length;
-    const sc=Object.keys(allPlayers).map(id=>{
-      let s=0; matches.forEach(m=>{ const e=m.entries?.find(e=>e.playerId===id); if(e)s+=e.total; });
-      return{id,s:+s.toFixed(1)};
-    }).sort((a,b)=>b.s-a.s);
-    rank=sc.findIndex(x=>x.id===pid)+1;
-  }
+  const allScores=Object.keys(allPlayers).map(id=>{
+    let s=0;matches.forEach(m=>{const e=m.entries?.find(e=>e.playerId===id);if(e)s+=e.total;});
+    return{id,s:+s.toFixed(1)};
+  }).sort((a,b)=>b.s-a.s);
+  const rank=allScores.findIndex(x=>x.id===pid)+1;
+  const tp=Object.keys(allPlayers).length;
 
   // Roles
-  const rCount={}, rWins={};
-  myEntries.forEach(({e})=>{ rCount[e.role]=(rCount[e.role]||0)+1; if(e.result==='win')rWins[e.role]=(rWins[e.role]||0)+1; });
-  const topRoles=Object.entries(rCount).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const rCnt={},rW={};
+  myE.forEach(({e})=>{rCnt[e.role]=(rCnt[e.role]||0)+1;if(e.result==='win')rW[e.role]=(rW[e.role]||0)+1;});
+  const topRoles=Object.entries(rCnt).sort((a,b)=>b[1]-a[1]).slice(0,7);
   const maxRC=topRoles[0]?.[1]||1;
 
-  const app=document.getElementById('app');
-  app.style.display='block';
-  app.innerHTML=`
-    <div class="hd">
-      <div class="hd-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
-      <div class="hd-emoji">${pData.emoji||'🎭'}</div>
-      <div class="hd-name">${esc(pData.name)}</div>
-      <div class="hd-rank">第 ${rank} 名 / 共 ${tp} 名玩家</div>
+  // Topbar
+  document.getElementById('topName').textContent=`${pData.emoji||'🎭'} ${pData.name}`;
+  document.getElementById('topRank').textContent=`第${rank}名 / 共${tp}名玩家`;
+  document.title=`${pData.name} · 档案`;
+
+  document.getElementById('profileContent').innerHTML=`
+    <div class="p-hd">
+      <div class="p-emoji">${pData.emoji||'🎭'}</div>
+      <div class="p-name">${esc(pData.name)}</div>
+      <div class="p-rank">第 ${rank} 名 / 共 ${tp} 名玩家</div>
     </div>
 
-    <div class="stats">
-      <div class="stat-card"><div class="stat-num">${score>=0?'+':''}${score}</div><div class="stat-label">总积分</div></div>
-      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">参赛场次</div></div>
-      <div class="stat-card"><div class="stat-num">${wr}%</div><div class="stat-label">总胜率</div></div>
-    </div>
-
-    <div class="rates">
-      <div class="rate-card"><div class="rate-num">${wr}%</div><div class="rate-bar-wrap"><div class="rate-bar" style="width:${wr}%"></div></div><div class="rate-label">综合胜率</div></div>
-      <div class="rate-card"><div class="rate-num">${wolfR!==null?wolfR+'%':'—'}</div><div class="rate-bar-wrap"><div class="rate-bar wolf" style="width:${wolfR||0}%"></div></div><div class="rate-label">狼人胜率</div></div>
-      <div class="rate-card"><div class="rate-num">${goodR!==null?goodR+'%':'—'}</div><div class="rate-bar-wrap"><div class="rate-bar good" style="width:${goodR||0}%"></div></div><div class="rate-label">好人胜率</div></div>
-    </div>
-
-    <!-- 最喜欢的角色 -->
-    <div class="section">
-      <div class="sec-title">
-        🏆 我最喜欢玩的角色
-        <button class="sec-btn" onclick="bUserNavigated=false;bInitRound();renderBracketSection(document.getElementById('bracketSection'))">重新选择</button>
+    <!-- 角色排行榜放最前面 -->
+    <div class="section" style="margin-top:20px;">
+      <div class="sec-title">🏆 我最喜欢玩的角色！
+        <button class="sec-btn" onclick="resetBracket()">重新选择</button>
       </div>
       <div id="bracketSection"></div>
     </div>
 
-    <!-- 常用角色 -->
+    <!-- 积分数据放后面 -->
+    <div class="p-stats">
+      <div class="stat"><div class="stat-n">${score>=0?'+':''}${score}</div><div class="stat-l">总积分</div></div>
+      <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">参赛场次</div></div>
+      <div class="stat"><div class="stat-n">${wr}%</div><div class="stat-l">总胜率</div></div>
+    </div>
+    <div class="p-rates">
+      <div class="rate"><div class="rate-n">${wr}%</div><div class="rate-bar-w"><div class="rate-bar" style="width:${wr}%"></div></div><div class="rate-l">综合胜率</div></div>
+      <div class="rate"><div class="rate-n">${wolfR!==null?wolfR+'%':'—'}</div><div class="rate-bar-w"><div class="rate-bar wolf" style="width:${wolfR||0}%"></div></div><div class="rate-l">好人胜率</div></div>
+      <div class="rate"><div class="rate-n">${goodR!==null?goodR+'%':'—'}</div><div class="rate-bar-w"><div class="rate-bar good" style="width:${goodR||0}%"></div></div><div class="rate-l">狼人胜率</div></div>
+    </div>
+
     <div class="section">
       <div class="sec-title">📊 实战常用角色</div>
       ${topRoles.length?topRoles.map(([role,cnt])=>`
         <div class="role-row">
           <div class="role-name">${role}</div>
-          <div class="role-bar-wrap"><div class="role-bar" style="width:${Math.round(cnt/maxRC*100)}%"></div></div>
+          <div class="role-bar-w"><div class="role-bar-f" style="width:${Math.round(cnt/maxRC*100)}%"></div></div>
           <div class="role-cnt">${cnt}次</div>
-          <div class="role-wr">${Math.round((rWins[role]||0)/cnt*100)}%</div>
+          <div class="role-wr">${Math.round((rW[role]||0)/cnt*100)}%</div>
         </div>`).join(''):'<div class="no-data">暂无数据</div>'}
     </div>
 
-    <!-- 最近战绩 -->
     <div class="section">
       <div class="sec-title">📋 最近战绩</div>
-      ${myEntries.slice(0,10).map(({m,e})=>`
-        <div class="match-row">
+      ${myE.slice(0,10).map(({m,e})=>`
+        <div class="m-row">
           <div class="m-top">
-            <div><div class="m-date">${m.date} · 第${m.round}局</div>
-            <div class="m-role">${e.seat?e.seat+'号 · ':''}${e.role}</div></div>
+            <div><div class="m-date">${m.date} · 第${m.round}局</div><div class="m-role">${e.seat?e.seat+'号 · ':''}${e.role}</div></div>
             <div style="text-align:right">
               <div class="m-badge ${e.result}">${e.result==='win'?'胜':'负'}</div>
               <div class="m-score ${e.total>=0?'pos':'neg'}" style="margin-top:4px">${e.total>=0?'+':''}${e.total}</div>
@@ -399,83 +391,204 @@ async function renderProfile(pData, allMatches, allPlayers){
           <div class="m-detail">${m.winCamp||''}获胜</div>
         </div>`).join('')||'<div class="no-data">暂无战绩</div>'}
     </div>
-
     <div class="footer">北美盗梦空间狼人杀联赛 · ${new Date().getFullYear()}</div>
   `;
 
-  // Render bracket section
+  document.getElementById('selectPage').style.display='none';
+  document.getElementById('profilePage').style.display='flex';
   bInitRound();
-  renderBracketSection(document.getElementById('bracketSection'));
+  renderBracket();
+  // 自动滚动到排行榜
+  setTimeout(()=>{
+    const el=document.getElementById('bracketSection');
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },300);
 }
 
-// ══ Directory (no ID) ══
-async function showDirectory(){
-  const [pData,mData]=await Promise.all([fb.get(`${PATH}/players`),fb.get(`${PATH}/matches`)]);
-  const players=pData?Object.values(pData):[];
-  const matches=mData?Object.values(mData):[];
-  document.getElementById('loading').style.display='none';
-  const app=document.getElementById('app');
-  app.style.display='block';
-  if(!players.length){
-    app.innerHTML=`<div class="hd"><div class="hd-badge">北美盗梦空间狼人杀联赛</div><div class="hd-name" style="font-size:20px;margin-top:16px">玩家档案</div></div><div class="no-data" style="margin-top:40px">暂无玩家数据</div>`;
-    return;
+// ══ Bracket ══
+function bNorm(raw){
+  if(!raw)return[{},{},{},{},{}];
+  const arr=Array.isArray(raw)?raw:[0,1,2,3,4].map(i=>raw[i]||{});
+  while(arr.length<5)arr.push({});
+  return arr.map(r=>(!r||typeof r!=='object'||Array.isArray(r))?{}:r);
+}
+
+function bGetTeam(ri,mi,s){
+  if(ri===0)return ROLES[mi*2+s];
+  const r=bWins[ri-1]||{};
+  return r[mi*2+s]??r[String(mi*2+s)]??null;
+}
+
+function bPrevDone(ri){
+  if(ri===0)return true;
+  const p=bWins[ri-1]||{};
+  for(let i=0;i<N[ri-1];i++)if(!p[i]&&!p[String(i)])return false;
+  return true;
+}
+
+function bWin(ri,mi){const r=bWins[ri]||{};return r[mi]??r[String(mi)]??null;}
+
+function bGetTop3(){
+  const champ=bWins[TOTAL-1]?.[0]??bWins[TOTAL-1]?.['0']??null;
+  const t0=bGetTeam(TOTAL-1,0,0),t1=bGetTeam(TOTAL-1,0,1);
+  const finalist=champ?(champ===t0?t1:t0):null;
+  const thirds=[];
+  for(let mi=0;mi<N[TOTAL-2];mi++){
+    const w=bWin(TOTAL-2,mi);
+    if(w){const a=bGetTeam(TOTAL-2,mi,0),b=bGetTeam(TOTAL-2,mi,1);thirds.push(w===a?b:a);}
   }
-  const ranked=players.map(p=>{
-    const myE=[];matches.forEach(m=>{const e=m.entries?.find(e=>e.playerId===p.id);if(e)myE.push(e);});
-    const score=+myE.reduce((s,e)=>s+e.total,0).toFixed(1);
-    const games=myE.length, wins=myE.filter(e=>e.result==='win').length;
-    return{p,score,games,wr:games?Math.round(wins/games*100):0};
-  }).sort((a,b)=>b.score-a.score);
-  app.innerHTML=`
-    <div class="hd">
-      <div class="hd-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
-      <div class="hd-name" style="font-size:20px;margin-top:12px">玩家档案</div>
-      <div class="hd-rank">${players.length} 名玩家</div>
-    </div>
-    <div class="section" style="margin-top:20px;">
-      ${ranked.map(({p,score,games,wr},i)=>`
-        <a class="dir-card" href="profile.html?id=${p.id}">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="font-size:16px;color:${i<3?'var(--gold2)':'var(--dim)'};min-width:28px;font-family:'Courier Prime',monospace;font-weight:700">
-              ${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}
-            </div>
-            <div>
-              <div style="font-size:15px;font-weight:700">${p.emoji||'🎭'} ${esc(p.name)}</div>
-              <div style="font-size:11px;color:var(--dim);margin-top:2px">${games}场 · 胜率${wr}%</div>
-            </div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'Courier Prime',monospace;font-size:18px;font-weight:700;color:var(--gold2)">${score>=0?'+':''}${score}</div>
-            <div style="font-size:10px;color:var(--dim)">积分</div>
-          </div>
-        </a>`).join('')}
-    </div>
-    <div class="footer">北美盗梦空间狼人杀联赛</div>`;
+  return{champ,finalist,thirds:thirds.filter(Boolean)};
 }
 
-// ══ Init ══
-async function init(){
-  const params=new URLSearchParams(location.search);
-  pid=params.get('id');
-  if(!pid){ await showDirectory(); return; }
+function bInitRound(){
+  if(bNav)return;
+  for(let ri=0;ri<TOTAL;ri++){
+    const cnt=Object.values(bWins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+    if(cnt<N[ri]){bRound=ri;return;}
+  }
+  bRound=TOTAL-1;
+}
 
-  const [pData,mData,allP,bData]=await Promise.all([
-    fb.get(`${PATH}/players/${pid}`),
-    fb.get(`${PATH}/matches`),
-    fb.get(`${PATH}/players`),
-    fb.get(`${PATH}/brackets/${pid}`)
-  ]);
+function bSetRound(ri){bNav=true;bRound=ri;renderBracket();}
 
-  document.getElementById('loading').style.display='none';
-  if(!pData){ document.getElementById('app').innerHTML='<div class="no-data" style="min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px"><div style="font-size:32px">😕</div><div>找不到该玩家</div></div>'; document.getElementById('app').style.display='block'; return; }
+function bSelect(ri,mi,s){
+  if(!bPrevDone(ri)){showToast('请先完成上一轮');return;}
+  const t0=bGetTeam(ri,mi,0),t1=bGetTeam(ri,mi,1);
+  if(!t0||!t1||t0===t1)return;
+  const team=bGetTeam(ri,mi,s);if(!team)return;
+  const cur=bWin(ri,mi);
+  if(cur===team){delete bWins[ri][mi];delete bWins[ri][String(mi)];bClearDown(ri,mi);}
+  else if(cur&&cur!==team){return;}
+  else{bWins[ri][mi]=team;}
+  saveBracket();
+  renderBracket();
+}
 
-  document.title=`${pData.name} · 玩家档案`;
-  if(bData?.wins) bWins=bNorm(bData.wins);
-  await renderProfile(pData, mData, allP);
+function bClearDown(ri,mi){let m=mi;for(let r=ri+1;r<TOTAL;r++){m=Math.floor(m/2);delete bWins[r][m];delete bWins[r][String(m)];}}
+
+function resetBracket(){
+  if(!confirm('重置角色排行，重新选择？'))return;
+  bWins=[{},{},{},{},{}];bNav=false;bRound=0;
+  saveBracket();renderBracket();
+}
+
+async function saveBracket(){
+  if(!currentPid)return;
+  await fb.put(`${PATH}/brackets/${currentPid}`,{wins:bWins,updated:new Date().toISOString()});
+}
+
+function renderBracket(){
+  const el=document.getElementById('bracketSection');
+  if(!el)return;
+  const{champ,finalist,thirds}=bGetTop3();
+  const isComplete=champ!==null;
+
+  const podium=isComplete?`
+    <div class="fav-podium">
+      ${finalist?`<div class="fav-card p2"><div class="fav-icon">🥈</div><div class="fav-rank">第二喜欢</div><div class="fav-name">${finalist}</div></div>`:''}
+      <div class="fav-card p1"><div class="fav-icon">🥇</div><div class="fav-rank">最喜欢</div><div class="fav-name">${champ}</div></div>
+      ${thirds[0]?`<div class="fav-card p3"><div class="fav-icon">🥉</div><div class="fav-rank">第三喜欢</div><div class="fav-name">${thirds[0]}</div></div>`:''}
+    </div>`:'';
+
+  const ri=bRound;
+  const ok=bPrevDone(ri);
+  const cnt=Object.values(bWins[ri]||{}).filter(v=>v&&typeof v==='string').length;
+
+  const tabs=RNAMES.map((name,i)=>{
+    const c=Object.values(bWins[i]||{}).filter(v=>v&&typeof v==='string').length;
+    const done=c===N[i],locked=!bPrevDone(i);
+    return`<div class="b-tab${i===ri?' active':''}${done?' done':''}${locked?' locked':''}" onclick="${!locked?`bSetRound(${i})`:''}">${name}${done?' ✓':` ${c}/${N[i]}`}</div>`;
+  }).join('');
+
+  let matches='';
+  if(!ok){
+    matches=`<div class="b-locked">请先完成上一轮</div>`;
+  }else{
+    for(let mi=0;mi<N[ri];mi++){
+      const t0=bGetTeam(ri,mi,0),t1=bGetTeam(ri,mi,1);
+      const cur=bWin(ri,mi);
+      const canSel=ok&&t0&&t1&&t0!==t1;
+      const slot=(team,s)=>{
+        if(!team)return`<div class="b-slot pending">待定</div>`;
+        const isW=cur===team,isL=cur&&cur!==team;
+        return`<div class="b-slot${isW?' winner':isL?' loser':''}" onclick="${canSel&&!isL?`bSelect(${ri},${mi},${s})`:''}">${isW?'▶ ':''}${team}</div>`;
+      };
+      matches+=`<div class="b-card${cur?' decided':''}">
+        <div class="b-num">第${mi+1}场 / ${N[ri]}</div>
+        ${slot(t0,0)}<div class="b-vs">VS</div>${slot(t1,1)}
+      </div>`;
+    }
+    if(cnt===N[ri]&&ri<TOTAL-1)
+      matches+=`<div class="b-next"><button class="b-next-btn" onclick="bSetRound(${ri+1})">全部选完 · 进入${RNAMES[ri+1]} →</button></div>`;
+    if(ri===TOTAL-1&&cnt===N[ri]&&champ)
+      matches+=`<div class="b-champ"><div class="b-champ-icon">🏆</div><div style="font-size:11px;color:var(--dim);letter-spacing:2px">我最喜欢玩的角色</div><div class="b-champ-name">${champ}</div></div>`;
+  }
+
+  el.innerHTML=`${podium}<div class="bracket-wrap"><div class="b-tabs">${tabs}</div>
+    <div class="b-rhead"><div class="b-rtitle">${RNAMES[ri]}</div><div class="b-rprog">${cnt}/${N[ri]}场</div></div>
+    ${matches}</div>`;
 }
 
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.className='toast',2000);}
+
+
+// ══ Add Player ══
+const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
+let selectedEmoji = '🎭';
+
+function showAddForm(){
+  document.getElementById('addToggle').style.display='none';
+  document.getElementById('addForm').style.display='block';
+  // Render emoji picker
+  const ep=document.getElementById('emojiPicker');
+  ep.innerHTML=EMOJIS.map(e=>`
+    <button onclick="selectEmoji('${e}',this)" style="
+      font-size:22px;width:40px;height:40px;border-radius:8px;
+      background:${e===selectedEmoji?'rgba(200,160,40,0.2)':'transparent'};
+      border:${e===selectedEmoji?'1px solid var(--gold)':'1px solid transparent'};
+      cursor:pointer;transition:all .12s;
+    " title="${e}">${e}</button>`).join('');
+  setTimeout(()=>document.getElementById('newNameInput').focus(),100);
+}
+
+function hideAddForm(){
+  document.getElementById('addToggle').style.display='block';
+  document.getElementById('addForm').style.display='none';
+  document.getElementById('newNameInput').value='';
+  document.getElementById('addError').style.display='none';
+}
+
+function selectEmoji(e, btn){
+  selectedEmoji=e;
+  document.querySelectorAll('#emojiPicker button').forEach(b=>{
+    b.style.background='transparent';b.style.border='1px solid transparent';
+  });
+  btn.style.background='rgba(200,160,40,0.2)';
+  btn.style.border='1px solid var(--gold)';
+}
+
+async function confirmAdd(){
+  const name=document.getElementById('newNameInput').value.trim();
+  const err=document.getElementById('addError');
+  err.style.display='none';
+  if(!name){err.textContent='请输入昵称';err.style.display='block';return;}
+  if(name.length>12){err.textContent='昵称最多12个字';err.style.display='block';return;}
+  if(Object.values(allPlayers).find(p=>p.name===name)){
+    err.textContent='这个名字已存在，请直接在上方选择';err.style.display='block';return;
+  }
+  const btn=event.target.closest('button')||document.querySelector('#addForm button');
+  const id='p'+Date.now();
+  const player={id,name,emoji:selectedEmoji,created:new Date().toLocaleDateString('zh-CN')};
+  allPlayers[id]=player;
+  // Save to Firebase
+  await fb.put(`${PATH}/players/${id}`,player);
+  hideAddForm();
+  showToast(`✓ 已添加玩家：${name}`);
+  renderPlayerList('');
+  // Auto select this player
+  await selectPlayer(id);
+}
 
 init();
 </script>
