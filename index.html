@@ -17,7 +17,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   color:var(--text);font-family:'Noto Serif SC',serif;min-height:100vh;}
 
 /* ── 输入名字页 ── */
-.name-page{display:flex;flex-direction:column;align-items:center;justify-content:center;
+.name-page{display:none;flex-direction:column;align-items:center;justify-content:center;
   min-height:100vh;padding:40px 20px;}
 .n-badge{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:4px;
   color:var(--dim);margin-bottom:16px;}
@@ -157,16 +157,36 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 .a-bar-fill{height:100%;border-radius:4px;background:var(--gold);}
 .a-bar-cnt{font-size:11px;color:var(--dim);min-width:28px;text-align:right;font-family:'Courier Prime',monospace;}
 /* 管理员入口按钮（低调） */
-.admin-entry{display:block;margin:30px auto 0;background:none;border:none;
-  color:rgba(200,160,40,0.18);cursor:pointer;font-size:10px;letter-spacing:2px;
-  font-family:'Noto Serif SC',serif;padding:8px;}
-.admin-entry:hover{color:var(--dim);}
+.admin-entry{display:block;margin:32px auto 0;background:none;
+  border:1px solid rgba(200,160,40,0.3);border-radius:8px;
+  color:rgba(200,160,40,0.5);cursor:pointer;font-size:12px;letter-spacing:2px;
+  font-family:'Noto Serif SC',serif;padding:10px 24px;}
+.admin-entry:hover{color:var(--gold);border-color:var(--gold);}
 /* Toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
   background:rgba(80,200,120,0.9);color:#fff;padding:8px 20px;border-radius:16px;
   font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
 .toast.show{opacity:1;}
 
+
+/* ── 管理员锁定页（全屏覆盖） ── */
+.admin-lock{position:fixed;inset:0;background:var(--bg);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;z-index:999;padding:20px;}
+.admin-lock.show{display:flex;}
+.lock-badge{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:4px;color:var(--dim);}
+.lock-title{font-size:18px;font-weight:900;letter-spacing:4px;color:var(--gold2);}
+.lock-sub{font-size:12px;color:var(--dim);letter-spacing:2px;}
+.lock-input{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 20px;color:var(--text);font-size:18px;outline:none;text-align:center;
+  letter-spacing:4px;width:240px;font-family:'Courier Prime',monospace;}
+.lock-input:focus{border-color:var(--gold);}
+.lock-btn{background:var(--gold2);color:#2B1F0A;border:none;border-radius:10px;
+  padding:14px 36px;font-weight:700;font-size:15px;cursor:pointer;
+  font-family:'Noto Serif SC',serif;letter-spacing:2px;}
+.lock-back{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;
+  letter-spacing:1px;margin-top:4px;font-family:'Noto Serif SC',serif;}
+.lock-err{color:rgba(181,69,58,.9);font-size:12px;letter-spacing:1px;display:none;}
 /* 生成结果图 */
 .gen-btn{width:100%;margin-top:12px;padding:14px;background:rgba(255,215,60,0.12);
   border:1px solid rgba(255,215,60,0.45);color:var(--gold2);border-radius:10px;
@@ -222,6 +242,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <button class="n-btn" id="enterBtn" onclick="enter()">进入 →</button>
     <div class="n-err" id="nameErr"></div>
   </div>
+  <button class="admin-entry" onclick="openAdmin()">管理员入口</button>
 </div>
 
 <!-- 排行榜页 -->
@@ -251,7 +272,6 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <div class="round-tabs" id="roundTabs"></div>
     <div class="bracket-wrap" id="matchArea"></div>
   </div>
-    <button class="admin-entry" onclick="openAdmin()">管理员入口</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -560,21 +580,31 @@ function generateImage(){
   },300);
 }
 
-// 页面加载完直接聚焦输入框
-window.addEventListener('load',()=>setTimeout(()=>document.getElementById('nameInput').focus(),300));
-
 // ══ 管理员入口 ══
 const ADMIN_PW='inception2026';
 
 function openAdmin(){
-  const pw=prompt('管理员密码：');
+  // 显示全屏锁定页
+  document.getElementById('adminLock').classList.add('show');
+  document.getElementById('lockPwInput').value='';
+  document.getElementById('lockErr').style.display='none';
+  setTimeout(()=>document.getElementById('lockPwInput').focus(),200);
+}
+function closeAdminLock(){
+  document.getElementById('adminLock').classList.remove('show');
+}
+function adminLogin(){
+  const pw=document.getElementById('lockPwInput').value;
   if(pw===ADMIN_PW){
+    document.getElementById('adminLock').classList.remove('show');
     document.getElementById('namePage').style.display='none';
     document.getElementById('bracketPage').style.display='none';
     document.getElementById('adminPage').style.display='flex';
     loadAdminData();
-  } else if(pw!==null){
-    alert('密码错误');
+  } else {
+    document.getElementById('lockErr').style.display='block';
+    document.getElementById('lockPwInput').value='';
+    document.getElementById('lockPwInput').focus();
   }
 }
 
@@ -683,6 +713,18 @@ async function loadAdminData(){
 }
 </script>
 
+<!-- 管理员锁定页 -->
+<div class="admin-lock" id="adminLock">
+  <div class="lock-badge">北美盗梦空间狼人杀联赛</div>
+  <div class="lock-title">管理员后台</div>
+  <div class="lock-sub">输入管理员密码</div>
+  <input class="lock-input" id="lockPwInput" type="password" placeholder="密码"
+    onkeydown="if(event.key==='Enter')adminLogin()">
+  <button class="lock-btn" onclick="adminLogin()">进入后台</button>
+  <div class="lock-err" id="lockErr">密码错误</div>
+  <button class="lock-back" onclick="closeAdminLock()">← 返回</button>
+</div>
+
 <!-- 管理员页 -->
 <div class="admin-page" id="adminPage">
   <div class="a-topbar">
@@ -708,5 +750,10 @@ async function loadAdminData(){
   <div class="gen-txt">正在生成结果图...</div>
 </div>
 
+<script>
+// 页面加载：显示输入名字页，聚焦输入框
+document.getElementById('namePage').style.display='flex';
+setTimeout(function(){ var el=document.getElementById('nameInput'); if(el)el.focus(); }, 300);
+</script>
 </body>
 </html>
