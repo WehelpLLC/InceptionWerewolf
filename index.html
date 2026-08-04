@@ -165,10 +165,23 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
   background:radial-gradient(ellipse,#0a1030,#060818);border:1px solid rgba(200,160,40,.07);}
 .bc-t{font-size:12px;font-weight:900;letter-spacing:3px;color:var(--G);text-shadow:0 0 15px rgba(255,210,40,.3);}
 .bc-s{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:4px;}
-.marker{position:absolute;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:10px;border:1.5px solid rgba(255,215,60,.5);
-  background:rgba(20,14,4,.9);z-index:10;cursor:pointer;box-shadow:0 0 5px rgba(255,215,60,.25);}
+.marker{position:absolute;min-width:22px;height:22px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:13px;border:1.5px solid rgba(255,215,60,.7);
+  background:rgba(20,14,4,.96);z-index:10;cursor:pointer;box-shadow:0 2px 9px rgba(0,0,0,.7);}
 .marker.me{border-color:var(--G);box-shadow:0 0 8px rgba(255,215,60,.6);}
+.marker-label{position:absolute;top:21px;left:50%;transform:translateX(-50%);padding:2px 4px;
+  border-radius:4px;background:rgba(5,7,18,.88);border:1px solid rgba(200,160,40,.25);color:#f6e6aa;
+  font-size:8px;line-height:1;white-space:nowrap;font-family:'Noto Serif SC',serif;pointer-events:none;}
+.map-avatar{width:22px;height:22px;border-radius:50%;object-fit:cover;display:block}
+/* 迷雾遮盖：未解锁的格子 */
+.sq.fog>*{opacity:0;}
+.sq.fog::after{content:'';position:absolute;inset:0;z-index:5;
+  background:repeating-linear-gradient(135deg,rgba(30,35,55,.94),rgba(30,35,55,.94) 6px,rgba(22,26,44,.94) 6px,rgba(22,26,44,.94) 12px);
+  border-radius:2px;}
+.sq.fog.ms::after,.sq.fog.cn::after{content:'🌫';display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:rgba(180,190,210,.55);}
+.map-legend{margin:12px 16px 0;padding:12px 14px;border-radius:10px;background:linear-gradient(110deg,rgba(200,160,40,.13),rgba(80,200,120,.07));border:1px solid rgba(200,160,40,.28);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.map-legend b{color:var(--G);font-size:14px;letter-spacing:1px}.map-legend span{color:var(--dim);font-size:11px;}
 .mpl-row{display:flex;align-items:center;gap:10px;padding:8px 12px;
   background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;}
 .mpl-row.me{border-color:var(--gold);}
@@ -292,17 +305,17 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 <!-- ══ 1. 输入名字页 ══ -->
 <div class="pg name-pg on" id="pg-name">
   <div class="n-badge">北美盗梦空间狼人杀联赛 · Season 3</div>
-  <div class="n-title">我最喜欢玩的角色！</div>
-  <div class="n-sub">输入你的名字开始</div>
+  <div class="n-title">北美盗梦空间狼人杀联赛</div>
+  <div class="n-sub">登录账户，或以游客身份进入联赛</div>
   <div class="n-box">
-    <input class="n-input" id="nameInput" placeholder="你叫什么名字？" maxlength="12"
+    <input class="n-input" id="nameInput" placeholder="游客昵称（不登录也可进入）" maxlength="12"
       autocomplete="off" oninput="onName(this.value)" onkeydown="if(event.key==='Enter')doEnter()">
     <div class="n-hint" id="nameHint"></div>
     <div class="emoji-wrap" id="emojiWrap">
       <div class="emoji-label">选个头像</div>
       <div class="emoji-grid" id="emojiGrid"></div>
     </div>
-    <button class="n-enter" id="enterBtn" onclick="doEnter()">进入 →</button>
+    <button class="n-enter" id="enterBtn" onclick="doEnter()">以游客身份进入 →</button>
     <button class="n-admin" onclick="showLock()">管理员入口</button>
   </div>
 </div>
@@ -311,12 +324,13 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
 <div class="pg" id="pg-player">
   <div class="topbar">
     <div><div class="topbar-title" id="topName"></div><div class="topbar-sub">北美盗梦空间狼人杀联赛</div></div>
-    <button class="topbar-btn" onclick="doChangeName()">换人</button>
+    <div style="display:flex;gap:6px;"><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
   </div>
   <div class="tab-nav">
     <div class="tab-btn on" id="tb0" onclick="switchTab(0)">🏆 角色排行</div>
     <div class="tab-btn" id="tb1" onclick="switchTab(1)">🗺 梦境地图</div>
     <div class="tab-btn" id="tb2" onclick="switchTab(2)">📊 我的数据</div>
+    <div class="tab-btn" id="tb3" onclick="switchTab(3)">📖 战报</div>
   </div>
 
   <!-- Tab 0: 角色排行榜 -->
@@ -380,6 +394,15 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     </div>
     <div class="no-data" id="noData" style="display:none;">暂无比赛记录<br><small>比赛记录由管理员录入后显示</small></div>
   </div>
+  <!-- Tab 3: 战报/复盘浏览 -->
+  <div class="tab-pane" id="tp3">
+    <div style="text-align:center;padding:20px 16px 12px;">
+      <div style="font-size:32px;margin-bottom:6px;">📖</div>
+      <div style="font-size:16px;font-weight:900;letter-spacing:2px;color:var(--G);">对局战报</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">每周对局复盘 · 点击展开阅读</div>
+    </div>
+    <div id="recapsView" style="padding:0 16px 20px;"><div class="no-data">加载中...</div></div>
+  </div>
 </div>
 
 <!-- ══ 3. 管理员页 ══ -->
@@ -393,6 +416,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <div class="adm-tab-btn" id="at1" onclick="switchAdmTab(1)">👥 玩家</div>
     <div class="adm-tab-btn" id="at2" onclick="switchAdmTab(2)">📝 战绩</div>
     <div class="adm-tab-btn" id="at3" onclick="switchAdmTab(3)">🗺 地图</div>
+    <div class="adm-tab-btn" id="at4" onclick="switchAdmTab(4)">📖 复盘</div>
   </div>
 
   <!-- Adm Tab 0: 投票结果 -->
@@ -431,6 +455,10 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
             <input type="date" class="meta-inp" id="mDate">
           </div>
           <div class="meta-field">
+            <div class="meta-label">第几周</div>
+            <input type="number" class="meta-inp" id="mWeek" min="1" value="1" style="width:70px;">
+          </div>
+          <div class="meta-field">
             <div class="meta-label">第几局</div>
             <input type="number" class="meta-inp" id="mRound" min="1" value="1" style="width:70px;">
           </div>
@@ -452,6 +480,64 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <div class="adm-body">
       <button class="btn-line" onclick="loadMapAdm()" style="width:100%;margin-bottom:12px;">🔄 加载玩家列表</button>
       <div id="mapAdmList"><div class="no-data">点击上方按钮加载</div></div>
+    </div>
+  </div>
+  <!-- Adm Tab 4: 复盘管理 -->
+  <div class="adm-pane" id="ap4">
+    <div class="adm-body">
+      <div class="sec-title" style="margin-top:0;">📖 录入复盘</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="adm-inp" id="rcWeek" placeholder="第几周（如 1）" style="flex:1;">
+        <input class="adm-inp" id="rcGame" placeholder="第几局（如 1）" style="flex:1;">
+      </div>
+      <input class="adm-inp" id="rcTitle" placeholder="标题（如 预女猎白混）" style="width:100%;margin-bottom:8px;">
+      <textarea id="rcBody" placeholder="粘贴复盘正文（身份信息、每晚每天的过程、结果……）" style="width:100%;min-height:200px;background:#080c20;border:1px solid var(--line);border-radius:8px;padding:11px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.6;resize:vertical;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn-line" onclick="clearRecapForm()">清空</button>
+        <button class="btn-gold" onclick="saveRecap()" style="flex:1;">✓ 保存复盘</button>
+      </div>
+      <div class="sec-title">📋 已录入的复盘</div>
+      <div id="recapsAdmList"><div class="no-data">加载中...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员改玩家头像弹层 -->
+<div id="admEmojiOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(360px,100%);background:#101633;border:1px solid rgba(255,215,60,.4);border-radius:14px;padding:22px;">
+    <div style="font-size:16px;font-weight:900;color:var(--G);letter-spacing:2px;text-align:center;margin-bottom:4px;">🎭 修改玩家头像</div>
+    <div id="admEmojiName" style="font-size:12px;color:var(--dim);text-align:center;margin-bottom:16px;"></div>
+    <div id="admEmojiGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="topbar-btn" style="flex:1;" onclick="closeAdmEmoji()">取消</button>
+      <button class="btn-gold" style="flex:1;" onclick="saveAdmEmoji()">✓ 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 改名弹层 -->
+<div id="renameOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(360px,100%);background:#101633;border:1px solid rgba(255,215,60,.4);border-radius:14px;padding:22px;">
+    <div style="font-size:16px;font-weight:900;color:var(--G);letter-spacing:2px;text-align:center;margin-bottom:4px;">✏️ 修改昵称</div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:16px;">你的投票、地图位置、战绩都会保留</div>
+    <input id="renameInput" maxlength="12" placeholder="输入新昵称" style="width:100%;background:#080c20;border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-family:inherit;font-size:15px;text-align:center;margin-bottom:8px;">
+    <div id="renameErr" style="min-height:18px;font-size:12px;color:#ffaaa5;text-align:center;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="topbar-btn" style="flex:1;" onclick="closeRename()">取消</button>
+      <button class="btn-gold" style="flex:1;" onclick="saveRename()">✓ 确认改名</button>
+    </div>
+  </div>
+</div>
+
+<!-- 换头像弹层 -->
+<div id="emojiPickerOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(360px,100%);background:#101633;border:1px solid rgba(255,215,60,.4);border-radius:14px;padding:22px;">
+    <div style="font-size:16px;font-weight:900;color:var(--G);letter-spacing:2px;text-align:center;margin-bottom:4px;">🎭 选择你的头像</div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:16px;">换好后会同步显示在梦境地图上</div>
+    <div id="emojiPickerGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="topbar-btn" style="flex:1;" onclick="closeEmojiPicker()">取消</button>
+      <button class="btn-gold" style="flex:1;" onclick="saveEmojiChange()">✓ 保存</button>
     </div>
   </div>
 </div>
@@ -479,11 +565,11 @@ const DB='https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
 const fb={
   async get(p){try{const r=await fetch(`${DB}/${p}.json`);return r.ok?await r.json():null;}catch{return null;}},
   async put(p,d){try{await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{}},
-  async del(p){try{await fetch(`${DB}/${p}.json`,{method:'DELETE'});}catch{}}
+  async del(p){try{const r=await fetch(`${DB}/${p}.json`,{method:'DELETE'});return r.ok;}catch{return false;}}
 };
 
 // ══ 常量 ══
-const ROLES=["混血儿","平民","预言家","女巫","猎人","白神","守卫","骑士","摄梦人","魔术师","通灵师","守墓人","猎魔人","定序王子","奇迹商人","舞者","蒙面人","禁言长老","狼人","狼王","白狼王","狼美人","石像鬼","隐狼","机械狼","恶灵骑士","梦魔","血月使徒","诡术师","假面","盗宝大师","狼术师"];
+const ROLES=["平民", "预言家", "女巫", "猎人", "守卫", "骑士", "白痴", "魔术师", "通灵师", "守墓人", "猎魔人", "摄梦人", "定序王子", "奇迹商人", "舞者", "禁言者", "禁言长老", "蒙面人", "丘比特", "熊", "狐狸", "九尾狐", "仓鼠", "企鹅", "乌鸦", "天使", "替罪羊", "双生儿", "小女孩", "锈剑骑士", "盗贼", "盗宝大师", "黑市商人", "混血儿", "野孩子", "吹笛者", "妓女", "鬼魂新娘", "口吃法官", "炸弹", "狼人", "狼王", "白狼王", "黑狼王", "狼美人", "蚀时狼妃", "隐狼", "石像鬼", "机械狼", "恶灵骑士", "梦魔", "魅魔", "血月使徒", "诡术师", "假面", "狼术师", "恶魔", "长老", "潜行者"];
 const N=[16,8,4,2,1],TOTAL=5,RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
 const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
 const ADMIN_PW='inception2026';
@@ -544,6 +630,96 @@ function pickEmoji(e,btn){
   goPlayer();
 }
 
+// ── 玩家换头像 ──
+let pickerEmoji=cEmoji;
+function openEmojiPicker(){
+  pickerEmoji=cEmoji;
+  const grid=document.getElementById('emojiPickerGrid');
+  grid.innerHTML=EMOJIS.map(e=>`<button class="emoji-btn${e===cEmoji?' sel':''}" onclick="pickerSelect('${e}',this)">${e}</button>`).join('');
+  document.getElementById('emojiPickerOverlay').style.display='flex';
+}
+function closeEmojiPicker(){
+  document.getElementById('emojiPickerOverlay').style.display='none';
+}
+function pickerSelect(e,btn){
+  pickerEmoji=e;
+  document.querySelectorAll('#emojiPickerGrid .emoji-btn').forEach(b=>b.className='emoji-btn');
+  btn.className='emoji-btn sel';
+}
+async function saveEmojiChange(){
+  cEmoji=pickerEmoji;
+  const key=encodeKey(cName);
+  // 1. 更新界面
+  document.getElementById('topName').textContent=cEmoji+' '+cName;
+  const he=document.getElementById('hEmoji');if(he)he.textContent=cEmoji;
+  const de=document.getElementById('dEmoji');if(de)de.textContent=cEmoji;
+  // 2. 同步到投票数据（保留 wins）
+  const bracket=await fb.get(`tournament/playerBrackets/${key}`);
+  if(bracket){bracket.emoji=cEmoji;await fb.put(`tournament/playerBrackets/${key}`,bracket);}
+  else{await fb.put(`tournament/playerBrackets/${key}`,{name:cName,emoji:cEmoji,wins:bWins});}
+  // 3. 同步到地图数据（保留 position）
+  const mapP=await fb.get(`tournament/mapPlayers/${key}`);
+  if(mapP){mapP.emoji=cEmoji;await fb.put(`tournament/mapPlayers/${key}`,mapP);}
+  // 4. 同步到玩家名单（战绩系统，按名字匹配）
+  const players=await fb.get('playerProfiles/s3/players');
+  if(players){for(const[id,p]of Object.entries(players)){if(p.name===cName){p.emoji=cEmoji;await fb.put(`playerProfiles/s3/players/${id}`,p);break;}}}
+  closeEmojiPicker();
+  toast('✓ 头像已更新！');
+}
+
+// ── 玩家改名（带数据迁移，保留所有记录）──
+function openRename(){
+  document.getElementById('renameInput').value=cName;
+  document.getElementById('renameErr').textContent='';
+  document.getElementById('renameOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('renameInput').focus(),100);
+}
+function closeRename(){document.getElementById('renameOverlay').style.display='none';}
+async function saveRename(){
+  const err=document.getElementById('renameErr');
+  const newName=document.getElementById('renameInput').value.trim();
+  err.textContent='';
+  if(!newName){err.textContent='请输入新昵称';return;}
+  if(newName===cName){closeRename();return;}
+  const oldKey=encodeKey(cName),newKey=encodeKey(newName);
+  // 校验：新名字不能和别人重复
+  const allBrackets=await fb.get('tournament/playerBrackets')||{};
+  if(allBrackets[newKey]){err.textContent='这个昵称已被占用，换一个吧';return;}
+  const allPlayers=await fb.get('playerProfiles/s3/players')||{};
+  if(Object.values(allPlayers).some(p=>p.name===newName)){err.textContent='这个昵称已被占用，换一个吧';return;}
+  err.textContent='正在保存…';
+  try{
+    // 1. 迁移投票数据（含 wins）
+    const bracket=await fb.get(`tournament/playerBrackets/${oldKey}`);
+    if(bracket){
+      bracket.name=newName;
+      await fb.put(`tournament/playerBrackets/${newKey}`,bracket);
+      await fb.del(`tournament/playerBrackets/${oldKey}`);
+    }
+    // 2. 迁移地图数据（含 position）
+    const mapP=await fb.get(`tournament/mapPlayers/${oldKey}`);
+    if(mapP){
+      mapP.name=newName;
+      await fb.put(`tournament/mapPlayers/${newKey}`,mapP);
+      await fb.del(`tournament/mapPlayers/${oldKey}`);
+    }
+    // 3. 更新玩家名单里的 name（id 不变，所以战绩 matches 自动跟随，无需改）
+    for(const[id,p]of Object.entries(allPlayers)){
+      if(p.name===cName){p.name=newName;await fb.put(`playerProfiles/s3/players/${id}`,p);break;}
+    }
+    // 4. 更新当前会话和界面
+    cName=newName;
+    document.getElementById('topName').textContent=cEmoji+' '+cName;
+    const hn=document.getElementById('hName');if(hn)hn.textContent=cName;
+    const dn=document.getElementById('dName');if(dn)dn.textContent=cName;
+    closeRename();
+    toast('✓ 昵称已改为 '+newName);
+  }catch(e){
+    err.textContent='保存失败，请重试';
+    console.warn('改名失败',e);
+  }
+}
+
 function goPlayer(){
   document.getElementById('topName').textContent=cEmoji+' '+cName;
   document.getElementById('hEmoji').textContent=cEmoji;
@@ -569,7 +745,7 @@ function doChangeName(){
 
 // ══ Tab 切换 ══
 function switchTab(n){
-  for(let i=0;i<3;i++){
+  for(let i=0;i<4;i++){
     document.getElementById('tb'+i).classList.toggle('on',i===n);
     document.getElementById('tp'+i).classList.toggle('on',i===n);
   }
@@ -577,6 +753,7 @@ function switchTab(n){
   if(n===0){initRound();renderBracket();}
   if(n===1)loadMapTab();
   if(n===2)loadMyData();
+  if(n===3)loadRecapsView();
 }
 
 // ══ 2a. 角色排行榜 ══
@@ -671,60 +848,8 @@ function generateImg(){
 }
 
 // ══ 2b. 梦境地图 ══
-function mapGrid(sq){
-  if(sq<=20)return{row:1,col:sq+1};
-  if(sq<=40)return{row:sq-20+1,col:21};
-  if(sq<=60)return{row:21,col:21-(sq-40)};
-  return{row:21-(sq-60),col:1};
-}
-function buildMap(){
-  if(mapBuilt)return;mapBuilt=true;
-  const b=document.getElementById('iboard');b.innerHTML='';
-  const ctr=document.createElement('div');
-  ctr.className='board-center';ctr.style.cssText='grid-row:2/21;grid-column:2/21;';
-  ctr.innerHTML='<div class="bc-t">梦境远征</div><div class="bc-s">DREAM EXPEDITION · S3</div>';
-  b.appendChild(ctr);
-  for(let sq=0;sq<=80;sq++){
-    const p=mapGrid(sq);const lm=MAP_LMS[sq];const isCn=MAP_CN.has(sq);const isMs=!!lm&&!isCn;
-    const d=document.createElement('div');
-    d.className='sq'+(isCn?' cn'+(sq===0?' c0':sq===80?' cn2':''):isMs?' ms':' reg');
-    d.style.cssText=`grid-row:${p.row};grid-column:${p.col};`;d.dataset.sq=sq;
-    if(isCn)d.innerHTML=`<div class="ci">${lm?.e||''}</div><div class="ct">${lm?.n||''}</div><div class="cn2">${sq}</div>`;
-    else if(isMs)d.innerHTML=`<div class="si">${lm.e}</div><div class="st">${lm.n}</div><div class="sn">${sq}</div>`;
-    else d.innerHTML=`<div class="sn">${sq}</div>`;
-    b.appendChild(d);
-  }
-  resizeMap();
-}
-function resizeMap(){
-  const b=document.getElementById('iboard');if(!b)return;
-  const avail=Math.max(280,(document.getElementById('tp1')?.offsetWidth||window.innerWidth)-16);
-  const r=Math.floor(avail/23);const cn=r*2;
-  b.style.gridTemplateColumns=`${cn}px repeat(19,${r}px) ${cn}px`;
-  b.style.gridTemplateRows=`${cn}px repeat(19,${r}px) ${cn}px`;
-  b.querySelectorAll('.sn').forEach(el=>el.style.fontSize=Math.max(6,Math.floor(r*.32))+'px');
-  b.querySelectorAll('.si').forEach(el=>el.style.fontSize=Math.max(10,Math.floor(cn*.34))+'px');
-  b.querySelectorAll('.st').forEach(el=>el.style.fontSize=Math.max(5,Math.floor(r*.28))+'px');
-  b.querySelectorAll('.ci').forEach(el=>el.style.fontSize=Math.max(14,Math.floor(cn*.36))+'px');
-  b.querySelectorAll('.ct').forEach(el=>el.style.fontSize=Math.max(6,Math.floor(r*.3))+'px');
-  b.querySelectorAll('.bc-t').forEach(el=>el.style.fontSize=Math.max(10,Math.floor(r*.5))+'px');
-  b.querySelectorAll('.bc-s').forEach(el=>el.style.fontSize=Math.max(7,Math.floor(r*.28))+'px');
-}
-function placeMarkers(){
-  document.querySelectorAll('.marker').forEach(m=>m.remove());
-  const byPos={};
-  Object.values(mapPlayers).forEach(p=>{const pos=p.position||0;if(!byPos[pos])byPos[pos]=[];byPos[pos].push(p);});
-  Object.entries(byPos).forEach(([pos,ps])=>{
-    const sq=parseInt(pos);const el=document.querySelector(`[data-sq="${sq}"]`);if(!el)return;
-    ps.forEach((p,i)=>{
-      const m=document.createElement('div');m.className='marker'+(p.name===cName?' me':'');
-      m.textContent=p.emoji||'🎭';m.title=p.name+' ('+sq+'格)';
-      const off=ps.length>1?i*14-(ps.length-1)*7:0;
-      m.style.cssText=`bottom:${MAP_CN.has(sq)?28:12}px;left:calc(50% + ${off}px - 8px);`;
-      el.appendChild(m);
-    });
-  });
-}
+// ══ 2b. 梦境地图（横向轨道版，实现见文件末尾 buildMap/placeMarkers）══
+function resizeMap(){}
 function renderMapList(){
   const el=document.getElementById('mapPlayerList');if(!el)return;
   const ps=Object.values(mapPlayers).sort((a,b)=>(b.position||0)-(a.position||0));
@@ -744,9 +869,15 @@ function renderMapList(){
 }
 async function loadMapTab(){
   buildMap();
-  const data=await fb.get('tournament/mapPlayers');
+  if(!document.getElementById('mapLegend')){
+    const legend=document.createElement('div');legend.id='mapLegend';legend.className='map-legend';
+    legend.innerHTML='<div><b>🧭 梦境远征 · 玩家足迹</b><br><span>地图头像下方显示玩家姓名；下方列表可查看完整进度。</span></div><span>🏁 终点：奇迹宫殿</span>';
+    document.getElementById('tp1').insertBefore(legend,document.getElementById('myMapCard'));
+  }
+  const [data,profileData]=await Promise.all([fb.get('tournament/mapPlayers'),fb.get('playerProfiles/s3/players')]);
+  const profileByName={};Object.values(profileData||{}).forEach(p=>{profileByName[p.name]=p;});
   mapPlayers={};
-  if(data)Object.entries(data).forEach(([k,p])=>{if(p)mapPlayers[k]={...p,key:k};});
+  if(data)Object.entries(data).forEach(([k,p])=>{if(p)mapPlayers[k]={...p,avatarUrl:profileByName[p.name]?.avatarUrl||'',key:k};});
   const key=encodeKey(cName);const me=mapPlayers[key];
   const card=document.getElementById('myMapCard');
   if(me){
@@ -816,14 +947,136 @@ function doAdminLogin(){
   }
 }
 function switchAdmTab(n){
-  for(let i=0;i<4;i++){
+  for(let i=0;i<5;i++){
     document.getElementById('at'+i).classList.toggle('on',i===n);
     document.getElementById('ap'+i).classList.toggle('on',i===n);
   }
   if(n===0)loadVotes();
   if(n===1)loadPlayers();
-  if(n===2){loadMatchForm();loadMatchHist();}
+  if(n===2){loadMatchForm().then(()=>loadMatchHist());}
   if(n===3)loadMapAdm();
+  if(n===4)loadRecapsAdm();
+}
+
+// ── 3e. 复盘管理 ──
+let recapsCache={};
+function clearRecapForm(){
+  document.getElementById('rcWeek').value='';
+  document.getElementById('rcGame').value='';
+  document.getElementById('rcTitle').value='';
+  document.getElementById('rcBody').value='';
+}
+async function saveRecap(){
+  const week=document.getElementById('rcWeek').value.trim();
+  const game=document.getElementById('rcGame').value.trim();
+  const title=document.getElementById('rcTitle').value.trim();
+  const body=document.getElementById('rcBody').value.trim();
+  if(!body){toast('请填写复盘正文');return;}
+  const id='rc'+Date.now();
+  const rec={id,week:week||'?',game:game||'?',title:title||'未命名',body,created:new Date().toISOString()};
+  await fb.put(`tournament/recaps/${id}`,rec);
+  clearRecapForm();loadRecapsAdm();
+  toast('✓ 复盘已保存！');
+}
+async function delRecap(id){
+  if(!confirm('删除这篇复盘？'))return;
+  await fb.del(`tournament/recaps/${id}`);
+  loadRecapsAdm();
+}
+function sortRecaps(data){
+  return Object.values(data||{}).sort((a,b)=>{
+    const wa=parseInt(a.week)||0,wb=parseInt(b.week)||0;
+    if(wa!==wb)return wa-wb;
+    return (parseInt(a.game)||0)-(parseInt(b.game)||0);
+  });
+}
+async function loadRecapsAdm(){
+  const el=document.getElementById('recapsAdmList');
+  el.innerHTML='<div class="no-data">加载中...</div>';
+  const data=await fb.get('tournament/recaps');
+  recapsCache=data||{};
+  const list=sortRecaps(data);
+  if(!list.length){el.innerHTML='<div class="no-data">暂无复盘，在上方录入</div>';return;}
+  el.innerHTML=list.map(r=>`
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:7px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;font-size:13px;">第${esc(r.week)}周 · 第${esc(r.game)}局 <span style="color:var(--G);">${esc(r.title)}</span></div>
+        <button class="btn-danger" onclick="delRecap('${r.id}')">删除</button>
+      </div>
+    </div>`).join('');
+}
+// 玩家端浏览
+async function loadRecapsView(){
+  const el=document.getElementById('recapsView');
+  el.innerHTML='<div class="no-data">加载中...</div>';
+  const data=await fb.get('tournament/recaps');
+  const list=sortRecaps(data);
+  if(!list.length){el.innerHTML='<div class="no-data">暂无战报<br><small>对局复盘由管理员发布后显示</small></div>';return;}
+  // 同时加载战绩和玩家名单，用于座位表联动
+  const[matchData,playerData]=await Promise.all([fb.get('playerProfiles/s3/matches'),fb.get('playerProfiles/s3/players')]);
+  const matches=Object.values(matchData||{});
+  const playerMap=playerData||{};
+  // 给每篇复盘找到对应的那局战绩（周+局都匹配）
+  function findMatch(week,game){
+    return matches.find(m=>String(m.week)===String(week)&&String(m.round)===String(game));
+  }
+  function seatTableHtml(m){
+    if(!m||!m.entries)return'';
+    const rows=[...m.entries].sort((a,b)=>(a.seat||0)-(b.seat||0)).map(e=>{
+      const p=playerMap[e.playerId];
+      const nm=p?`${p.emoji||'🎭'} ${esc(p.name)}`:'未知玩家';
+      const win=e.result==='win';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(200,160,40,.08);font-size:12px;">
+        <span style="font-family:'Courier Prime',monospace;color:var(--G);min-width:30px;">${e.seat||'?'}号</span>
+        <span style="flex:1;">${nm}</span>
+        <span style="color:var(--dim);min-width:56px;">${esc(e.role||'')}</span>
+        <span style="color:${win?'rgba(80,200,120,.9)':'rgba(181,69,58,.9)'};min-width:24px;">${win?'胜':'负'}</span>
+      </div>`;
+    }).join('');
+    return`<div style="background:rgba(8,10,28,.6);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--G);margin-bottom:6px;">🪑 本局座位表</div>${rows}</div>`;
+  }
+  // 把正文里的"N号"标注上玩家名 → "N号(玩家名)"，只作用于显示
+  function annotateBody(body,m){
+    let safe=esc(body||'');
+    if(!m||!m.entries)return safe;
+    // 建座位→玩家名映射
+    const seat2name={};
+    m.entries.forEach(e=>{const p=playerMap[e.playerId];if(e.seat&&p)seat2name[e.seat]=p.name;});
+    // 匹配"数字+号"，在号后追加(玩家名)。从大到小替换避免"12号"被当"1号"+"2号"
+    // 用正则一次性处理：\d+号
+    safe=safe.replace(/(\d+)号/g,(match,num)=>{
+      const nm=seat2name[parseInt(num)];
+      return nm?`${num}号<span style="color:var(--G);font-size:12px;">(${esc(nm)})</span>`:match;
+    });
+    return safe;
+  }
+  el.innerHTML=list.map((r,i)=>{
+    const m=findMatch(r.week,r.game);
+    const seatTable=seatTableHtml(m);
+    const bodyHtml=annotateBody(r.body,m);
+    return`
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden;">
+      <div onclick="toggleRecap(${i})" style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">第${esc(r.week)}周 · 第${esc(r.game)}局${m?' · 🔗已关联战绩':''}</div>
+          <div style="font-size:15px;font-weight:900;color:var(--G);margin-top:3px;">${esc(r.title)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--dim);" id="rcArrow${i}">▾</div>
+      </div>
+      <div id="rcContent${i}" style="display:none;padding:0 16px 16px;border-top:1px solid var(--line);padding-top:12px;">
+        ${seatTable}
+        <div style="font-size:13px;line-height:1.75;white-space:pre-wrap;color:var(--text);">${bodyHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleRecap(i){
+  const c=document.getElementById('rcContent'+i),a=document.getElementById('rcArrow'+i);
+  if(!c)return;
+  const open=c.style.display==='none';
+  c.style.display=open?'block':'none';
+  if(a)a.textContent=open?'▴':'▾';
 }
 
 // ── 3a. 投票结果 ──
@@ -952,13 +1205,43 @@ async function importVoters(){
   renderPlayers();
   toast(`✓ 已导入 ${toAdd.length} 名玩家`);
 }
+let admEmojiTargetId=null,admEmojiPicked='🎭';
+function openAdmEmoji(id){
+  const p=scorePlayers[id];if(!p)return;
+  admEmojiTargetId=id;admEmojiPicked=p.emoji||'🎭';
+  document.getElementById('admEmojiName').textContent=p.name;
+  const grid=document.getElementById('admEmojiGrid');
+  grid.innerHTML=EMOJIS.map(e=>`<button class="emoji-btn${e===admEmojiPicked?' sel':''}" onclick="admEmojiSelect('${e}',this)">${e}</button>`).join('');
+  document.getElementById('admEmojiOverlay').style.display='flex';
+}
+function closeAdmEmoji(){document.getElementById('admEmojiOverlay').style.display='none';}
+function admEmojiSelect(e,btn){
+  admEmojiPicked=e;
+  document.querySelectorAll('#admEmojiGrid .emoji-btn').forEach(b=>b.className='emoji-btn');
+  btn.className='emoji-btn sel';
+}
+async function saveAdmEmoji(){
+  const p=scorePlayers[admEmojiTargetId];if(!p)return;
+  const name=p.name,key=encodeKey(name);
+  // 1. 玩家名单
+  p.emoji=admEmojiPicked;
+  await fb.put(`playerProfiles/s3/players/${admEmojiTargetId}`,p);
+  // 2. 投票数据（保留wins）
+  const bracket=await fb.get(`tournament/playerBrackets/${key}`);
+  if(bracket){bracket.emoji=admEmojiPicked;await fb.put(`tournament/playerBrackets/${key}`,bracket);}
+  // 3. 地图数据（保留position）
+  const mapP=await fb.get(`tournament/mapPlayers/${key}`);
+  if(mapP){mapP.emoji=admEmojiPicked;await fb.put(`tournament/mapPlayers/${key}`,mapP);}
+  closeAdmEmoji();renderPlayers();
+  toast('✓ 已更新 '+name+' 的头像');
+}
 function renderPlayers(){
   const el=document.getElementById('playerList');
   const ps=Object.values(scorePlayers).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   if(!ps.length){el.innerHTML='<div class="no-data">暂无玩家，输入昵称添加</div>';return;}
-  el.innerHTML=`<div style="font-size:11px;color:var(--dim);margin-bottom:8px;">共 ${ps.length} 名玩家</div>`+
+  el.innerHTML=`<div style="font-size:11px;color:var(--dim);margin-bottom:8px;">共 ${ps.length} 名玩家 · 点击头像可修改</div>`+
     ps.map(p=>`<div class="player-row">
-      <span style="font-size:20px;">${p.emoji||'🎭'}</span>
+      <span style="font-size:20px;cursor:pointer;" onclick="openAdmEmoji('${p.id}')" title="点击修改头像">${p.emoji||'🎭'}</span>
       <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${esc(p.name)}</div>
         <div style="font-size:10px;color:var(--dim);">${p.created||''}</div></div>
       <button class="btn-danger" onclick="delPlayer('${p.id}')">删除</button>
@@ -976,28 +1259,45 @@ async function addPlayer(){
   renderPlayers();toast(`✓ 已添加：${addEmoji2} ${n}`);
 }
 async function delPlayer(id){
-  const p=scorePlayers[id];if(!p||!confirm(`删除玩家「${p.name}」？`))return;
+  const p=scorePlayers[id];if(!p||!confirm(`删除玩家「${p.name}」？\n将同时从玩家名单、梦境地图上移除。`))return;
+  const key=encodeKey(p.name);
+  // 1. 删玩家名单
+  const ok=await fb.del(`playerProfiles/s3/players/${id}`);
+  if(!ok){toast('删除失败：Firebase 拒绝了请求，请检查数据库规则。');return;}
+  // 2. 删地图位置（key 是玩家名编码）
+  await fb.del(`tournament/mapPlayers/${key}`);
+  // 3. 询问是否连投票记录一起删
+  if(confirm(`是否也删除「${p.name}」的角色排行投票记录？\n\n确定=一并删除投票  取消=保留投票`)){
+    await fb.del(`tournament/playerBrackets/${key}`);
+  }
   delete scorePlayers[id];
-  await fb.del(`playerProfiles/s3/players/${id}`);
-  renderPlayers();toast('已删除');
+  renderPlayers();toast('已删除玩家及地图记录');
 }
 
 // ── 3c. 比赛战绩录入 ──
-function loadMatchForm(){
+async function loadMatchForm(){
   document.getElementById('mDate').value=new Date().toISOString().slice(0,10);
+  const mw=document.getElementById('mWeek');if(mw)mw.value=1;
   document.getElementById('mRound').value=1;
   document.getElementById('entryRows').innerHTML='';
   entryCount=0;
+  // 确保玩家列表已加载（否则下拉框选不了玩家）
+  if(!scorePlayers||!Object.keys(scorePlayers).length){
+    const data=await fb.get('playerProfiles/s3/players');
+    scorePlayers=data||{};
+  }
 }
 function getPlayerOptions(selId=''){
   const ps=Object.values(scorePlayers).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   return`<option value="">选择玩家</option>`+ps.map(p=>`<option value="${p.id}" ${p.id===selId?'selected':''}>${p.emoji||'🎭'} ${esc(p.name)}</option>`).join('');
 }
 function addEntryRow(){
+  if(!scorePlayers||!Object.keys(scorePlayers).length){toast('玩家列表加载中，请稍候再试');fb.get('playerProfiles/s3/players').then(d=>{scorePlayers=d||{};});return;}
   const id='er'+(++entryCount);
   const row=document.createElement('div');
   row.className='entry-row';row.id=id;
   row.innerHTML=`
+    <input class="score-inp" type="number" min="1" max="12" placeholder="座位" style="width:52px;" title="座位号">
     <select class="entry-sel" style="flex:1;min-width:100px;" onchange="">${getPlayerOptions()}</select>
     <select class="entry-sel" style="min-width:80px;">${ROLES.map(r=>`<option>${r}</option>`).join('')}</select>
     <div class="wr-toggle">
@@ -1016,6 +1316,7 @@ function toggleWR(btn,type){
 function clearForm(){document.getElementById('entryRows').innerHTML='';entryCount=0;}
 async function saveMatch(){
   const date=document.getElementById('mDate').value;
+  const week=parseInt(document.getElementById('mWeek').value)||1;
   const round=parseInt(document.getElementById('mRound').value)||1;
   const rows=document.querySelectorAll('#entryRows .entry-row');
   if(!rows.length){toast('请先添加参赛玩家');return;}
@@ -1023,15 +1324,17 @@ async function saveMatch(){
   let ok=true;
   rows.forEach(row=>{
     const sels=row.querySelectorAll('select');
+    const nums=row.querySelectorAll('input[type="number"]');
+    const seat=parseInt(nums[0]?.value)||null;  // 第一个number是座位号
     const pid=sels[0].value;const role=sels[1].value;
     const result=row.querySelector('.wr-btn.win.on')?'win':'lose';
-    const total=parseFloat(row.querySelector('.score-inp').value)||0;
+    const total=parseFloat(nums[1]?.value)||0;   // 第二个number是积分
     if(!pid){ok=false;return;}
-    entries.push({playerId:pid,role,result,total});
+    entries.push({seat,playerId:pid,role,result,total});
   });
   if(!ok){toast('请为所有玩家选择名字');return;}
   const mid='m'+Date.now();
-  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,round,entries});
+  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,entries});
   clearForm();loadMatchForm();loadMatchHist();
   toast('✓ 比赛记录已保存！');
 }
@@ -1048,12 +1351,12 @@ async function loadMatchHist(){
   el.innerHTML=matches.slice(0,20).map(m=>`
     <div class="hist-row">
       <div class="hist-head">
-        <div class="hist-title">${m.date||''} · 第${m.round||''}局</div>
+        <div class="hist-title">${m.date||''} · 第${m.week||'?'}周第${m.round||''}局</div>
         <button class="btn-danger" onclick="delMatch('${m.id}')">撤销</button>
       </div>
       ${(m.entries||[]).map(e=>{
         const p=playerMap[e.playerId];
-        return`<div class="hist-entry">${p?p.emoji||'🎭':'?'} ${esc(p?.name||'未知')} · ${esc(e.role||'')} · <span style="color:${e.result==='win'?'rgba(80,200,120,.8)':'rgba(181,69,58,.8)'}">${e.result==='win'?'胜':'负'}</span> · <span style="color:var(--G)">${e.total>=0?'+':''}${e.total}</span></div>`;
+        return`<div class="hist-entry">${e.seat?'<span style="color:var(--G);font-family:Courier Prime,monospace;">'+e.seat+'号</span> ':''}${p?p.emoji||'🎭':'?'} ${esc(p?.name||'未知')} · ${esc(e.role||'')} · <span style="color:${e.result==='win'?'rgba(80,200,120,.8)':'rgba(181,69,58,.8)'}">${e.result==='win'?'胜':'负'}</span> · <span style="color:var(--G)">${e.total>=0?'+':''}${e.total}</span></div>`;
       }).join('')}
     </div>`).join('');
 }
@@ -1083,7 +1386,14 @@ async function loadMapAdm(){
       <button class="adm-btn y" onclick="mapMove('${p.key}','${esc(p.name)}','${p.emoji}',2)">+2赢局</button>
       <input class="adm-inp" type="number" min="0" max="80" value="${p.position}" id="mi-${p.key}">
       <button class="adm-btn" onclick="mapSet('${p.key}','${esc(p.name)}','${p.emoji}')">设定</button>
+      <button class="adm-btn" style="color:rgba(181,69,58,.9);border-color:rgba(181,69,58,.4);" onclick="mapRemove('${p.key}','${esc(p.name)}')">移除</button>
     </div>`).join('');
+}
+async function mapRemove(key,name){
+  if(!confirm(`把「${name}」从梦境地图上移除？\n（不影响玩家名单和投票，只清除地图位置）`))return;
+  await fb.del(`tournament/mapPlayers/${key}`);
+  toast(`已把 ${name} 移出地图`);
+  loadMapAdm();
 }
 async function mapMove(key,name,emoji,delta){
   const el=document.getElementById('mi-'+key);
@@ -1099,6 +1409,112 @@ async function mapSet(key,name,emoji){
   toast(`${emoji} ${name} → 第${val}格`);
   if(MAP_LMS[val])setTimeout(()=>toast(`🎉 到达${MAP_LMS[val].e}${MAP_LMS[val].n}！`),1200);
 }
+
+// ══ 联赛中心（增量加入；不改变人气王、地图或后台的原有数据与流程）══
+const league={season:'s3',seasons:[],players:{},matches:{},rows:[]};
+function leagueEsc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function leagueWolf(role){return /狼|石像鬼|恶灵骑士|梦魇|血月|诡术|假面|盗宝/.test(role||'');}
+function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.filter(e=>e.result==='win');if(!winners.length)return null;return winners.some(e=>leagueWolf(e.role))?'🐺 狼人胜利':'👑 好人胜利';}
+function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
+function leaguePath(){const meta=league.seasons.find(x=>x.id===league.season)?.meta||{};return meta.dataPath||`playerProfiles/${league.season}`;}
+function leagueShow(){showPage('pg-league');leagueLoadSeasons();}
+async function leagueLoadSeasons(){let t={};try{t=await fb.get('tournament')||{};}catch{}const map=t.seasons||{},ids=Object.keys(map);if(!ids.includes('s3'))ids.push('s3');league.seasons=ids.map(id=>({id,meta:map[id]||{}}));if(ids.includes(t.activeSeason))league.season=t.activeSeason;const sel=document.getElementById('leagueSeason');sel.innerHTML=league.seasons.map(x=>`<option value="${leagueEsc(x.id)}">${leagueEsc(x.meta.name||x.meta.title||({s3:'Season 3'}[x.id])||x.id)}</option>`).join('');sel.value=league.season;await leagueLoad();}
+async function leagueLoad(){const area=document.getElementById('leagueArea');if(!area)return;area.innerHTML='<div class="no-data">正在加载联赛数据…</div>';try{const[p,m]=await Promise.all([fb.get(`${leaguePath()}/players`),fb.get(`${leaguePath()}/matches`)]);league.players=p||{};league.matches=m||{};Object.entries(league.players).forEach(([id,x])=>{if(!x.id)x.id=id;});league.rows=Object.values(league.players).map(p=>({p,s:leagueStats(p.id)})).sort((a,b)=>b.s.score-a.s.score||b.s.rate-a.s.rate);leagueRender();}catch{area.innerHTML='<div class="no-data">无法读取 Firebase 数据，请稍后重试。</div>';}}
+function leagueFmt(n){return `${n>=0?'+':''}${Number(n||0).toFixed(1).replace(/\.0$/,'')}`;}
+let leagueStopPlayers=null,leagueStopMatches=null,leagueWatchPath='';
+function leagueRecalculate(){Object.entries(league.players).forEach(([id,p])=>{if(!p.id)p.id=id;});league.rows=Object.values(league.players).map(p=>({p,s:leagueStats(p.id)})).sort((a,b)=>b.s.score-a.s.score||b.s.rate-a.s.rate);}
+async function leagueStartRealtime(){const path=leaguePath();if(leagueWatchPath===path&&leagueStopPlayers)return;leagueStopPlayers?.();leagueStopMatches?.();leagueWatchPath=path;try{const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');const dbSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');const app=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const db=dbSdk.getDatabase(app,DB);const redraw=()=>{leagueRecalculate();if(document.getElementById('pg-league')?.classList.contains('on'))leagueRender();};leagueStopPlayers=dbSdk.onValue(dbSdk.ref(db,`${path}/players`),s=>{league.players=s.val()||{};redraw();});leagueStopMatches=dbSdk.onValue(dbSdk.ref(db,`${path}/matches`),s=>{league.matches=s.val()||{};redraw();});}catch(e){console.warn('Realtime listener unavailable; using one-time loading.',e);}}
+const leagueLoadOnce=leagueLoad;
+leagueLoad=async function(){await leagueLoadOnce();await leagueStartRealtime();};
+const leagueLoadWithRealtime=leagueLoad;
+leagueLoad=async function(){await leagueLoadWithRealtime();if(!Object.keys(league.players).length&&!Object.keys(league.matches).length&&league.season!=='s3'){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
+function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,5);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3>积分排名</h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><strong>${league.rows.indexOf(x)+1}</strong><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%</small></span><em>${leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>最新战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
+function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p></div><div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;}
+function addLeagueCenter(){const style=document.createElement('style');style.textContent=`.league-open{margin-top:10px}.league{min-height:100vh;padding-bottom:48px}.league-head{padding:20px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}.league-head h1{font-size:20px;margin:0;color:var(--G)}.league-head select,.league-search input{background:#10152a;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px}.league-body{max-width:900px;margin:auto;padding:20px 16px}.league-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0 0 18px}.league-stats>div,.league-card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px}.league-stats b{display:block;color:var(--G);font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.league-stats span,.league-row small,.league-match small,.league-profile p{display:block;color:var(--dim);font-size:11px;margin-top:4px}.league-cols{display:grid;grid-template-columns:1.3fr .9fr;gap:14px}.league-card h3{margin:0 0 12px;color:var(--G);font-size:15px}.league-search{margin-bottom:8px}.league-search input{width:100%}.league-row{width:100%;display:flex;align-items:center;gap:9px;text-align:left;background:none;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:10px 0;font-family:inherit}.league-row strong{width:20px;color:var(--gold)}.league-avatar{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:#252c4c;font-size:18px;flex:0 0 auto}.league-row span:nth-child(3){flex:1}.league-row em{font-style:normal;color:var(--G);font-family:monospace;font-weight:bold}.league-match{padding:11px 0;border-bottom:1px solid var(--line)}.league-match:last-child{border:0}.league-profile{text-align:center;padding:20px}.league-avatar.big{width:64px;height:64px;font-size:34px;margin:auto}.league-profile h2{margin:8px 0 0}@media(max-width:600px){.league-cols{grid-template-columns:1fr}.league-stats{grid-template-columns:1fr}.league-head{align-items:flex-start;flex-direction:column}}`;document.head.appendChild(style);const entry=document.querySelector('#pg-name .n-box');const button=document.createElement('button');button.className='n-admin league-open';button.textContent='📊 联赛中心';button.onclick=leagueShow;entry.appendChild(button);const page=document.createElement('div');page.className='pg league';page.id='pg-league';page.innerHTML=`<div class="league-head"><button class="topbar-btn" onclick="showPage('pg-name')">← 返回</button><h1>🏆 联赛中心</h1><select id="leagueSeason" onchange="league.season=this.value;leagueLoad()"></select></div><div class="league-body" id="leagueArea"><div class="no-data">选择赛季后加载</div></div>`;document.body.insertBefore(page,document.getElementById('lockOverlay'));}
+try{addLeagueCenter();}catch(e){console.warn('联赛中心模块加载失败(不影响核心功能):',e);}
+
+// ══ Firebase Auth：玩家账号（邮箱/密码）══
+const authConfig={apiKey:'AIzaSyAgirINMy8jx6W1joRyj1LvSazYCk5t0Z8',authDomain:'werewolf-favourite-tournament.firebaseapp.com',databaseURL:'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com',projectId:'werewolf-favourite-tournament',appId:'1:663863021546:web:ee6183ba5232630ffdec93'};
+let authApp,authApi,authUser=null;
+async function authInit(){try{const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');authApi=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');authApp=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const auth=authApi.getAuth(authApp);authApi.onAuthStateChanged(auth,u=>{authUser=u;authUpdateButton();if(u)authLoadProfile();});}catch(e){console.warn('Firebase Auth unavailable',e);}}
+async function authDb(path,method='GET',data){const token=authUser?await authUser.getIdToken():'';const r=await fetch(`${DB}/${path}.json${token?'?auth='+encodeURIComponent(token):''}`,{method,headers:{'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});if(!r.ok)throw new Error('无法保存账户资料');return method==='GET'?r.json():true;}
+function authUpdateButton(){const b=document.getElementById('authOpen');if(!b)return;b.textContent=authUser?`👤 ${authUser.email.split('@')[0]}`:'🔐 玩家登录';}
+function authOpen(){document.getElementById('authOverlay').classList.add('on');document.getElementById('authError').textContent='';}
+function authClose(){document.getElementById('authOverlay').classList.remove('on');}
+async function authSubmit(create){const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value,name=document.getElementById('authName').value.trim(),err=document.getElementById('authError');err.textContent='';if(!email||!pw||(create&&!name)){err.textContent='请填写邮箱、密码和玩家昵称。';return;}try{const auth=authApi.getAuth(authApp);const cred=create?await authApi.createUserWithEmailAndPassword(auth,email,pw):await authApi.signInWithEmailAndPassword(auth,email,pw);authUser=cred.user;if(create)await authDb(`tournament/userProfiles/${authUser.uid}`,'PUT',{displayName:name,emoji:'🎭',email,createdAt:new Date().toISOString()});await authLoadProfile();authClose();toast(create?'注册成功，欢迎加入！':'登录成功！');}catch(e){err.textContent=e.code==='auth/email-already-in-use'?'这个邮箱已注册，请直接登录。':e.code==='auth/invalid-credential'?'邮箱或密码不正确。':e.code==='auth/operation-not-allowed'?'请先在 Firebase Authentication 启用 Email/Password。':'登录失败：'+e.message;}}
+async function authLoadProfile(){if(!authUser)return;try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);if(p?.displayName){cName=p.displayName;cEmoji=p.emoji||'🎭';}}catch(e){console.warn(e);}}
+async function authLogout(){if(authApi&&authApp)await authApi.signOut(authApi.getAuth(authApp));authUser=null;authUpdateButton();toast('已退出登录');}
+function addAuthUI(){const style=document.createElement('style');style.textContent=`.auth-open{margin:0 0 10px!important;color:var(--G)!important;border-color:rgba(255,215,60,.6)!important;background:rgba(255,215,60,.12)!important}.auth-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:20px}.auth-overlay.on{display:flex}.auth-box{width:min(390px,100%);background:#101633;border:1px solid rgba(255,215,60,.42);border-radius:14px;padding:24px;box-shadow:0 20px 50px #0009}.auth-box h2{margin:0 0 6px;color:var(--G);font-size:21px}.auth-box p{font-size:12px;color:var(--dim);line-height:1.55}.auth-box input{width:100%;margin:7px 0;background:#080c20;border:1px solid var(--line);border-radius:7px;padding:11px;color:var(--text);font-family:inherit}.auth-actions{display:flex;gap:8px;margin-top:9px}.auth-actions button{flex:1}.auth-err{min-height:18px;color:#ffaaa5;font-size:12px;margin-top:8px}`;document.head.appendChild(style);const box=document.querySelector('#pg-name .n-box');const b=document.createElement('button');b.id='authOpen';b.className='n-admin auth-open';b.onclick=authUser?authLogout:authOpen;b.textContent='🔐 玩家登录 / 注册';box.insertBefore(b,box.firstChild);const ov=document.createElement('div');ov.id='authOverlay';ov.className='auth-overlay';ov.innerHTML=`<div class="auth-box"><h2>玩家账户</h2><p>登录后可保存你的玩家资料，并用于后续的个人数据与权限绑定。</p><input id="authName" maxlength="12" placeholder="玩家昵称（注册时必填）"><input id="authEmail" type="email" placeholder="邮箱"><input id="authPassword" type="password" minlength="6" placeholder="密码（至少 6 位）"><div class="auth-actions"><button class="btn-line" onclick="authSubmit(false)">登录</button><button class="btn-gold" onclick="authSubmit(true)">注册</button></div><div id="authError" class="auth-err"></div><button onclick="authClose()" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--dim);cursor:pointer">取消</button></div>`;document.body.appendChild(ov);authInit();}
+/* 登录/注册暂时隐藏（玩家用名字回看记录即可）。以后要启用把下一行取消注释： */
+// try{addAuthUI();}catch(e){console.warn('玩家登录模块加载失败:',e);}
+
+// 头像与唯一 Emoji：照片保存到 Firebase Storage，Emoji 通过 emojiOwners 占位。
+const avatarEmojiList=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎲','👑','🏆','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉'];
+let selectedAvatarEmoji='🎭',selectedAvatarFile=null;
+function avatarPickEmoji(emoji){selectedAvatarEmoji=emoji;document.querySelectorAll('.avatar-emoji').forEach(b=>b.classList.toggle('chosen',b.dataset.emoji===emoji));}
+function avatarFileChanged(input){selectedAvatarFile=input.files?.[0]||null;const note=document.getElementById('avatarFileNote');if(note)note.textContent=selectedAvatarFile?`已选择：${selectedAvatarFile.name}`:'未选择照片（将使用 emoji）';}
+async function saveAvatarPreference(){if(!authUser)return;const emojiKey=encodeURIComponent(selectedAvatarEmoji);const owner=await authDb(`tournament/emojiOwners/${emojiKey}`);if(owner&&owner!==authUser.uid)throw new Error('这个 emoji 已被其他玩家使用，请换一个。');await authDb(`tournament/emojiOwners/${emojiKey}`,'PUT',authUser.uid);let avatarUrl='';if(selectedAvatarFile){if(!selectedAvatarFile.type.startsWith('image/'))throw new Error('只能上传图片文件。');if(selectedAvatarFile.size>5*1024*1024)throw new Error('头像图片不能超过 5 MB。');const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');const storageSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js');const app=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const fileRef=storageSdk.ref(storageSdk.getStorage(app),`avatars/${authUser.uid}/profile-${Date.now()}`);await storageSdk.uploadBytes(fileRef,selectedAvatarFile,{contentType:selectedAvatarFile.type});avatarUrl=await storageSdk.getDownloadURL(fileRef);}const profile=await authDb(`tournament/userProfiles/${authUser.uid}`)||{};await authDb(`tournament/userProfiles/${authUser.uid}`,'PATCH',{emoji:selectedAvatarEmoji,...(avatarUrl?{avatarUrl}:{}),updatedAt:new Date().toISOString()});const players=await authDb('playerProfiles/s3/players')||{};for(const [id,p] of Object.entries(players)){if(p.name===profile.displayName){await authDb(`playerProfiles/s3/players/${id}`,'PUT',{...p,emoji:selectedAvatarEmoji,...(avatarUrl?{avatarUrl}:{})});}}}
+const authSubmitOriginal=authSubmit;
+authSubmit=async function(create){await authSubmitOriginal(create);if(create&&authUser){try{await saveAvatarPreference();toast('头像已保存');}catch(e){toast(e.message||'头像保存失败');}}};
+const addAuthUIOriginal=addAuthUI;
+function addAvatarControls(){const style=document.createElement('style');style.textContent=`.avatar-options{margin:9px 0;padding:9px;border:1px solid var(--line);border-radius:8px}.avatar-options label{display:block;color:var(--dim);font-size:11px;margin-bottom:6px}.avatar-grid{display:flex;gap:4px;flex-wrap:wrap}.avatar-emoji{border:1px solid transparent!important;background:#151a31!important;padding:5px!important;cursor:pointer}.avatar-emoji.chosen{border-color:var(--G)!important;background:rgba(255,215,60,.18)!important}.avatar-file{width:100%;font-size:11px;color:var(--dim)}`;document.head.appendChild(style);const actions=document.querySelector('#authOverlay .auth-actions');if(!actions)return;const controls=document.createElement('div');controls.className='avatar-options';controls.innerHTML=`<label>头像（可上传照片；未上传时使用唯一 emoji）</label><div class="avatar-grid">${avatarEmojiList.map(e=>`<button type="button" class="avatar-emoji${e===selectedAvatarEmoji?' chosen':''}" data-emoji="${e}" onclick="avatarPickEmoji('${e}')">${e}</button>`).join('')}</div><input class="avatar-file" type="file" accept="image/*" onchange="avatarFileChanged(this)"><div id="avatarFileNote" style="font-size:10px;color:var(--dim);margin-top:4px">未选择照片（将使用 emoji）</div>`;actions.parentNode.insertBefore(controls,actions);}
+// try{addAvatarControls();}catch(e){console.warn('头像模块加载失败:',e);}
+
+// ══ 梦境远征视觉路线图：保留同一份 mapPlayers.position 数据 ══
+function addDreamRouteStyles(){const style=document.createElement('style');style.textContent=`#iboard.dream-route{display:block;width:100%;min-width:620px;border:1px solid rgba(255,215,60,.32);border-radius:18px;overflow:hidden;background:radial-gradient(circle at 20% 15%,#283c73 0,transparent 28%),radial-gradient(circle at 80% 85%,#382260 0,transparent 30%),linear-gradient(140deg,#090d24,#12173a 55%,#090b1b);box-shadow:inset 0 0 45px #0008,0 15px 35px #0005}.dream-head{padding:17px 22px;border-bottom:1px solid rgba(255,215,60,.16);display:flex;justify-content:space-between;align-items:center}.dream-head b{color:var(--G);letter-spacing:3px;font-size:16px}.dream-head span{font-size:10px;color:var(--dim);letter-spacing:2px}.dream-track{height:330px;position:relative;padding:0 48px}.dream-line{position:absolute;left:7%;right:7%;top:160px;height:7px;border-radius:9px;background:linear-gradient(90deg,#4b8f82,#dfba55,#a778d5);box-shadow:0 0 16px rgba(255,215,60,.45)}.dream-line:after{content:'';position:absolute;inset:2px;background:repeating-linear-gradient(90deg,#fff8 0 10px,transparent 10px 21px);border-radius:8px}.dream-tile{position:absolute;top:150px;width:26px;height:26px;transform:translateX(-50%);z-index:2;display:grid;place-items:center;border-radius:7px;background:rgba(18,23,48,.85);border:1px solid rgba(255,215,60,.28);font-family:'Courier Prime',monospace;font-size:11px;color:rgba(232,210,130,.7);box-shadow:0 2px 6px #0006}.dream-tile.milestone{background:rgba(255,215,60,.16);border-color:rgba(255,215,60,.6);color:var(--G);font-weight:bold}.dream-stage{position:absolute;top:118px;transform:translateX(-50%);width:84px;text-align:center;z-index:3}.dream-stage i{display:grid;place-items:center;width:48px;height:48px;margin:auto;border-radius:50%;font-style:normal;font-size:23px;background:linear-gradient(145deg,#3a2c15,#15182d);border:2px solid rgba(255,215,60,.7);box-shadow:0 0 14px rgba(255,215,60,.28)}.dream-stage:first-of-type i{border-color:#73d9a5}.dream-stage b{display:block;margin-top:6px;font-size:10px;color:#f4dfa5;line-height:1.25}.dream-stage small{color:var(--dim);font-size:9px}.route-player{position:absolute;z-index:5;display:flex;flex-direction:row;align-items:center;gap:5px;width:auto;border:0;background:none;color:#fff;cursor:default;padding:0;white-space:nowrap}.route-player .rp-avatar{width:30px;height:30px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;background:#171a35;border:2px solid var(--G);box-shadow:0 0 10px #f7ce6188;overflow:hidden}.route-player .rp-avatar img{width:100%;height:100%;object-fit:cover}.route-player .rp-name{background:#070a18dd;border:1px solid rgba(255,215,60,.35);border-radius:7px;padding:2px 6px;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;flex:0 0 auto}.route-player.me .rp-avatar{border-color:#74e5b0;box-shadow:0 0 15px #74e5b0}.route-player.me .rp-name{color:#a9ffd1;border-color:#74e5b0}.dream-key{display:flex;gap:13px;justify-content:center;padding:10px;border-top:1px solid rgba(255,215,60,.14);font-size:10px;color:var(--dim)}.dream-key strong{color:var(--G)}@media(max-width:650px){.dream-track{height:300px}.route-player{transform:scale(.88);transform-origin:center}}`;document.head.appendChild(style);}
+try{addDreamRouteStyles();}catch(e){console.warn('地图样式加载失败:',e);}
+function addFogStyles(){const s=document.createElement('style');s.textContent=`.dream-fog{position:absolute;z-index:4;top:18px;bottom:12px;right:0;border-left:1px solid #dce4ff88;background:radial-gradient(ellipse at 30% 40%,#b4c2ea55,transparent 40%),radial-gradient(ellipse at 70% 65%,#c4b3e844,transparent 40%),linear-gradient(90deg,#2a3357bb,#0f1228f2);backdrop-filter:blur(3px);box-shadow:-16px 0 30px #6c7dbe44}.dream-fog:after{content:'☁ 迷雾深处 · 尚未揭晓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#e6e9ff;font-size:12px;letter-spacing:3px;white-space:nowrap;text-shadow:0 2px 8px #000}.dream-stage.fogged{visibility:hidden;pointer-events:none}`;document.head.appendChild(s);}
+function buildMap(){
+  if(mapBuilt)return;mapBuilt=true;
+  const b=document.getElementById('iboard');b.className='iboard dream-route';
+  // ★ 本周区间：只显示 起点(0) → 罗马斗兽场(10)。下周开放佩特拉就把 SEG_END 改成 20
+  const SEG_START=0,SEG_END=10;
+  const span=SEG_END-SEG_START;
+  // 只取本区间内的奇迹点
+  const stages=Object.entries(MAP_LMS)
+    .filter(([pos])=>Number(pos)>=SEG_START&&Number(pos)<=SEG_END)
+    .map(([pos,l])=>{
+      const pct=8+(Number(pos)-SEG_START)/span*84;
+      return`<div class="dream-stage" data-stage="${pos}" style="left:${pct}%"><i>${l.e}</i><b>${l.n}</b><small>${pos} 格${l.r?' · '+l.r:''}</small></div>`;
+    }).join('');
+  // 生成每一格的刻度方块（0到SEG_END），奇迹格高亮
+  let tiles='';
+  for(let g=SEG_START;g<=SEG_END;g++){
+    const pct=8+(g-SEG_START)/span*84;
+    const isMilestone=!!MAP_LMS[g];
+    tiles+=`<div class="dream-tile${isMilestone?' milestone':''}" style="left:${pct}%">${g}</div>`;
+  }
+  b.innerHTML=`<div class="dream-head"><div><b>🧭 梦境远征</b><span> DREAM EXPEDITION · 第一周</span></div><span>本周征途：梦境之门 → 罗马斗兽场</span></div><div class="dream-track" id="dreamTrack"><div class="dream-line"></div>${tiles}${stages}<div id="dreamPlayers"></div></div><div class="dream-key"><span>🏁 起点</span><span>🏛 罗马斗兽场</span><span><strong>绿色边框</strong> = 你的位置</span></div>`;
+  b.dataset.segStart=SEG_START;b.dataset.segEnd=SEG_END;
+}
+function placeMarkers(){
+  const box=document.getElementById('dreamPlayers');if(!box)return;
+  const b=document.getElementById('iboard');
+  const SEG_START=Number(b?.dataset.segStart||0),SEG_END=Number(b?.dataset.segEnd||10);
+  const span=SEG_END-SEG_START||1;
+  const all=Object.values(mapPlayers);
+  // 玩家按本区间定位（超过区间末端的，钉在末端）
+  const grouped={};
+  all.forEach(p=>{
+    let pos=Math.max(SEG_START,Math.min(SEG_END,Number(p.position)||0));
+    (grouped[pos]??=[]).push(p);
+  });
+  // 同一格的玩家垂直堆叠，交替排在路线上下方，无重叠、无数量上限
+  const LINE_TOP=160;      // 路线中线的 top 值（与CSS .dream-line 的 top 一致）
+  const STEP=40;           // 每个头像之间的垂直间距
+  box.innerHTML=Object.entries(grouped).flatMap(([pos,players])=>{
+    const left=8+(Number(pos)-SEG_START)/span*84;
+    return players.map((p,i)=>{
+      // i=0 排上方第一层，i=1 下方第一层，i=2 上方第二层… 交替向外扩展
+      const layer=Math.floor(i/2)+1;
+      const dir=(i%2===0)?-1:1;              // 偶数在上，奇数在下
+      const top=LINE_TOP+dir*layer*STEP-15;
+      const avatar=p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:(p.emoji||'🎭');
+      return`<div class="route-player${p.name===cName?' me':''}" style="left:calc(${left}% - 15px);top:${top}px"><span class="rp-avatar">${avatar}</span><span class="rp-name">${esc(p.name)}</span></div>`;
+    });
+  }).join('');
+}
+try{addFogStyles();}catch(e){console.warn('迷雾样式加载失败:',e);}
 
 // ══ 初始化 ══
 window.addEventListener('load',()=>{
