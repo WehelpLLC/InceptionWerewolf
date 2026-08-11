@@ -449,6 +449,12 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
     <div class="adm-body">
       <div class="sec-title" style="margin-top:0;">📝 录入比赛</div>
       <div class="match-form">
+        <div class="meta-field" style="margin-bottom:10px;">
+          <div class="meta-label">🎭 选择版型</div>
+          <select class="meta-inp" id="mTemplate" style="width:100%;" onchange="onTemplateChange()">
+            <option value="">— 请选择版型 —</option>
+          </select>
+        </div>
         <div class="match-meta">
           <div class="meta-field">
             <div class="meta-label">比赛日期</div>
@@ -463,8 +469,14 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
             <input type="number" class="meta-inp" id="mRound" min="1" value="1" style="width:70px;">
           </div>
         </div>
+        <div id="templateHint" style="font-size:11px;color:var(--dim);margin:6px 0;"></div>
         <div id="entryRows"></div>
-        <button class="btn-line" onclick="addEntryRow()" style="width:100%;margin:8px 0;">+ 添加参赛玩家</button>
+        <button class="btn-line" onclick="addEntryRow()" style="width:100%;margin:8px 0;">+ 添加参赛玩家（手动）</button>
+        <div id="winSideButtons" style="display:none;gap:8px;margin:10px 0;">
+          <button class="btn-line" style="flex:1;border-color:#c85a4a;color:#e8988a;" onclick="setWinSide('wolf')">🐺 狼人阵营获胜</button>
+          <button class="btn-line" style="flex:1;border-color:#5ac878;color:#9ae8b8;" onclick="setWinSide('good')">👑 好人阵营获胜</button>
+        </div>
+        <div id="nightDayFields"></div>
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn-line" onclick="clearForm()">清空</button>
           <button class="btn-gold" onclick="saveMatch()" style="flex:1;">✓ 保存比赛</button>
@@ -1348,6 +1360,11 @@ async function loadMatchForm(){
   document.getElementById('mRound').value=1;
   document.getElementById('entryRows').innerHTML='';
   entryCount=0;
+  initTemplateSelect();
+  const tsel=document.getElementById('mTemplate');if(tsel)tsel.value='';
+  document.getElementById('winSideButtons').style.display='none';
+  document.getElementById('nightDayFields').innerHTML='';
+  document.getElementById('templateHint').textContent='';
   // 确保玩家列表已加载（否则下拉框选不了玩家）
   if(!scorePlayers||!Object.keys(scorePlayers).length){
     const data=await fb.get('playerProfiles/s3/players');
@@ -1356,37 +1373,170 @@ async function loadMatchForm(){
 }
 function getPlayerOptions(selId=''){
   const ps=Object.values(scorePlayers).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-  return`<option value="">选择玩家</option>`+ps.map(p=>`<option value="${p.id}" ${p.id===selId?'selected':''}>${p.emoji||'🎭'} ${esc(p.name)}</option>`).join('');
+  return`<option value="">选择玩家</option><option value="__NEW__">➕ 新玩家（现场输入名字）</option>`+ps.map(p=>`<option value="${p.id}" ${p.id===selId?'selected':''}>${p.emoji||'🎭'} ${esc(p.name)}</option>`).join('');
 }
-function addEntryRow(){
+function onPlayerSelChange(sel){
+  const row=sel.closest('.entry-row');
+  const existing=row.querySelector('.new-player-inp');
+  if(sel.value==='__NEW__'){
+    if(!existing){
+      const inp=document.createElement('input');
+      inp.className='entry-sel new-player-inp';
+      inp.style.cssText='flex:1;min-width:100px;';
+      inp.placeholder='输入新玩家名字';
+      sel.parentNode.insertBefore(inp,sel.nextSibling);
+      sel.style.display='none';
+    }
+  }else if(existing){
+    existing.remove();
+    sel.style.display='';
+  }
+}
+const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","小狼击杀","机械狼击杀","女巫救","女巫毒","机械狼技能","机械狼学习目标","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","机械猎人枪口"]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["魔术师交换目标","狼术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","机械狼击杀","装甲狼击杀","女巫救","女巫毒","机械狼技能","装甲狼技能","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","机械猎人枪口","装甲猎人枪口"],"hasFirstSecondNight":true}};
+function initTemplateSelect(){
+  const sel=document.getElementById('mTemplate');
+  if(!sel||sel.options.length>1)return;
+  Object.keys(ROLE_TEMPLATES).forEach(name=>{
+    const opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);
+  });
+}
+function onTemplateChange(){
+  const name=document.getElementById('mTemplate').value;
+  document.getElementById('entryRows').innerHTML='';entryCount=0;
+  if(!name){document.getElementById('templateHint').textContent='';document.getElementById('winSideButtons').style.display='none';document.getElementById('nightDayFields').innerHTML='';return;}
+  const t=ROLE_TEMPLATES[name];
+  const wolfList=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean).join('、')||'狼人';
+  document.getElementById('templateHint').innerHTML=`神职：${t.roles.join('/')}　·　特殊狼：${wolfList}${t.goodExtra?'　·　含'+t.goodExtra:''}`;
+  for(let i=1;i<=12;i++)addEntryRow(i);
+  document.getElementById('winSideButtons').style.display='flex';
+  buildNightDayFields(t);
+}
+function addEntryRow(seatNum){
   if(!scorePlayers||!Object.keys(scorePlayers).length){toast('玩家列表加载中，请稍候再试');fb.get('playerProfiles/s3/players').then(d=>{scorePlayers=d||{};});return;}
   const id='er'+(++entryCount);
+  const tname=document.getElementById('mTemplate')?document.getElementById('mTemplate').value:'';
+  const t=tname?ROLE_TEMPLATES[tname]:null;
+  const roleOptions=t?buildRoleOptions(t):ROLES.map(r=>`<option>${r}</option>`).join('');
   const row=document.createElement('div');
   row.className='entry-row';row.id=id;
   row.innerHTML=`
-    <input class="score-inp" type="number" min="1" max="12" placeholder="座位" style="width:52px;" title="座位号">
-    <select class="entry-sel" style="flex:1;min-width:100px;" onchange="">${getPlayerOptions()}</select>
-    <select class="entry-sel" style="min-width:80px;">${ROLES.map(r=>`<option>${r}</option>`).join('')}</select>
+    <input class="score-inp" type="number" min="1" max="12" placeholder="座位" value="${seatNum||''}" style="width:52px;" title="座位号">
+    <select class="entry-sel" style="flex:1;min-width:100px;" onchange="onPlayerSelChange(this)">${getPlayerOptions()}</select>
+    <select class="entry-sel role-sel" style="min-width:110px;">${roleOptions}</select>
     <div class="wr-toggle">
       <button class="wr-btn win on" onclick="toggleWR(this,'win')">胜</button>
       <button class="wr-btn lose" onclick="toggleWR(this,'lose')">负</button>
     </div>
-    <input class="score-inp" type="number" value="3" placeholder="积分">
+    <input class="score-inp" type="number" value="5" placeholder="积分">
     <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;">×</button>`;
   document.getElementById('entryRows').appendChild(row);
+}
+function buildRoleOptions(t){
+  const goodRoles=[...t.roles];
+  if(t.goodExtra)goodRoles.push(t.goodExtra);
+  goodRoles.push('平民');
+  const wolfRoles=[t.wolfSpecial,t.wolfSpecial2,'狼人'].filter(Boolean);
+  const all=[...goodRoles,...wolfRoles];
+  return all.map(r=>`<option>${r}</option>`).join('');
+}
+function setWinSide(side){
+  const name=document.getElementById('mTemplate').value;
+  if(!name){toast('请先选择版型');return;}
+  const t=ROLE_TEMPLATES[name];
+  const wolfNames=new Set([t.wolfSpecial,t.wolfSpecial2,'狼人'].filter(Boolean));
+  document.querySelectorAll('#entryRows .entry-row').forEach(row=>{
+    const roleSel=row.querySelector('.role-sel');
+    if(!roleSel)return;
+    const role=roleSel.value;
+    const isWolf=wolfNames.has(role);
+    const win=(side==='wolf')===isWolf;
+    row.querySelectorAll('.wr-btn').forEach(b=>b.classList.remove('on'));
+    row.querySelector(win?'.wr-btn.win':'.wr-btn.lose').classList.add('on');
+    const scoreInp=row.querySelectorAll('.score-inp')[1];
+    if(scoreInp)scoreInp.value=win?5:2;
+  });
+  toast((side==='wolf'?'🐺 狼人':'👑 好人')+'阵营获胜，已自动标记12人胜负');
+}
+function buildNightDayFields(t){
+  const box=document.getElementById('nightDayFields');
+  const nightCols=t.hasFirstSecondNight?['第一晚','第二晚','第三晚','第四晚','第五晚']:['第一晚','第二晚','第三晚','第四晚','第五晚','第六晚'];
+  const dayCommon=['警长','死亡情况','猎人枪口','自爆情况','放逐投票'];
+  const dayAll=[...dayCommon,...(t.dayExtra||[])];
+  const dayCols=['第一天','第二天','第三天','第四天','第五天','第六天'];
+  const placeholderFor=(f)=>{
+    if(f==='女巫救')return'救的号码';
+    if(f==='女巫毒')return'毒的号码';
+    if(f==='猎人是否开枪')return'是/否';
+    if(f==='猎人开枪目标')return'开枪打的号码';
+    if(f==='获胜方')return'狼/好';
+    return'号码';
+  };
+  const buildTable=(fields,cols,prefix)=>`
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table class="record-table" style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;">
+      <tr><th style="text-align:left;padding:5px 6px;position:sticky;left:0;background:#141525;min-width:88px;">字段</th>${cols.map(c=>`<th style="padding:5px 6px;min-width:56px;">${c}</th>`).join('')}</tr>
+      ${fields.map(f=>`<tr><td style="padding:4px 6px;color:var(--G);position:sticky;left:0;background:#0d0e1c;font-weight:600;">${f}</td>${cols.map((c,ci)=>`<td style="padding:2px;"><input class="rt-inp" data-field="${f}" data-col="${ci}" style="width:52px;background:rgba(255,255,255,.04);border:1px solid rgba(200,160,40,.15);border-radius:4px;color:#e8d082;text-align:center;padding:4px 2px;font-size:10px;" placeholder="${placeholderFor(f)}"></td>`).join('')}</tr>`).join('')}
+      <tr><td style="padding:4px 6px;color:#e0645a;position:sticky;left:0;background:#0d0e1c;font-weight:600;">获胜方</td>${cols.map((c,ci)=>`<td style="padding:2px;"><input class="rt-inp" data-field="获胜方" data-col="${ci}" style="width:52px;background:rgba(255,255,255,.04);border:1px solid rgba(200,160,40,.15);border-radius:4px;color:#e8d082;text-align:center;padding:4px 2px;font-size:10px;" placeholder="狼/好"></td>`).join('')}</tr>
+    </table></div>`;
+  box.innerHTML=`
+    <div class="sec-title" style="font-size:13px;">🌙 夜间记录（可选，逐晚填写，用于自动生成复盘）</div>
+    ${buildTable(t.nightFields,nightCols,'night')}
+    <div class="sec-title" style="font-size:13px;">☀️ 白天记录（可选，逐天填写）</div>
+    ${buildTable(dayAll,dayCols,'day')}`;
+}
+function collectNightDayData(){
+  const rows=document.querySelectorAll('#nightDayFields .rt-inp');
+  const data={};
+  rows.forEach(inp=>{
+    if(!inp.value.trim())return;
+    const f=inp.dataset.field,c=inp.dataset.col;
+    (data[f]??={})[c]=inp.value.trim();
+  });
+  return data;
 }
 function toggleWR(btn,type){
   const row=btn.closest('.entry-row');
   row.querySelectorAll('.wr-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
 }
-function clearForm(){document.getElementById('entryRows').innerHTML='';entryCount=0;}
+function clearForm(){
+  document.getElementById('entryRows').innerHTML='';entryCount=0;
+  const tsel=document.getElementById('mTemplate');if(tsel)tsel.value='';
+  document.getElementById('winSideButtons').style.display='none';
+  document.getElementById('nightDayFields').innerHTML='';
+  document.getElementById('templateHint').textContent='';
+}
 async function saveMatch(){
   const date=document.getElementById('mDate').value;
   const week=parseInt(document.getElementById('mWeek').value)||1;
   const round=parseInt(document.getElementById('mRound').value)||1;
   const rows=document.querySelectorAll('#entryRows .entry-row');
   if(!rows.length){toast('请先添加参赛玩家');return;}
+  // 先处理新玩家：现场输入名字的，逐一建档拿到真实id
+  const newPlayerEmojis=['🎮','🎯','🌸','🍺','🗺️','🌀','🐚','👑','🥥','🎈','🦋','🌟','🔥','💎','🎪'];
+  let ei=0;
+  for(const row of rows){
+    const inp=row.querySelector('.new-player-inp');
+    if(inp&&inp.value.trim()){
+      const name=inp.value.trim();
+      // 检查是否已有同名玩家，避免重复建档
+      let existId=Object.values(scorePlayers).find(p=>p.name===name)?.id;
+      if(!existId){
+        const pid='p'+Date.now()+'_'+(ei++);
+        const emoji=newPlayerEmojis[Math.floor(Math.random()*newPlayerEmojis.length)];
+        await fb.put(`playerProfiles/s3/players/${pid}`,{id:pid,name,emoji,created:new Date().toLocaleDateString()});
+        scorePlayers[pid]={id:pid,name,emoji};
+        existId=pid;
+        toast(`✓ 新玩家 ${emoji} ${name} 已建档`);
+      }
+      // 把这一行的select设回已选中该玩家，方便后续统一读取
+      const sel=row.querySelector('select.entry-sel');
+      sel.innerHTML=getPlayerOptions(existId);
+      sel.value=existId;
+      sel.style.display='';
+      inp.remove();
+    }
+  }
   const entries=[];
   let ok=true;
   rows.forEach(row=>{
@@ -1396,10 +1546,10 @@ async function saveMatch(){
     const pid=sels[0].value;const role=sels[1].value;
     const result=row.querySelector('.wr-btn.win.on')?'win':'lose';
     const total=parseFloat(nums[1]?.value)||0;   // 第二个number是积分
-    if(!pid){ok=false;return;}
+    if(!pid||pid==='__NEW__'){ok=false;return;}
     entries.push({seat,playerId:pid,role,result,total});
   });
-  if(!ok){toast('请为所有玩家选择名字');return;}
+  if(!ok){toast('请为所有玩家选择名字（或输入新玩家名字）');return;}
   const mid='m'+Date.now();
   await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,entries});
   clearForm();loadMatchForm();loadMatchHist();
@@ -1495,7 +1645,7 @@ const leagueLoadOnce=leagueLoad;
 leagueLoad=async function(){await leagueLoadOnce();await leagueStartRealtime();};
 const leagueLoadWithRealtime=leagueLoad;
 leagueLoad=async function(){await leagueLoadWithRealtime();if(!Object.keys(league.players).length&&!Object.keys(league.matches).length&&league.season!=='s3'){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
-function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,5);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3>积分一览</h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%</small></span><em>${leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>最新战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
+function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,10);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3>积分一览</h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%</small></span><em>${leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>近两周战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>第${leagueEsc(m.week||'?')}周 · ${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
 function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p></div><div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;}
 const HISTORY_DATA={"S1":[{"name":"九叔","title":"🩸 狼队核心","score":"20.3","winRate":"58.5%","goodRate":"52.0%","wolfRate":"64.3%","games":"41","avg":"0.3","rank":1},{"name":"秋田","title":"🩸 狼队核心","score":"19.8","winRate":"54.2%","goodRate":"44.7%","wolfRate":"71.4%","games":"35","avg":"-0.2","rank":2},{"name":"星七四","title":"👑 版本坐标 🧠 双面大师","score":"18.0","winRate":"67.5%","goodRate":"63.2%","wolfRate":"71.4%","games":"19","avg":"0.5","rank":3},{"name":"赵炫翰","title":"🩸 狼队核心","score":"17.4","winRate":"58.5%","goodRate":"53.3%","wolfRate":"65.2%","games":"35","avg":"0.4","rank":4},{"name":"教练","title":"🩸 狼队核心","score":"8.2","winRate":"54.3%","goodRate":"50.0%","wolfRate":"62.1%","games":"39","avg":"0.2","rank":5},{"name":"Eric","title":"🔮 好人之光","score":"5.0","winRate":"63.0%","goodRate":"65.0%","wolfRate":"57.1%","games":"17","avg":"0.5","rank":6},{"name":"盗梦尼克","title":"🩸 狼队核心","score":"4.6","winRate":"53.1%","goodRate":"47.8%","wolfRate":"66.7%","games":"12","avg":"0.1","rank":7},{"name":"Biogeek","title":"⚔️ 狼村常客","score":"4.4","winRate":"38.5%","goodRate":"43.8%","wolfRate":"30.0%","games":"9","avg":"-0.6","rank":8},{"name":"Kelly","title":"🔮 好人之光","score":"3.7","winRate":"60.9%","goodRate":"69.2%","wolfRate":"50.0%","games":"14","avg":"0.2","rank":9},{"name":"懒懒","title":"⚔️ 狼村常客","score":"3.1","winRate":"45.5%","goodRate":"50.0%","wolfRate":"40.0%","games":"6","avg":"-0.9","rank":10},{"name":"Eva","title":"⚔️ 狼村常客","score":"2.1","winRate":"48.6%","goodRate":"43.5%","wolfRate":"57.1%","games":"20","avg":"0.1","rank":11},{"name":"Zack","title":"⭐ 新星崛起","score":"2.1","winRate":"72.7%","goodRate":"60.0%","wolfRate":"83.3%","games":"1","avg":"0.6","rank":11},{"name":"玛丽","title":"⚔️ 狼村常客","score":"1.5","winRate":"100.0%","goodRate":"0.0%","wolfRate":"100.0%","games":"0","avg":"1.5","rank":12},{"name":"孔明","title":"⚔️ 狼村常客","score":"1.5","winRate":"100.0%","goodRate":"0.0%","wolfRate":"100.0%","games":"0","avg":"1.5","rank":12},{"name":"盗梦朱迪","title":"⚔️ 狼村常客","score":"1.5","winRate":"66.7%","goodRate":"0.0%","wolfRate":"100.0%","games":"2","avg":"1.5","rank":12},{"name":"散","title":"⚔️ 狼村常客","score":"1.0","winRate":"100.0%","goodRate":"100.0%","wolfRate":"0.0%","games":"0","avg":"1.0","rank":13},{"name":"PJZ","title":"⚔️ 狼村常客","score":"1.0","winRate":"100.0%","goodRate":"100.0%","wolfRate":"0.0%","games":"1","avg":"0.0","rank":13},{"name":"Raymond","title":"🩸 狼队核心","score":"0.8","winRate":"52.8%","goodRate":"48.6%","wolfRate":"62.5%","games":"27","avg":"0.3","rank":14},{"name":"文轩","title":"⚔️ 狼村常客","score":"0.3","winRate":"50.0%","goodRate":"0.0%","wolfRate":"100.0%","games":"0","avg":"0.3","rank":15},{"name":"白夜","title":"⚔️ 狼村常客","score":"0.3","winRate":"66.7%","goodRate":"100.0%","wolfRate":"50.0%","games":"0","avg":"0.3","rank":15},{"name":"CYY","title":"⚔️ 狼村常客","score":"0.3","winRate":"50.0%","goodRate":"0.0%","wolfRate":"100.0%","games":"0","avg":"0.3","rank":15},{"name":"奶茶","title":"⚔️ 狼村常客","score":"0.3","winRate":"50.0%","goodRate":"0.0%","wolfRate":"100.0%","games":"0","avg":"0.3","rank":15},{"name":"Roy","title":"⚔️ 狼村常客","score":"0.0","winRate":"50.0%","goodRate":"50.0%","wolfRate":"0.0%","games":"0","avg":"0.0","rank":16},{"name":"Mike","title":"⚔️ 狼村常客","score":"0.0","winRate":"50.0%","goodRate":"60.0%","wolfRate":"33.3%","games":"0","avg":"0.0","rank":16},{"name":"诺诺子","title":"🐣 萌新上线","score":"0.0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"0.0","rank":16},{"name":"Ara","title":"⚔️ 狼村常客","score":"0.0","winRate":"50.0%","goodRate":"50.0%","wolfRate":"0.0%","games":"0","avg":"0.0","rank":16},{"name":"盼盼","title":"⚔️ 狼村常客","score":"0.0","winRate":"45.0%","goodRate":"46.2%","wolfRate":"42.9%","games":"17","avg":"-1.0","rank":16},{"name":"柠檬塔","title":"⚔️ 狼村常客","score":"-0.2","winRate":"40.0%","goodRate":"40.0%","wolfRate":"0.0%","games":"0","avg":"-0.2","rank":17},{"name":"大峰","title":"⚔️ 狼村常客","score":"-0.5","winRate":"45.5%","goodRate":"50.0%","wolfRate":"0.0%","games":"10","avg":"-1.0","rank":18},{"name":"张良子","title":"🧭 历练之路","score":"-0.6","winRate":"25.0%","goodRate":"33.3%","wolfRate":"0.0%","games":"0","avg":"-0.6","rank":19},{"name":"Puka","title":"⚔️ 狼村常客","score":"-0.6","winRate":"57.1%","goodRate":"66.7%","wolfRate":"0.0%","games":"1","avg":"0.4","rank":19},{"name":"新手mike","title":"⚔️ 狼村常客","score":"-1.0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"-1.0","rank":20},{"name":"卷卷","title":"⚔️ 狼村常客","score":"-1.0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"-1.0","rank":20},{"name":"Dreamcloud","title":"⚔️ 狼村常客","score":"-1.3","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"-1.3","rank":21},{"name":"若琳","title":"⚔️ 狼村常客","score":"-1.5","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"-1.5","rank":22},{"name":"X","title":"⚔️ 狼村常客","score":"-1.5","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"0","avg":"-1.5","rank":22},{"name":"LuMing","title":"⚔️ 狼村常客","score":"-1.5","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","games":"1","avg":"0.0","rank":22},{"name":"小灵","title":"⚔️ 狼村常客","score":"-2.1","winRate":"50.0%","goodRate":"51.4%","wolfRate":"44.4%","games":"33","avg":"0.4","rank":23},{"name":"Rita","title":"🎭 控场大师 ⚔️ 狼村常客","score":"-4.5","winRate":"37.5%","goodRate":"46.7%","wolfRate":"22.2%","games":"9","avg":"0.0","rank":24},{"name":"JC","title":"⚔️ 狼村常客","score":"-5.7","winRate":"52.4%","goodRate":"50.0%","wolfRate":"55.6%","games":"3","avg":"0.3","rank":25},{"name":"学姐","title":"🧭 历练之路","score":"-6.0","winRate":"30.0%","goodRate":"25.0%","wolfRate":"50.0%","games":"3","avg":"0.0","rank":26},{"name":"Aramina","title":"🧭 历练之路","score":"-6.0","winRate":"23.1%","goodRate":"11.1%","wolfRate":"50.0%","games":"13","avg":"0.0","rank":26},{"name":"0000","title":"🧭 历练之路","score":"-6.2","winRate":"28.6%","goodRate":"25.0%","wolfRate":"50.0%","games":"4","avg":"-0.2","rank":27},{"name":"Tim","title":"⚔️ 狼村常客","score":"-6.7","winRate":"40.4%","goodRate":"41.9%","wolfRate":"37.5%","games":"34","avg":"0.3","rank":28},{"name":"贝贝","title":"🧭 历练之路","score":"-6.9","winRate":"29.3%","goodRate":"32.3%","wolfRate":"20.0%","games":"11","avg":"-0.4","rank":29},{"name":"Richard","title":"⚔️ 狼村常客","score":"-7.0","winRate":"36.4%","goodRate":"34.8%","wolfRate":"40.0%","games":"20","avg":"0.0","rank":30},{"name":"罗亮","title":"⚔️ 狼村常客","score":"-7.9","winRate":"45.5%","goodRate":"43.2%","wolfRate":"50.0%","games":"33","avg":"0.1","rank":31},{"name":"乌拉","title":"🩸 狼队核心","score":"-8.0","winRate":"54.7%","goodRate":"50.0%","wolfRate":"71.4%","games":"29","avg":"0.5","rank":32},{"name":"岑老师","title":"⚔️ 狼村常客","score":"-8.4","winRate":"37.8%","goodRate":"46.2%","wolfRate":"18.2%","games":"17","avg":"-0.4","rank":33}],"S2":[{"name":"九叔","title":"🧠 双面大师","score":"44","winRate":"74.3%","goodRate":"81.0%","wolfRate":"64.3%","voteRate":"78.1%","games":"35","avg":"1.3","rank":1},{"name":"Tim","title":"🔮 好人之光","score":"36","winRate":"56.7%","goodRate":"66.7%","wolfRate":"41.7%","voteRate":"90.6%","games":"30","avg":"1.2","rank":2},{"name":"Aaron","title":"🔮 好人之光","score":"36","winRate":"62.9%","goodRate":"68.0%","wolfRate":"50.0%","voteRate":"73.3%","games":"35","avg":"1.0","rank":2},{"name":"罗亮","title":"🔮 好人之光","score":"32","winRate":"57.1%","goodRate":"64.0%","wolfRate":"40.0%","voteRate":"91.3%","games":"35","avg":"0.9","rank":3},{"name":"秋田","title":"🔮 好人之光","score":"21","winRate":"57.1%","goodRate":"63.0%","wolfRate":"37.5%","voteRate":"64.0%","games":"35","avg":"0.6","rank":4},{"name":"糖糖","title":"🔮 好人之光","score":"18","winRate":"64.7%","goodRate":"80.0%","wolfRate":"42.9%","voteRate":"66.7%","games":"17","avg":"1.1","rank":5},{"name":"岑老师","title":"🔮 好人之光","score":"15.5","winRate":"53.3%","goodRate":"62.5%","wolfRate":"42.9%","voteRate":"62.5%","games":"15","avg":"1.0","rank":6},{"name":"Biogeek","title":"🔮 好人之光","score":"11","winRate":"56.3%","goodRate":"72.7%","wolfRate":"20.0%","voteRate":"68.4%","games":"16","avg":"0.7","rank":7},{"name":"Eric","title":"⚔️ 狼村常客","score":"8.5","winRate":"50.0%","goodRate":"60.0%","wolfRate":"0.0%","voteRate":"66.7%","games":"12","avg":"0.7","rank":8},{"name":"喵头鹰","title":"🔮 好人之光","score":"8","winRate":"61.1%","goodRate":"75.0%","wolfRate":"33.3%","voteRate":"57.9%","games":"18","avg":"0.4","rank":9},{"name":"PoPo","title":"🧠 双面大师","score":"6.5","winRate":"66.7%","goodRate":"66.7%","wolfRate":"66.7%","voteRate":"57.1%","games":"9","avg":"0.7","rank":10},{"name":"学姐","title":"⚔️ 狼村常客","score":"5.5","winRate":"75.0%","goodRate":"66.7%","wolfRate":"100.0%","voteRate":"75.0%","games":"4","avg":"1.4","rank":11},{"name":"乌拉","title":"⚔️ 狼村常客","score":"5","winRate":"100.0%","goodRate":"100.0%","wolfRate":"0.0%","voteRate":"100.0%","games":"2","avg":"2.5","rank":12},{"name":"教练","title":"⚔️ 狼村常客","score":"5","winRate":"42.1%","goodRate":"54.5%","wolfRate":"25.0%","voteRate":"52.9%","games":"19","avg":"0.3","rank":12},{"name":"小马哥","title":"🔮 好人之光","score":"5","winRate":"60.0%","goodRate":"60.0%","wolfRate":"0.0%","voteRate":"85.7%","games":"5","avg":"1.0","rank":12},{"name":"Evi","title":"⚔️ 狼村常客","score":"4","winRate":"66.7%","goodRate":"50.0%","wolfRate":"100.0%","voteRate":"100.0%","games":"3","avg":"1.3","rank":13},{"name":"Raymond","title":"⚔️ 狼村常客","score":"3.5","winRate":"48.0%","goodRate":"56.3%","wolfRate":"33.3%","voteRate":"60.0%","games":"25","avg":"0.1","rank":14},{"name":"小灵","title":"🔮 好人之光","score":"3.5","winRate":"60.0%","goodRate":"100.0%","wolfRate":"50.0%","voteRate":"100.0%","games":"5","avg":"0.7","rank":14},{"name":"CaCa","title":"🔮 好人之光","score":"3","winRate":"55.6%","goodRate":"60.0%","wolfRate":"50.0%","voteRate":"66.7%","games":"9","avg":"0.3","rank":15},{"name":"Richard","title":"⚔️ 狼村常客","score":"2.5","winRate":"40.0%","goodRate":"44.4%","wolfRate":"33.3%","voteRate":"77.8%","games":"15","avg":"0.2","rank":16},{"name":"蓝礼","title":"🔮 好人之光","score":"2.5","winRate":"60.0%","goodRate":"60.0%","wolfRate":"0.0%","voteRate":"54.5%","games":"5","avg":"0.5","rank":16},{"name":"JC","title":"⚔️ 狼村常客","score":"2","winRate":"100.0%","goodRate":"100.0%","wolfRate":"0.0%","voteRate":"100.0%","games":"1","avg":"2.0","rank":17},{"name":"Rita","title":"⚔️ 狼村常客","score":"2","winRate":"40.0%","goodRate":"33.3%","wolfRate":"50.0%","voteRate":"80.0%","games":"10","avg":"0.2","rank":17},{"name":"露鸣","title":"🧭 历练之路","score":"2","winRate":"35.0%","goodRate":"50.0%","wolfRate":"0.0%","voteRate":"68.0%","games":"20","avg":"0.1","rank":17},{"name":"TT","title":"⚔️ 狼村常客","score":"2","winRate":"50.0%","goodRate":"100.0%","wolfRate":"0.0%","voteRate":"100.0%","games":"2","avg":"1.0","rank":17},{"name":"Eva","title":"⚔️ 狼村常客","score":"1","winRate":"50.0%","goodRate":"57.1%","wolfRate":"33.3%","voteRate":"70.0%","games":"10","avg":"0.1","rank":18},{"name":"盗梦尼克","title":"⚔️ 狼村常客","score":"1","winRate":"50.0%","goodRate":"50.0%","wolfRate":"0.0%","voteRate":"75.0%","games":"2","avg":"0.5","rank":18},{"name":"盗梦朱迪","title":"⚔️ 狼村常客","score":"1","winRate":"50.0%","goodRate":"100.0%","wolfRate":"33.3%","voteRate":"50.0%","games":"4","avg":"0.3","rank":18},{"name":"星七四","title":"⚔️ 狼村常客","score":"1","winRate":"50.0%","goodRate":"100.0%","wolfRate":"0.0%","voteRate":"100.0%","games":"2","avg":"0.5","rank":18},{"name":"PJZ","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Aramina","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"诺诺子","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Zack","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"LuMing","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Puka","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"盼盼","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Roy","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"白夜","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"X","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"奶茶","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"张良子","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"孔明","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"懒懒","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Ara","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"柠檬塔","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"新手mike","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"文轩","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Mike","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Dreamcloud","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"散","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Kelly","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"玛丽","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"0000","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"CYY","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"大峰","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"若琳","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"卷卷","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Erin","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"1","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"Quin","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"LuLu","title":"🐣 萌新上线","score":"0","winRate":"0.0%","goodRate":"0.0%","wolfRate":"0.0%","voteRate":"0.0%","games":"0","avg":"","rank":19},{"name":"贝贝","title":"⚔️ 狼村常客","score":"-1","winRate":"50.0%","goodRate":"0.0%","wolfRate":"100.0%","voteRate":"0.0%","games":"2","avg":"-0.5","rank":20},{"name":"赵炫翰","title":"🧭 历练之路","score":"-1","winRate":"30.0%","goodRate":"40.0%","wolfRate":"20.0%","voteRate":"70.0%","games":"10","avg":"-0.1","rank":20},{"name":"Phoebe","title":"⚔️ 狼村常客","score":"-2.5","winRate":"25.0%","goodRate":"50.0%","wolfRate":"0.0%","voteRate":"50.0%","games":"4","avg":"-0.6","rank":21},{"name":"Alex","title":"⚔️ 狼村常客","score":"-3","winRate":"25.0%","goodRate":"0.0%","wolfRate":"50.0%","voteRate":"50.0%","games":"4","avg":"-0.8","rank":22}]};
 const GROWTH_DATA=[{"name":"罗亮","s1rank":31,"s2rank":3,"improve":28,"title":"🔮 好人之光"},{"name":"岑老师","s1rank":33,"s2rank":6,"improve":27,"title":"🔮 好人之光"},{"name":"Tim","s1rank":28,"s2rank":2,"improve":26,"title":"🔮 好人之光"},{"name":"乌拉","s1rank":32,"s2rank":12,"improve":20,"title":"⚔️ 狼村常客"},{"name":"学姐","s1rank":26,"s2rank":11,"improve":15,"title":"⚔️ 狼村常客"},{"name":"Richard","s1rank":30,"s2rank":16,"improve":14,"title":"⚔️ 狼村常客"},{"name":"小灵","s1rank":23,"s2rank":14,"improve":9,"title":"🔮 好人之光"},{"name":"贝贝","s1rank":29,"s2rank":20,"improve":9,"title":"⚔️ 狼村常客"},{"name":"JC","s1rank":25,"s2rank":17,"improve":8,"title":"⚔️ 狼村常客"},{"name":"0000","s1rank":27,"s2rank":19,"improve":8,"title":"🐣 萌新上线"},{"name":"Rita","s1rank":24,"s2rank":17,"improve":7,"title":"⚔️ 狼村常客"},{"name":"Aramina","s1rank":26,"s2rank":19,"improve":7,"title":"🐣 萌新上线"},{"name":"LuMing","s1rank":22,"s2rank":19,"improve":3,"title":"🐣 萌新上线"},{"name":"X","s1rank":22,"s2rank":19,"improve":3,"title":"🐣 萌新上线"},{"name":"若琳","s1rank":22,"s2rank":19,"improve":3,"title":"🐣 萌新上线"},{"name":"Dreamcloud","s1rank":21,"s2rank":19,"improve":2,"title":"🐣 萌新上线"},{"name":"Biogeek","s1rank":8,"s2rank":7,"improve":1,"title":"🔮 好人之光"},{"name":"新手mike","s1rank":20,"s2rank":19,"improve":1,"title":"🐣 萌新上线"},{"name":"卷卷","s1rank":20,"s2rank":19,"improve":1,"title":"🐣 萌新上线"},{"name":"九叔","s1rank":1,"s2rank":1,"improve":0,"title":"🧠 双面大师"},{"name":"Raymond","s1rank":14,"s2rank":14,"improve":0,"title":"⚔️ 狼村常客"},{"name":"Puka","s1rank":19,"s2rank":19,"improve":0,"title":"🐣 萌新上线"},{"name":"张良子","s1rank":19,"s2rank":19,"improve":0,"title":"🐣 萌新上线"},{"name":"大峰","s1rank":18,"s2rank":19,"improve":-1,"title":"🐣 萌新上线"},{"name":"秋田","s1rank":2,"s2rank":4,"improve":-2,"title":"🔮 好人之光"},{"name":"Eric","s1rank":6,"s2rank":8,"improve":-2,"title":"⚔️ 狼村常客"},{"name":"柠檬塔","s1rank":17,"s2rank":19,"improve":-2,"title":"🐣 萌新上线"},{"name":"诺诺子","s1rank":16,"s2rank":19,"improve":-3,"title":"🐣 萌新上线"},{"name":"盼盼","s1rank":16,"s2rank":19,"improve":-3,"title":"🐣 萌新上线"},{"name":"Roy","s1rank":16,"s2rank":19,"improve":-3,"title":"🐣 萌新上线"},{"name":"Ara","s1rank":16,"s2rank":19,"improve":-3,"title":"🐣 萌新上线"},{"name":"Mike","s1rank":16,"s2rank":19,"improve":-3,"title":"🐣 萌新上线"},{"name":"白夜","s1rank":15,"s2rank":19,"improve":-4,"title":"🐣 萌新上线"},{"name":"奶茶","s1rank":15,"s2rank":19,"improve":-4,"title":"🐣 萌新上线"},{"name":"文轩","s1rank":15,"s2rank":19,"improve":-4,"title":"🐣 萌新上线"},{"name":"CYY","s1rank":15,"s2rank":19,"improve":-4,"title":"🐣 萌新上线"},{"name":"盗梦朱迪","s1rank":12,"s2rank":18,"improve":-6,"title":"⚔️ 狼村常客"},{"name":"PJZ","s1rank":13,"s2rank":19,"improve":-6,"title":"🐣 萌新上线"},{"name":"散","s1rank":13,"s2rank":19,"improve":-6,"title":"🐣 萌新上线"},{"name":"教练","s1rank":5,"s2rank":12,"improve":-7,"title":"⚔️ 狼村常客"},{"name":"Eva","s1rank":11,"s2rank":18,"improve":-7,"title":"⚔️ 狼村常客"},{"name":"孔明","s1rank":12,"s2rank":19,"improve":-7,"title":"🐣 萌新上线"},{"name":"玛丽","s1rank":12,"s2rank":19,"improve":-7,"title":"🐣 萌新上线"},{"name":"Zack","s1rank":11,"s2rank":19,"improve":-8,"title":"🐣 萌新上线"},{"name":"懒懒","s1rank":10,"s2rank":19,"improve":-9,"title":"🐣 萌新上线"},{"name":"Kelly","s1rank":9,"s2rank":19,"improve":-10,"title":"🐣 萌新上线"},{"name":"盗梦尼克","s1rank":7,"s2rank":18,"improve":-11,"title":"⚔️ 狼村常客"},{"name":"星七四","s1rank":3,"s2rank":18,"improve":-15,"title":"⚔️ 狼村常客"},{"name":"赵炫翰","s1rank":4,"s2rank":20,"improve":-16,"title":"🧭 历练之路"}];
