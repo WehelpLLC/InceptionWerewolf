@@ -481,6 +481,15 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#0
           <button class="btn-line" onclick="clearForm()">清空</button>
           <button class="btn-gold" onclick="saveMatch()" style="flex:1;">✓ 保存比赛</button>
         </div>
+        <div id="recapDraftBox" style="display:none;margin-top:16px;padding:14px;background:rgba(255,215,60,.06);border:1px solid rgba(200,160,40,.3);border-radius:10px;">
+          <div class="sec-title" style="margin:0 0 8px;font-size:13px;">📖 复盘草稿（已根据记录自动生成，可修改后保存）</div>
+          <input class="meta-inp" id="recapTitleInp" style="width:100%;margin-bottom:8px;" placeholder="复盘标题">
+          <textarea id="recapBodyInp" style="width:100%;min-height:240px;background:rgba(0,0,0,.3);border:1px solid rgba(200,160,40,.2);border-radius:8px;color:#e8d082;padding:10px;font-size:13px;line-height:1.7;font-family:inherit;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn-line" onclick="document.getElementById('recapDraftBox').style.display='none'">先不存</button>
+            <button class="btn-gold" onclick="confirmSaveRecap()" style="flex:1;">✓ 确认保存复盘</button>
+          </div>
+        </div>
       </div>
       <div class="sec-title">📋 历史比赛</div>
       <div id="matchHist"><div class="no-data">加载中...</div></div>
@@ -1551,9 +1560,77 @@ async function saveMatch(){
   });
   if(!ok){toast('请为所有玩家选择名字（或输入新玩家名字）');return;}
   const mid='m'+Date.now();
-  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,entries});
+  const ndData=collectNightDayData();
+  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,entries,recordData:ndData});
+  // 生成复盘草稿
+  const tname=document.getElementById('mTemplate').value;
+  if(tname){
+    generateRecapDraft(tname,week,round,entries,ndData);
+  }
   clearForm();loadMatchForm();loadMatchHist();
-  toast('✓ 比赛记录已保存！');
+  toast('✓ 比赛记录已保存！'+(tname?'复盘草稿已生成，可在下方查看':''));
+}
+function seatName(entries,seatNo){
+  if(!seatNo)return null;
+  const e=entries.find(x=>String(x.seat)===String(seatNo).replace(/[号]/g,'').trim());
+  if(!e)return seatNo+'号';
+  const p=scorePlayers[e.playerId];
+  return `${seatNo}号(${p?p.name:'?'})`;
+}
+function generateRecapDraft(tname,week,round,entries,ndData){
+  const t=ROLE_TEMPLATES[tname];
+  // 身份信息段
+  const wolfNames=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean);
+  const byRole={};
+  entries.forEach(e=>{(byRole[e.role]??=[]).push(e.seat);});
+  const wolfSeats=entries.filter(e=>[...wolfNames,'狼人'].includes(e.role)).map(e=>e.seat).sort((a,b)=>a-b);
+  const goodRoleLines=t.roles.map(r=>byRole[r]?`${r}${byRole[r].join('/')}`:null).filter(Boolean);
+  if(t.goodExtra&&byRole[t.goodExtra])goodRoleLines.push(`${t.goodExtra}${byRole[t.goodExtra].join('/')}`);
+  const civilSeats=(byRole['平民']||[]).sort((a,b)=>a-b);
+  let idInfo=`身份信息：\n狼人阵营：${wolfNames.length?wolfNames.map(wn=>{const s=byRole[wn];return s?`${wn}${s.join('/')}`:'';}).filter(Boolean).join('，')+(byRole['狼人']?'，狼人 '+byRole['狼人'].join('/'):''):'狼人 '+wolfSeats.join('/')}\n神职：${goodRoleLines.join('，')}\n平民：${civilSeats.join(' / ')}\n\n`;
+
+  // 夜晚+白天记录段（把表格数据转文字）
+  const maxNight=Math.max(0,...Object.values(ndData).flatMap(v=>Object.keys(v).map(Number)).filter(k=>!isNaN(k)));
+  let body='';
+  const nightColLabels=t.hasFirstSecondNight?['第一晚','第二晚','第三晚','第四晚','第五晚']:['第一晚','第二晚','第三晚','第四晚','第五晚','第六晚'];
+  const dayColLabels=['第一天','第二天','第三天','第四天','第五天','第六天'];
+  for(let ci=0;ci<nightColLabels.length;ci++){
+    const parts=[];
+    t.nightFields.forEach(f=>{
+      const v=ndData[f]?.[ci];
+      if(v)parts.push(`${f}${seatName(entries,v)||v}`);
+    });
+    if(parts.length)body+=`🌙${nightColLabels[ci]}：${parts.join(' ')}\n`;
+    const dayParts=[];
+    const dayCommon=['警长','死亡情况','猎人枪口','自爆情况','放逐投票',...(t.dayExtra||[])];
+    dayCommon.forEach(f=>{
+      const v=ndData[f]?.[ci];
+      if(v)dayParts.push(`${f}${seatName(entries,v)||v}`);
+    });
+    if(dayParts.length)body+=`☀️${dayColLabels[ci]||('第'+(ci+1)+'天')}：${dayParts.join(' ')}\n`;
+  }
+  const winField=ndData['获胜方'];
+  let winLine='';
+  if(winField){
+    const w=Object.values(winField)[0];
+    winLine='\n'+((w&&(w.includes('狼')))?'狼人阵营获胜':'好人阵营获胜');
+  }
+  const fullBody=idInfo+body+winLine;
+  document.getElementById('recapTitleInp').value=`S3 Week ${week} 第${round}局复盘（${tname}）`;
+  document.getElementById('recapBodyInp').value=fullBody;
+  document.getElementById('recapDraftBox').style.display='block';
+  document.getElementById('recapDraftBox').scrollIntoView({behavior:'smooth',block:'start'});
+  window._pendingRecap={week,round};
+}
+async function confirmSaveRecap(){
+  const title=document.getElementById('recapTitleInp').value.trim();
+  const body=document.getElementById('recapBodyInp').value.trim();
+  if(!title||!body){toast('标题和正文不能为空');return;}
+  const meta=window._pendingRecap||{};
+  const id='rc'+Date.now();
+  await fb.put(`tournament/recaps/${id}`,{id,week:String(meta.week||''),game:String(meta.round||''),title,body,created:new Date().toISOString(),updated:new Date().toISOString()});
+  document.getElementById('recapDraftBox').style.display='none';
+  toast('✓ 复盘已保存！');
 }
 async function loadMatchHist(){
   const el=document.getElementById('matchHist');
