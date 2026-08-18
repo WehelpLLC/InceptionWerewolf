@@ -324,7 +324,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
 <div class="pg" id="pg-player">
   <div class="topbar">
     <div><div class="topbar-title" id="topName"></div><div class="topbar-sub">北美盗梦空间狼人杀联赛</div></div>
-    <div style="display:flex;gap:6px;"><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
   </div>
   <div class="tab-nav">
     <div class="tab-btn on" id="tb1" onclick="switchTab(1)">🗺 梦境地图</div>
@@ -450,6 +450,14 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
       <div class="sec-title" style="margin-top:0;">📝 录入比赛</div>
       <div class="match-form">
         <div class="meta-field" style="margin-bottom:10px;">
+          <div class="meta-label">🏁 赛道</div>
+          <div style="display:flex;gap:8px;">
+            <button class="wr-btn win on" id="trackBtnMain" onclick="setMatchTrack('main')" style="flex:1;">🏆 正赛</button>
+            <button class="wr-btn lose" id="trackBtnBaby" onclick="setMatchTrack('baby')" style="flex:1;">🐣 宝宝赛</button>
+          </div>
+          <div style="font-size:10px;color:var(--dim);margin-top:4px;">正赛胜一局 +2格　·　宝宝赛胜一局 +1格　·　出席（本周不分赛道首次）+1格　·　负不移动<br>同一玩家本周不论打了几局、跨不跨赛道，出席分只加一次</div>
+        </div>
+        <div class="meta-field" style="margin-bottom:10px;">
           <div class="meta-label">🎭 选择版型</div>
           <select class="meta-inp" id="mTemplate" style="width:100%;" onchange="onTemplateChange()">
             <option value="">— 请选择版型 —</option>
@@ -477,9 +485,13 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
           <button class="btn-line" style="flex:1;border-color:#5ac878;color:#9ae8b8;" onclick="setWinSide('good')">👑 好人阵营获胜</button>
         </div>
         <div id="nightDayFields"></div>
+        <div id="editHint" style="display:none;background:rgba(255,180,60,.12);border:1px solid rgba(255,180,60,.4);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;color:#e8b060;justify-content:space-between;align-items:center;">
+          <span>✏️ 正在编辑已有记录，保存后会覆盖原记录并自动调整地图分数</span>
+          <button class="btn-line" style="padding:3px 10px;font-size:11px;" onclick="cancelEditMatch()">取消编辑</button>
+        </div>
         <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn-line" onclick="clearForm()">清空</button>
-          <button class="btn-gold" onclick="saveMatch()" style="flex:1;">✓ 保存比赛</button>
+          <button class="btn-line" onclick="cancelEditMatch()">清空</button>
+          <button class="btn-gold" id="saveMatchBtn" onclick="saveMatch()" style="flex:1;">✓ 保存比赛</button>
         </div>
         <div id="recapDraftBox" style="display:none;margin-top:16px;padding:14px;background:rgba(255,215,60,.06);border:1px solid rgba(200,160,40,.3);border-radius:10px;">
           <div class="sec-title" style="margin:0 0 8px;font-size:13px;">📖 复盘草稿（已根据记录自动生成，可修改后保存）</div>
@@ -602,6 +614,15 @@ const MAP_CN=new Set([0,20,40,60,80]);
 let cName='',cEmoji='🎭',selEmoji='🎭';
 let bWins=[{},{},{},{},{}],bRound=0,bNav=false;
 let mapBuilt=false,mapPlayers={};
+let currentMatchTrack='main'; // 'main'=正赛, 'baby'=宝宝赛
+function setMatchTrack(track){
+  currentMatchTrack=track;
+  const btnMain=document.getElementById('trackBtnMain'),btnBaby=document.getElementById('trackBtnBaby');
+  if(btnMain&&btnBaby){
+    btnMain.classList.toggle('on',track==='main');
+    btnBaby.classList.toggle('on',track==='baby');
+  }
+}
 let scorePlayers={};
 let addEmoji='🎭';
 let entryCount=0;
@@ -1517,6 +1538,52 @@ function clearForm(){
   document.getElementById('winSideButtons').style.display='none';
   document.getElementById('nightDayFields').innerHTML='';
   document.getElementById('templateHint').textContent='';
+  setMatchTrack('main');
+}
+let editingMatchId=null,editingMatchOldEntries=null,editingMatchOldTrack=null,editingMatchOldWeek=null;
+async function editMatch(id){
+  const m=await fb.get(`playerProfiles/s3/matches/${id}`);
+  if(!m){toast('未找到这局记录');return;}
+  editingMatchId=id;
+  editingMatchOldEntries=JSON.parse(JSON.stringify(m.entries||[]));
+  editingMatchOldTrack=m.track||'main';
+  editingMatchOldWeek=m.week;
+  // 回填基础字段
+  document.getElementById('mDate').value=m.date||'';
+  document.getElementById('mWeek').value=m.week||1;
+  document.getElementById('mRound').value=m.round||1;
+  setMatchTrack(m.track||'main');
+  // 回填版型（如果能从复盘/记录中推断，否则留空让管理员手动选，身份下拉会退化成通用列表）
+  document.getElementById('entryRows').innerHTML='';entryCount=0;
+  (m.entries||[]).forEach(e=>{
+    addEntryRow(e.seat);
+    const row=document.getElementById('er'+entryCount);
+    if(row){
+      const sel=row.querySelector('select.entry-sel');
+      if(sel)sel.value=e.playerId;
+      const roleSel=row.querySelector('.role-sel');
+      if(roleSel){
+        if(![...roleSel.options].some(o=>o.value===e.role)){
+          const opt=document.createElement('option');opt.value=e.role;opt.textContent=e.role;roleSel.appendChild(opt);
+        }
+        roleSel.value=e.role;
+      }
+      row.querySelectorAll('.wr-btn').forEach(b=>b.classList.remove('on'));
+      row.querySelector(e.result==='win'?'.wr-btn.win':'.wr-btn.lose').classList.add('on');
+      const scoreInp=row.querySelectorAll('.score-inp')[1];
+      if(scoreInp)scoreInp.value=e.total;
+    }
+  });
+  document.getElementById('saveMatchBtn').textContent='✓ 保存修改';
+  document.getElementById('editHint').style.display='flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast('已载入这局数据，修改后点「保存修改」');
+}
+function cancelEditMatch(){
+  editingMatchId=null;editingMatchOldEntries=null;editingMatchOldTrack=null;editingMatchOldWeek=null;
+  document.getElementById('saveMatchBtn').textContent='✓ 保存比赛';
+  document.getElementById('editHint').style.display='none';
+  clearForm();
 }
 async function saveMatch(){
   const date=document.getElementById('mDate').value;
@@ -1562,16 +1629,99 @@ async function saveMatch(){
     entries.push({seat,playerId:pid,role,result,total});
   });
   if(!ok){toast('请为所有玩家选择名字（或输入新玩家名字）');return;}
-  const mid='m'+Date.now();
   const ndData=collectNightDayData();
-  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,entries,recordData:ndData});
+  const track=currentMatchTrack||'main';
+  const isEdit=!!editingMatchId;
+  const mid=isEdit?editingMatchId:('m'+Date.now());
+  await fb.put(`playerProfiles/s3/matches/${mid}`,{id:mid,date,week,round,track,entries,recordData:ndData});
+  let advResult;
+  if(isEdit){
+    // 编辑模式：先撤销这局原本对地图的贡献，再按新数据重新计算，避免重复叠加
+    advResult=await adjustMapForEdit(editingMatchOldWeek,editingMatchOldTrack,editingMatchOldEntries,week,track,entries,mid);
+  }else{
+    // 自动按赛道规则更新梦境远征地图：出席（每周首次）+1，正赛胜+2，宝宝赛胜+1，负不移动
+    advResult=await autoAdvanceMap(week,track,entries,mid);
+  }
   // 生成复盘草稿
   const tname=document.getElementById('mTemplate').value;
   if(tname){
     generateRecapDraft(tname,week,round,entries,ndData);
   }
-  clearForm();loadMatchForm();loadMatchHist();
-  toast('✓ 比赛记录已保存！'+(tname?'复盘草稿已生成，可在下方查看':''));
+  const wasEdit=isEdit;
+  cancelEditMatch();loadMatchForm();loadMatchHist();
+  toast('✓ '+(track==='baby'?'🐣 宝宝赛':'🏆 正赛')+(wasEdit?'记录已修改！':'记录已保存！')+'地图已更新'+advResult.updated+'人位置。'+(tname?'复盘草稿已生成，可在下方查看':''));
+}
+async function adjustMapForEdit(oldWeek,oldTrack,oldEntries,newWeek,newTrack,newEntries,matchId){
+  // 不用"净变化"的算法（在跨周编辑等场景下容易算错，历史已验证过），
+  // 改为对这局涉及到的每个玩家，直接用其全部真实战绩重新算一遍应处的位置，更可靠。
+  const allMatches=await fb.get('playerProfiles/s3/matches')||{}; // 此时数据库里这条记录已经是编辑后的新版本
+  const mapData=await fb.get('tournament/mapPlayers')||{};
+  const affectedIds=new Set([...oldEntries.map(e=>e.playerId),...newEntries.map(e=>e.playerId)].filter(Boolean));
+  let updated=0,skipped=[];
+  for(const pid of affectedIds){
+    let p=scorePlayers[pid]||await fb.get(`playerProfiles/s3/players/${pid}`);
+    if(!p){skipped.push(pid);continue;}
+    const key=encodeKey(p.name);
+    const correctPos=recomputePlayerPosition(pid,allMatches);
+    const curPos=mapData[key]?.position||0;
+    if(correctPos!==curPos){
+      await fb.put(`tournament/mapPlayers/${key}`,{name:p.name,emoji:p.emoji||'🎭',position:correctPos});
+      mapData[key]={name:p.name,emoji:p.emoji,position:correctPos};
+      updated++;
+    }
+  }
+  if(skipped.length)toast(`⚠️ ${skipped.length}名玩家档案未找到，地图未同步调整`);
+  return {updated,skipped};
+}
+// 根据某玩家的全部真实战绩记录，从头完整重算其应处的地图位置（按周分组，每周独立判断首次出席）
+function recomputePlayerPosition(playerId,allMatches){
+  const byWeek={};
+  Object.values(allMatches).forEach(m=>{
+    (m.entries||[]).forEach(e=>{
+      if(e.playerId!==playerId)return;
+      const wk=String(m.week);
+      (byWeek[wk]??=[]).push({track:m.track||'main',result:e.result});
+    });
+  });
+  let total=0;
+  Object.keys(byWeek).forEach(wk=>{
+    let attended=false;
+    byWeek[wk].forEach(rec=>{
+      const winPerWin=rec.track==='baby'?1:2;
+      if(!attended){total+=1;attended=true;}
+      if(rec.result==='win')total+=winPerWin;
+    });
+  });
+  return Math.max(0,Math.min(80,total));
+}
+async function autoAdvanceMap(week,track,entries,justSavedMatchId){
+  // 统一用全量重算逻辑（和编辑功能共用同一套算法，避免两套算法不一致导致偏差）
+  const allMatches=await fb.get('playerProfiles/s3/matches')||{};
+  const mapData=await fb.get('tournament/mapPlayers')||{};
+  let updated=0,skipped=[];
+  for(const e of entries){
+    if(!e.playerId){skipped.push('（无playerId的行）');continue;}
+    let p=scorePlayers[e.playerId];
+    if(!p){
+      // 兜底：scorePlayers可能还没同步到刚建档的新玩家，直接从数据库兜底查一次
+      p=await fb.get(`playerProfiles/s3/players/${e.playerId}`);
+      if(p)scorePlayers[e.playerId]=p;
+    }
+    if(!p){skipped.push(e.playerId);continue;}
+    const key=encodeKey(p.name);
+    const correctPos=recomputePlayerPosition(e.playerId,allMatches);
+    const curPos=mapData[key]?.position||0;
+    if(correctPos!==curPos){
+      await fb.put(`tournament/mapPlayers/${key}`,{name:p.name,emoji:p.emoji||'🎭',position:correctPos});
+      mapData[key]={name:p.name,emoji:p.emoji,position:correctPos};
+      updated++;
+    }
+  }
+  if(skipped.length){
+    console.warn('地图更新：以下玩家未找到档案，已跳过',skipped);
+    toast(`⚠️ ${skipped.length}名玩家档案未找到，地图未更新其位置，请检查`);
+  }
+  return {updated,skipped};
 }
 function seatName(entries,seatNo){
   if(!seatNo)return null;
@@ -1648,8 +1798,11 @@ async function loadMatchHist(){
   el.innerHTML=matches.slice(0,20).map(m=>`
     <div class="hist-row">
       <div class="hist-head">
-        <div class="hist-title">${m.date||''} · 第${m.week||'?'}周第${m.round||''}局</div>
-        <button class="btn-danger" onclick="delMatch('${m.id}')">撤销</button>
+        <div class="hist-title">${m.date||''} · 第${m.week||'?'}周第${m.round||''}局${m.track==='baby'?' <span style="color:#ff6b9d;">🐣宝宝赛</span>':''}</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-line" style="padding:5px 12px;font-size:12px;" onclick="editMatch('${m.id}')">✏️ 编辑</button>
+          <button class="btn-danger" onclick="delMatch('${m.id}')">撤销</button>
+        </div>
       </div>
       ${(m.entries||[]).map(e=>{
         const p=playerMap[e.playerId];
@@ -1850,9 +2003,13 @@ function waveY(pct){
   const AMP=70,BASE=160,FREQ=2.2;
   return BASE + Math.sin(pct/100*Math.PI*FREQ)*AMP;
 }
-function buildMap(){
-  if(mapBuilt)return;mapBuilt=true;
-  const b=document.getElementById('iboard');b.className='iboard dream-route';
+function buildMap(containerId){
+  containerId=containerId||'iboard';
+  const isBaby=containerId!=='iboard';
+  if(!isBaby){ if(mapBuilt)return; mapBuilt=true; }
+  const b=document.getElementById(containerId);
+  if(!b)return;
+  b.className='iboard dream-route';
   // ★ 本周区间：只显示 起点(0) → 罗马斗兽场(10)。下周开放佩特拉就把 SEG_END 改成 20
   const SEG_START=0,SEG_END=20;
   const span=SEG_END-SEG_START;
@@ -1888,9 +2045,12 @@ function buildMap(){
   },0);
   b.dataset.segStart=SEG_START;b.dataset.segEnd=SEG_END;
 }
-function placeMarkers(){
-  const box=document.getElementById('dreamPlayers');if(!box)return;
-  const b=document.getElementById('iboard');
+function placeMarkers(containerId){
+  containerId=containerId||'iboard';
+  const b=document.getElementById(containerId);
+  if(!b)return;
+  const box=b.querySelector('#dreamPlayers')||document.getElementById('dreamPlayers');
+  if(!box)return;
   const SEG_START=Number(b?.dataset.segStart||0),SEG_END=Number(b?.dataset.segEnd||10);
   const span=SEG_END-SEG_START||1;
   const all=Object.values(mapPlayers);
