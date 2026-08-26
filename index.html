@@ -363,6 +363,10 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
     <div><div class="topbar-title" id="topName"></div><div class="topbar-sub">北美盗梦空间狼人杀联赛</div></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
   </div>
+  <div id="bindHint" style="display:none;padding:10px 16px;background:rgba(255,215,60,.1);border-bottom:1px solid rgba(255,215,60,.25);font-size:12px;color:var(--G);display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span>🔒 建议绑定账号密码，防止他人用你的名字登录、消耗你的积分</span>
+    <span style="display:flex;gap:8px;flex-shrink:0"><button onclick="authOpen()" style="background:var(--G);color:#0d0f22;border:0;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">去绑定</button><button onclick="document.getElementById('bindHint').style.display='none'" style="background:none;border:0;color:var(--dim);cursor:pointer;font-size:11px">暂不</button></span>
+  </div>
   <div class="tab-nav">
     <div class="tab-btn on" id="tb1" onclick="switchTab(1)">🗺 梦境地图</div>
     <div class="tab-btn" id="tb2" onclick="switchTab(2)">📊 我的数据</div>
@@ -644,13 +648,19 @@ const fb={
   async put(p,d){try{await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{}},
   async del(p){try{const r=await fetch(`${DB}/${p}.json`,{method:'DELETE'});return r.ok;}catch{return false;}}
 };
+// 商店模块专用的、会真实抛出错误的写入函数（不影响fb.put在全站其他30余处的静默容错行为）
+async function fbPutStrict(p,d){
+  const r=await fetch(`${DB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(!r.ok){let detail='';try{detail=await r.text();}catch{}console.error('写入失败:',p,r.status,detail);throw new Error(`写入失败(${r.status})：${detail||'无详情'}`);}
+  return true;
+}
 
 // ══ 常量 ══
 const ROLES=["平民", "预言家", "女巫", "猎人", "守卫", "骑士", "白痴", "魔术师", "通灵师", "守墓人", "猎魔人", "摄梦人", "定序王子", "奇迹商人", "舞者", "禁言者", "禁言长老", "蒙面人", "丘比特", "熊", "狐狸", "九尾狐", "仓鼠", "企鹅", "乌鸦", "天使", "替罪羊", "双生儿", "小女孩", "锈剑骑士", "盗贼", "盗宝大师", "黑市商人", "混血儿", "野孩子", "吹笛者", "妓女", "鬼魂新娘", "口吃法官", "炸弹", "狼人", "狼王", "白狼王", "黑狼王", "狼美人", "蚀时狼妃", "隐狼", "石像鬼", "机械狼", "恶灵骑士", "梦魔", "魅魔", "血月使徒", "诡术师", "假面", "狼术师", "恶魔", "长老", "潜行者"];
 const N=[16,8,4,2,1],TOTAL=5,RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
 const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
 const ADMIN_PW='inception2026';
-const MAP_LMS={0:{n:'梦境之门',e:'🏁'},10:{n:'罗马斗兽场',e:'🏛',r:'🪑选座权'},20:{n:'佩特拉古城',e:'🪨',r:'⏱加时卡'},30:{n:'基督像',e:'⛪',r:'🕵️情报卡'},40:{n:'马丘比丘',e:'🗻',r:'🎭影帝卡'},50:{n:'奇琴伊察',e:'🏯',r:'✖️翻倍卡'},60:{n:'泰姬陵',e:'🕌',r:'🏅免死金牌'},70:{n:'长城',e:'🏯',r:'📖特工指南'},80:{n:'奇迹宫殿',e:'🏆',r:'🔮复活卡'}};
+const MAP_LMS={0:{n:'梦境之门',e:'🏁'},10:{n:'罗马斗兽场',e:'🏛',r:'🪑选座权'},20:{n:'佩特拉古城',e:'🪨',r:'⏱加时卡'},30:{n:'救世基督像',e:'⛪',r:'🕵️情报卡'},40:{n:'马丘比丘',e:'🗻',r:'🎭影帝卡'},50:{n:'奇琴伊察',e:'🏯',r:'✖️翻倍卡'},60:{n:'泰姬陵',e:'🕌',r:'🏅免死金牌'},70:{n:'长城',e:'🏯',r:'📖特工指南'},80:{n:'奇迹宫殿',e:'🏆',r:'🔮复活卡'}};
 const MAP_CN=new Set([0,20,40,60,80]);
 
 // ══ 状态 ══
@@ -689,6 +699,18 @@ function onName(v){
 async function doEnter(){
   const n=document.getElementById('nameInput').value.trim();
   if(!n)return;
+  // 安全检测：这个昵称是否已经被某个账号绑定过。已绑定的话，不能再靠直接输入昵称进入，必须密码登录
+  try{
+    const profiles=await fb.get('tournament/userProfiles')||{};
+    const boundUid=Object.entries(profiles).find(([uid,p])=>p.displayName===n)?.[0];
+    if(boundUid && (!authUser || authUser.uid!==boundUid)){
+      const hint=document.getElementById('nameHint');
+      hint.textContent='🔒 这个名字已绑定账号，请先登录后再进入';
+      hint.className='n-hint';
+      authOpen();
+      return;
+    }
+  }catch(e){console.warn('昵称绑定检测失败，按原有方式放行',e);}
   cName=n;
   const key=encodeKey(n);
   const data=await fb.get(`tournament/playerBrackets/${key}`);
@@ -862,6 +884,8 @@ function goPlayer(){
   fb.put(`tournament/playerBrackets/${key}`,{name:cName,emoji:cEmoji,wins:bWins,updated:new Date().toISOString()});
   showPage('pg-player');
   switchTab(1);
+  const bindHint=document.getElementById('bindHint');
+  if(bindHint)bindHint.style.display=authUser?'none':'flex';
 }
 
 function doChangeName(){
@@ -2095,20 +2119,37 @@ try{addShopModule();}catch(e){console.warn('神秘商店模块加载失败(不�
 async function shopShow(){
   showPage('pg-shop');
   const area=document.getElementById('shopArea');
-  if(!cName){area.innerHTML='<div class="no-data">请先在首页选择你的名字</div>';return;}
+  // 安全校验：商店涉及积分消耗，必须使用真实登录账号，不能只凭页面上可任意填写的昵称(cName)
+  if(!authUser){
+    area.innerHTML='<div class="no-data">神秘商店需要登录账号才能使用，请先点击顶部「🔐 玩家登录 / 注册」完成登录（防止他人冒用你的昵称消耗积分）</div>';
+    return;
+  }
+  let loginName='';
+  try{
+    const profile=await authDb(`tournament/userProfiles/${authUser.uid}`);
+    loginName=profile?.displayName||'';
+  }catch(e){
+    area.innerHTML='<div class="no-data">无法读取账号资料，请重新登录后再试</div>';
+    return;
+  }
+  if(!loginName){
+    area.innerHTML='<div class="no-data">你的账号还没有绑定玩家昵称，请联系管理员处理</div>';
+    return;
+  }
   area.innerHTML='<div class="no-data">正在加载…</div>';
   try{
     const players=await fb.get('playerProfiles/s3/players')||{};
     let pid=null;
-    for(const[id,p]of Object.entries(players)){if(p.name===cName){pid=id;break;}}
+    for(const[id,p]of Object.entries(players)){if(p.name===loginName){pid=id;break;}}
     if(!pid){area.innerHTML='<div class="no-data">未找到你的玩家档案，请先参与一场比赛建档后再来</div>';return;}
-    shop.playerId=pid; shop.playerName=cName;
+    shop.playerId=pid; shop.playerName=loginName;
     await shopLoad();
   }catch(e){
     area.innerHTML='<div class="no-data">加载失败，请稍后重试</div>';
     console.error(e);
   }
 }
+
 
 async function shopLoad(){
   const area=document.getElementById('shopArea');
@@ -2169,13 +2210,14 @@ ${catsHtml}`;
 }
 
 async function shopUseItem(orderId){
+  if(!authUser||!shop.playerId){toast('请先登录后再操作');return;}
   if(!confirm('确认使用这个道具吗？使用后将无法撤销。'))return;
   try{
     const order=await fb.get(`tournament/shopOrders/${orderId}`);
     if(!order||order.status!=='verified'){toast('该道具当前不可使用');return;}
     order.status='used';
     order.usedAt=Date.now();
-    await fb.put(`tournament/shopOrders/${orderId}`,order);
+    await fbPutStrict(`tournament/shopOrders/${orderId}`,order);
     toast('✓ 已标记为使用');
     await shopLoad();
   }catch(e){
@@ -2214,9 +2256,14 @@ async function shopAdmVerify(orderId){
   if(!order)return;
   order.status='verified';
   order.verifiedAt=Date.now();
-  await fb.put(`tournament/shopOrders/${orderId}`,order);
-  toast('✓ 已核实，玩家现在可以使用了');
-  loadShopAdm();
+  try{
+    await fbPutStrict(`tournament/shopOrders/${orderId}`,order);
+    toast('✓ 已核实，玩家现在可以使用了');
+    loadShopAdm();
+  }catch(e){
+    toast('核实失败：'+e.message);
+    console.error(e);
+  }
 }
 
 async function shopAdmRevert(orderId){
@@ -2224,13 +2271,19 @@ async function shopAdmRevert(orderId){
   const order=await fb.get(`tournament/shopOrders/${orderId}`);
   if(!order)return;
   order.status='pending';
-  await fb.put(`tournament/shopOrders/${orderId}`,order);
-  toast('已撤销核实');
-  loadShopAdm();
+  try{
+    await fbPutStrict(`tournament/shopOrders/${orderId}`,order);
+    toast('已撤销核实');
+    loadShopAdm();
+  }catch(e){
+    toast('操作失败：'+e.message);
+    console.error(e);
+  }
 }
 
 
 async function shopRedeem(itemId){
+  if(!authUser||!shop.playerId){toast('请先登录后再操作');return;}
   const item=SHOP_ITEMS.find(i=>i.id===itemId);
   if(!item)return;
   const available=Math.max(0,shop.score-shop.spent);
@@ -2268,6 +2321,7 @@ function shopOpenGiftPicker(item,others){
 }
 
 async function shopConfirmRedeem(itemId){
+  if(!authUser||!shop.playerId){toast('请先登录后再操作');document.getElementById('shopGiftOverlay')?.remove();return;}
   const item=SHOP_ITEMS.find(i=>i.id===itemId);
   if(!item)return;
   const available=Math.max(0,shop.score-shop.spent);
@@ -2277,9 +2331,9 @@ async function shopConfirmRedeem(itemId){
   const recipientName=recipientId===shop.playerId?shop.playerName:(sel.options[sel.selectedIndex]?.textContent||'');
   try{
     const newSpent=shop.spent+item.cost;
-    await fb.put(`playerProfiles/s3/shopSpent/${shop.playerId}`,newSpent);
+    await fbPutStrict(`playerProfiles/s3/shopSpent/${shop.playerId}`,newSpent);
     const orderId='so'+Date.now();
-    await fb.put(`tournament/shopOrders/${orderId}`,{
+    await fbPutStrict(`tournament/shopOrders/${orderId}`,{
       id:orderId,
       buyerId:shop.playerId,buyerName:shop.playerName,
       recipientId,recipientName,
@@ -2300,16 +2354,16 @@ async function shopConfirmRedeem(itemId){
 const authConfig={apiKey:'AIzaSyAgirINMy8jx6W1joRyj1LvSazYCk5t0Z8',authDomain:'werewolf-favourite-tournament.firebaseapp.com',databaseURL:'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com',projectId:'werewolf-favourite-tournament',appId:'1:663863021546:web:ee6183ba5232630ffdec93'};
 let authApp,authApi,authUser=null;
 async function authInit(){try{const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');authApi=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');authApp=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const auth=authApi.getAuth(authApp);authApi.onAuthStateChanged(auth,u=>{authUser=u;authUpdateButton();if(u)authLoadProfile();});}catch(e){console.warn('Firebase Auth unavailable',e);}}
-async function authDb(path,method='GET',data){const token=authUser?await authUser.getIdToken():'';const r=await fetch(`${DB}/${path}.json${token?'?auth='+encodeURIComponent(token):''}`,{method,headers:{'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});if(!r.ok)throw new Error('无法保存账户资料');return method==='GET'?r.json():true;}
-function authUpdateButton(){const b=document.getElementById('authOpen');if(!b)return;b.textContent=authUser?`👤 ${authUser.email.split('@')[0]}`:'🔐 玩家登录';}
+async function authDb(path,method='GET',data){const token=authUser?await authUser.getIdToken():'';const r=await fetch(`${DB}/${path}.json${token?'?auth='+encodeURIComponent(token):''}`,{method,headers:{'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});if(!r.ok){let detail='';try{const body=await r.text();detail=body;}catch(e){}console.error('authDb失败:',r.status,detail);throw new Error(`无法保存账户资料（状态码${r.status}：${detail||'无详情'}）`);}return method==='GET'?r.json():true;}
+function authUpdateButton(){const b=document.getElementById('authOpenBtn');if(!b)return;b.textContent=authUser?`👤 ${authUser.email.split('@')[0]}`:'🔐 玩家登录';}
 function authOpen(){document.getElementById('authOverlay').classList.add('on');document.getElementById('authError').textContent='';}
 function authClose(){document.getElementById('authOverlay').classList.remove('on');}
 async function authSubmit(create){const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value,name=document.getElementById('authName').value.trim(),err=document.getElementById('authError');err.textContent='';if(!email||!pw||(create&&!name)){err.textContent='请填写邮箱、密码和玩家昵称。';return;}try{const auth=authApi.getAuth(authApp);const cred=create?await authApi.createUserWithEmailAndPassword(auth,email,pw):await authApi.signInWithEmailAndPassword(auth,email,pw);authUser=cred.user;if(create)await authDb(`tournament/userProfiles/${authUser.uid}`,'PUT',{displayName:name,emoji:'🎭',email,createdAt:new Date().toISOString()});await authLoadProfile();authClose();toast(create?'注册成功，欢迎加入！':'登录成功！');}catch(e){err.textContent=e.code==='auth/email-already-in-use'?'这个邮箱已注册，请直接登录。':e.code==='auth/invalid-credential'?'邮箱或密码不正确。':e.code==='auth/operation-not-allowed'?'请先在 Firebase Authentication 启用 Email/Password。':'登录失败：'+e.message;}}
 async function authLoadProfile(){if(!authUser)return;try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);if(p?.displayName){cName=p.displayName;cEmoji=p.emoji||'🎭';}}catch(e){console.warn(e);}}
 async function authLogout(){if(authApi&&authApp)await authApi.signOut(authApi.getAuth(authApp));authUser=null;authUpdateButton();toast('已退出登录');}
-function addAuthUI(){const style=document.createElement('style');style.textContent=`.auth-open{margin:0 0 10px!important;color:var(--G)!important;border-color:rgba(255,215,60,.6)!important;background:rgba(255,215,60,.12)!important}.auth-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:20px}.auth-overlay.on{display:flex}.auth-box{width:min(390px,100%);background:#101633;border:1px solid rgba(255,215,60,.42);border-radius:14px;padding:24px;box-shadow:0 20px 50px #0009}.auth-box h2{margin:0 0 6px;color:var(--G);font-size:21px}.auth-box p{font-size:12px;color:var(--dim);line-height:1.55}.auth-box input{width:100%;margin:7px 0;background:#080c20;border:1px solid var(--line);border-radius:7px;padding:11px;color:var(--text);font-family:inherit}.auth-actions{display:flex;gap:8px;margin-top:9px}.auth-actions button{flex:1}.auth-err{min-height:18px;color:#ffaaa5;font-size:12px;margin-top:8px}`;document.head.appendChild(style);const box=document.querySelector('#pg-name .n-box');const b=document.createElement('button');b.id='authOpen';b.className='n-admin auth-open';b.onclick=authUser?authLogout:authOpen;b.textContent='🔐 玩家登录 / 注册';box.insertBefore(b,box.firstChild);const ov=document.createElement('div');ov.id='authOverlay';ov.className='auth-overlay';ov.innerHTML=`<div class="auth-box"><h2>玩家账户</h2><p>登录后可保存你的玩家资料，并用于后续的个人数据与权限绑定。</p><input id="authName" maxlength="12" placeholder="玩家昵称（注册时必填）"><input id="authEmail" type="email" placeholder="邮箱"><input id="authPassword" type="password" minlength="6" placeholder="密码（至少 6 位）"><div class="auth-actions"><button class="btn-line" onclick="authSubmit(false)">登录</button><button class="btn-gold" onclick="authSubmit(true)">注册</button></div><div id="authError" class="auth-err"></div><button onclick="authClose()" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--dim);cursor:pointer">取消</button></div>`;document.body.appendChild(ov);authInit();}
+function addAuthUI(){const style=document.createElement('style');style.textContent=`.auth-open{margin:0 0 10px!important;color:var(--G)!important;border-color:rgba(255,215,60,.6)!important;background:rgba(255,215,60,.12)!important}.auth-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:20px}.auth-overlay.on{display:flex}.auth-box{width:min(390px,100%);background:#101633;border:1px solid rgba(255,215,60,.42);border-radius:14px;padding:24px;box-shadow:0 20px 50px #0009}.auth-box h2{margin:0 0 6px;color:var(--G);font-size:21px}.auth-box p{font-size:12px;color:var(--dim);line-height:1.55}.auth-box input{width:100%;margin:7px 0;background:#080c20;border:1px solid var(--line);border-radius:7px;padding:11px;color:var(--text);font-family:inherit}.auth-actions{display:flex;gap:8px;margin-top:9px}.auth-actions button{flex:1}.auth-err{min-height:18px;color:#ffaaa5;font-size:12px;margin-top:8px}`;document.head.appendChild(style);const box=document.querySelector('#pg-name .n-box');const b=document.createElement('button');b.id='authOpenBtn';b.className='n-admin auth-open';b.onclick=authUser?authLogout:authOpen;b.textContent='🔐 玩家登录 / 注册';box.insertBefore(b,box.firstChild);const ov=document.createElement('div');ov.id='authOverlay';ov.className='auth-overlay';ov.innerHTML=`<div class="auth-box"><h2>玩家账户</h2><p>登录后可保存你的玩家资料，并用于后续的个人数据与权限绑定。</p><input id="authName" maxlength="12" placeholder="玩家昵称（注册时必填）"><input id="authEmail" type="email" placeholder="邮箱"><input id="authPassword" type="password" minlength="6" placeholder="密码（至少 6 位）"><div class="auth-actions"><button class="btn-line" onclick="authSubmit(false)">登录</button><button class="btn-gold" onclick="authSubmit(true)">注册</button></div><div id="authError" class="auth-err"></div><button onclick="authClose()" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--dim);cursor:pointer">取消</button></div>`;document.body.appendChild(ov);authInit();}
 /* 登录/注册暂时隐藏（玩家用名字回看记录即可）。以后要启用把下一行取消注释： */
-// try{addAuthUI();}catch(e){console.warn('玩家登录模块加载失败:',e);}
+try{addAuthUI();}catch(e){console.warn('玩家登录模块加载失败:',e);}
 
 // 头像与唯一 Emoji：照片保存到 Firebase Storage，Emoji 通过 emojiOwners 占位。
 const avatarEmojiList=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎲','👑','🏆','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉'];
@@ -2341,6 +2395,8 @@ function waveY(pct){
 }
 // 四象限布局：左上=罗马斗兽场(0-20格前半)，右上=佩特拉古城(0-20格后半)
 // 左下=尚未开启(空)，右下=救世基督像(20-30格)
+// 四象限布局：左上=罗马斗兽场(0-20格前半)，右上=佩特拉古城(0-20格后半)
+// 左下=尚未开启(空)，右下=救世基督像(20-30格)
 // 容器整体1000px高，上半区0-500px，下半区500-1000px；左右各占0-50%/50-100%
 const ZMAP_SEG1_END=20, ZMAP_SEG2_END=30;
 function getMapCoord(pos){
@@ -2350,15 +2406,17 @@ function getMapCoord(pos){
     const pct=8+pos/ZMAP_SEG1_END*84;
     return {x:pct, y:waveY(pct)};
   }
-  // 20-30格：从右上角(92%,~250px)拐入右下象限，终点落在右下象限中心附近
+  // 20-30格：整体趋势从右上(92%,~250px)向左下延伸到右下象限左边缘(约55%,~850px)
+  // 主趋势之上叠加正弦波动，制造和0-20段呼应的蜿蜒感，而非单调直插
   const yAt20=waveY(92);
-  const t=(pos-ZMAP_SEG1_END)/(ZMAP_SEG2_END-ZMAP_SEG1_END);
-  const X_START=92, X_END=75; // 终点x保持在右半区(50-100%)内，不越界到左下象限
-  const Y_END=780; // 终点y落在下半区(500-1000px)内
-  const ease=t*t*t;
-  const x=X_START - (X_START-X_END)*ease;
-  const y=yAt20 + (Y_END-yAt20)*t;
-  return {x, y};
+  const t=(pos-ZMAP_SEG1_END)/(ZMAP_SEG2_END-ZMAP_SEG1_END); // 0~1
+  const X_START=92, X_END=51; // 终点x精确贴近图片左边缘(容器边界50%)，救世基督像标签落在此处
+  const Y_END=850;
+  const xMain=X_START-(X_START-X_END)*t;
+  const yMain=yAt20+(Y_END-yAt20)*t;
+  // 小振幅正弦摆动，制造蜿蜒感；乘以(1-t)让摆动在接近终点时收敛，确保终点精确落位
+  const wobble=Math.sin(t*Math.PI*2.4)*6*(1-t*0.85);
+  return {x:xMain+wobble, y:yMain};
 }
 function buildMap(containerId){
   containerId=containerId||'iboard';
@@ -2376,7 +2434,8 @@ function buildMap(containerId){
     .map(([pos,l])=>{
       const c=getMapCoord(pos);
       const sy=c.y-42;
-      return`<div class="dream-stage" data-stage="${pos}" style="left:${c.x}%;top:${sy}px"><i>${l.e}</i><b>${l.n}</b><small>${pos} 格${l.r?' · '+l.r:''}</small></div>`;
+      const alignStyle=Number(pos)===30?'transform:translateX(6px)':'';
+      return`<div class="dream-stage" data-stage="${pos}" style="left:${c.x}%;top:${sy}px;${alignStyle}"><i>${l.e}</i><b>${l.n}</b><small>${pos} 格${l.r?' · '+l.r:''}</small></div>`;
     }).join('');
   // 生成每一格的刻度方块（0到SEG_END），奇迹格高亮
   let tiles='';
@@ -2425,13 +2484,20 @@ function placeMarkers(containerId){
   box.innerHTML=Object.entries(grouped).flatMap(([pos,players])=>{
     const coord=getMapCoord(pos);
     const left=coord.x;
-    const lineTop=coord.y;   // 该位置的Z字形路径Y坐标
+    const isMilestone=!!MAP_LMS[pos]; // 里程碑标签区块实际范围约 c.y-42 到 c.y+35，落在此格的玩家需完全避开
+    const lineTop=coord.y + (isMilestone?55:0); // 起点已在标签底部下方，留足安全间距
     const step=players.length>MAX_TIGHT?TIGHT_STEP:STEP;
     return players.map((p,i)=>{
-      // i=0 排上方第一层，i=1 下方第一层，i=2 上方第二层… 交替向外扩展
-      const layer=Math.floor(i/2)+1;
-      const dir=(i%2===0)?-1:1;              // 偶数在上，奇数在下
-      const top=lineTop+dir*layer*step-15;
+      let top;
+      if(isMilestone){
+        // 里程碑格子：全部只往下堆叠，绝不往上，避免撞进标签图标/文字区域
+        top=lineTop+i*step-15;
+      }else{
+        // 普通格子：维持原有的上下交替堆叠
+        const layer=Math.floor(i/2)+1;
+        const dir=(i%2===0)?-1:1;
+        top=lineTop+dir*layer*step-15;
+      }
       const avatar=p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:(p.emoji||'🎭');
       return`<div class="route-player${p.name===cName?' me':''}" style="left:calc(${left}% - 15px);top:${top}px"><span class="rp-avatar">${avatar}</span><span class="rp-name">${esc(p.name)}</span></div>`;
     });
