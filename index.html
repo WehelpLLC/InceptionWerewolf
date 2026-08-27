@@ -2358,10 +2358,10 @@ async function shopConfirmRedeem(itemId){
   const sel=document.getElementById('shopGiftTarget');
   const recipientId=sel?.value||shop.playerId;
   const recipientName=recipientId===shop.playerId?shop.playerName:(sel.options[sel.selectedIndex]?.textContent||'');
+  const orderId='so'+Date.now();
+  const newSpent=shop.spent+item.cost;
   try{
-    const newSpent=shop.spent+item.cost;
-    await fbPutStrict(`playerProfiles/s3/shopSpent/${shop.playerId}`,newSpent);
-    const orderId='so'+Date.now();
+    // 1) 先写订单：这一步失败则积分未动，无副作用
     await fbPutStrict(`tournament/shopOrders/${orderId}`,{
       id:orderId,
       buyerId:shop.playerId,buyerName:shop.playerName,
@@ -2369,13 +2369,23 @@ async function shopConfirmRedeem(itemId){
       itemId:item.id,itemName:item.name,itemIcon:item.icon,cost:item.cost,
       timestamp:Date.now(),status:'pending'
     });
-    document.getElementById('shopGiftOverlay')?.remove();
-    toast(recipientId===shop.playerId?'✓ 兑换成功！请联系管理员核实领取':`✓ 已购买并赠送给 ${recipientName}！`);
-    await shopLoad();
   }catch(e){
-    toast('兑换失败，请重试');
-    console.error(e);
+    toast('兑换失败，积分未扣除，请重试');
+    console.error('shopOrder write failed',e);
+    return;
   }
+  try{
+    // 2) 再扣分：若失败，回滚刚写入的订单，保证不出现“扣分无订单”
+    await fbPutStrict(`playerProfiles/s3/shopSpent/${shop.playerId}`,newSpent);
+  }catch(e){
+    console.error('shopSpent write failed, rolling back order',e);
+    try{await fb.del(`tournament/shopOrders/${orderId}`);}catch(e2){console.error('rollback failed',e2);}
+    toast('兑换失败，积分未扣除，请重试');
+    return;
+  }
+  document.getElementById('shopGiftOverlay')?.remove();
+  toast(recipientId===shop.playerId?'✓ 兑换成功！请联系管理员核实领取':`✓ 已购买并赠送给 ${recipientName}！`);
+  await shopLoad();
 }
 
 
