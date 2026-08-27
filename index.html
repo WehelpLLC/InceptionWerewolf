@@ -694,6 +694,59 @@ let entryCount=0;
 // ══ 工具函数 ══
 const encodeKey=n=>n.replace(/[.#$\/\[\] ]/g,'_');
 const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
+// 统一历史复盘标题格式：Week 后补空格、局号中文数字转阿拉伯数字
+function normalizeRecapTitle(t){
+  if(!t)return t;
+  let s=String(t);
+  // Week 紧贴数字 -> Week 空格 数字（Week1 -> Week 1，week1 -> Week 1）
+  s=s.replace(/[Ww]eek\s*(\d+)/g,'Week $1');
+  // 中文数字局号转阿拉伯：第一局 -> 第1局，第十二局 -> 第12局
+  const cn={零:0,一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+  s=s.replace(/第([一二两三四五六七八九十]+)局/g,(m,g)=>{
+    let n=0;
+    if(g==='十')n=10;
+    else if(g.length===1)n=cn[g]!=null?cn[g]:NaN;
+    else if(g.indexOf('十')>=0){
+      const parts=g.split('十');
+      const tens=parts[0]===''?1:(cn[parts[0]]||0);
+      const ones=parts[1]===''?0:(cn[parts[1]]||0);
+      n=tens*10+ones;
+    }else{n=NaN;}
+    return isNaN(n)?m:('第'+n+'局');
+  });
+  return s.replace(/\s{2,}/g,' ').trim();
+}
+// 把 ISO 或 yyyy-mm-dd 日期串格式化成 "3月15日"
+function fmtRecapDate(s){
+  if(!s)return'';
+  const d=new Date(s);
+  if(isNaN(d.getTime())){
+    // 兜底：尝试从 yyyy-mm-dd 直接取月日
+    const mth=String(s).match(/(\d{1,2})[-/](\d{1,2})(?!\d)/);
+    if(mth)return parseInt(mth[1])+'月'+parseInt(mth[2])+'日';
+    return'';
+  }
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+// 复盘副标签：正赛显示"第X周"，宝宝赛显示日期（比赛日期优先，创建日期兜底）
+function recapSubLabel(r,m){
+  const track=r.track||(m&&m.track)||'main';
+  if(track==='baby'){
+    const dt=fmtRecapDate((m&&m.date)||r.created);
+    return dt?('🐣 宝宝赛 · '+dt):'🐣 宝宝赛';
+  }
+  return '第'+esc(r.week)+'周';
+}
+// 宝宝赛复盘标题里去掉"S3 Week X"字样（正赛保持原样），返回已转义的安全串
+function recapDisplayTitle(r,m){
+  const track=r.track||(m&&m.track)||'main';
+  let t=normalizeRecapTitle(r.title||'');
+  if(track==='baby'){
+    // 去掉开头的 "S3 Week N" / "Week N"，保留"第X局复盘（…）"部分
+    t=t.replace(/^\s*S3\s*Week\s*\S+\s*/i,'').replace(/^\s*Week\s*\S+\s*/i,'').trim();
+  }
+  return esc(t);
+}
 function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.className='toast on';setTimeout(()=>t.className='toast',dur);}
 function showPage(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
 
@@ -1152,7 +1205,7 @@ async function saveRecap(){
   // 编辑模式：沿用原id覆盖；新增模式：生成新id
   const id=editingRecapId||('rc'+Date.now());
   const orig=editingRecapId?recapsCache[editingRecapId]:null;
-  const rec={id,week:week||'?',game:game||'?',title:title||'未命名',body,created:orig?.created||new Date().toISOString(),updated:new Date().toISOString()};
+  const rec={id,week:week||'?',game:game||'?',title:title||'未命名',body,track:orig?.track||'main',created:orig?.created||new Date().toISOString(),updated:new Date().toISOString()};
   await fb.put(`tournament/recaps/${id}`,rec);
   clearRecapForm();loadRecapsAdm();
   toast(editingRecapId?'✓ 复盘已更新！':'✓ 复盘已保存！');
@@ -1192,7 +1245,7 @@ async function loadRecapsAdm(){
   el.innerHTML=list.map(r=>`
     <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:7px;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div style="font-weight:700;font-size:13px;flex:1;">第${esc(r.week)}周 · 第${esc(r.game)}局 <span style="color:var(--G);">${esc(r.title)}</span></div>
+        <div style="font-weight:700;font-size:13px;flex:1;">${recapSubLabel(r,null)} · 第${esc(r.game)}局 <span style="color:var(--G);">${recapDisplayTitle(r,null)}</span></div>
         <button class="btn-line" style="padding:4px 12px;" onclick="editRecap('${r.id}')">编辑</button>
         <button class="btn-danger" onclick="delRecap('${r.id}')">删除</button>
       </div>
@@ -1268,8 +1321,8 @@ async function loadRecapsView(){
     <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden;">
       <div onclick="toggleRecap(${i})" style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">第${esc(r.week)}周 · 第${esc(r.game)}局${m?' · 🔗已关联战绩':''}</div>
-          <div style="font-size:15px;font-weight:900;color:var(--G);margin-top:3px;">${esc(r.title)}</div>
+          <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">${recapSubLabel(r,m)} · 第${esc(r.game)}局${m?' · 🔗已关联战绩':''}</div>
+          <div style="font-size:15px;font-weight:900;color:var(--G);margin-top:3px;">${recapDisplayTitle(r,m)}</div>
         </div>
         <div style="font-size:12px;color:var(--dim);" id="rcArrow${i}">▾</div>
       </div>
@@ -1905,7 +1958,7 @@ async function confirmSaveRecap(){
   if(!title||!body){toast('标题和正文不能为空');return;}
   const meta=window._pendingRecap||{};
   const id='rc'+Date.now();
-  await fb.put(`tournament/recaps/${id}`,{id,week:String(meta.week||''),game:String(meta.round||''),title,body,created:new Date().toISOString(),updated:new Date().toISOString()});
+  await fb.put(`tournament/recaps/${id}`,{id,week:String(meta.week||''),game:String(meta.round||''),title,body,track:String(meta.track||'main'),created:new Date().toISOString(),updated:new Date().toISOString()});
   document.getElementById('recapDraftBox').style.display='none';
   toast('✓ 复盘已保存！');
 }
@@ -2131,15 +2184,15 @@ function addShopModule(){
 .shop-cat-title{font-size:15px;font-weight:800;color:var(--G);margin:20px 0 10px;letter-spacing:2px}
 .shop-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .shop-item{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.01)),var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:left;transition:border-color .15s;box-shadow:0 3px 10px rgba(0,0,0,.18)}
-.shop-item .si-icon{font-size:24px;display:block}
-.shop-item .si-name{font-weight:800;margin-top:6px;font-size:13px;color:var(--text);padding-right:2px}
-.shop-item .si-desc{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.35}
-.shop-item .si-cost-tag{position:absolute;top:8px;right:8px;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:12px;font-weight:800;font-family:monospace;padding:3px 7px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
-.shop-item button{width:100%;margin-top:8px;padding:7px;border-radius:7px;border:1px solid var(--G);background:rgba(255,215,60,.1);color:var(--G);font-family:inherit;cursor:pointer;font-size:12px;font-weight:700}
+.shop-item .si-icon{font-size:30px;display:block}
+.shop-item .si-name{font-family:'Noto Serif SC',serif;font-weight:900;margin-top:7px;font-size:18px;color:var(--text);padding-right:2px;letter-spacing:.5px;line-height:1.25}
+.shop-item .si-desc{font-family:'Noto Serif SC',serif;font-size:14px;font-weight:400;color:var(--dim);margin-top:4px;line-height:1.45}
+.shop-item .si-cost-tag{position:absolute;top:8px;right:8px;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:16px;font-weight:900;font-family:'Noto Serif SC',serif;padding:4px 10px;border-radius:9px;box-shadow:0 2px 7px rgba(0,0,0,.32);letter-spacing:.3px}
+.shop-item button{width:100%;margin-top:8px;padding:8px;border-radius:7px;border:1px solid var(--G);background:rgba(255,215,60,.1);color:var(--G);font-family:inherit;cursor:pointer;font-size:13px;font-weight:700}
 .shop-item button:disabled{opacity:.35;border-color:var(--line);color:var(--dim);cursor:not-allowed;background:transparent}
 .shop-orders{margin-top:24px}
 .shop-order-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--dim)}
-@media(max-width:600px){.shop-grid{grid-template-columns:1fr 1fr}.shop-item{padding:11px 9px}.shop-item .si-icon{font-size:22px}.shop-item .si-name{font-size:13px}}`;
+@media(max-width:600px){.shop-grid{grid-template-columns:1fr 1fr}.shop-item{padding:12px 10px}.shop-item .si-icon{font-size:28px}.shop-item .si-name{font-size:17px}.shop-item .si-desc{font-size:13.5px}.shop-item .si-cost-tag{font-size:15px}}`;
   document.head.appendChild(style);
 }
 try{addShopModule();}catch(e){console.warn('神秘商店样式加载失败(不影响核心功能):',e);}
