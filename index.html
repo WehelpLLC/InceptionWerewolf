@@ -719,9 +719,11 @@ function normalizeRecapTitle(t){
 // 把 ISO 或 yyyy-mm-dd 日期串格式化成 "3月15日"
 function fmtRecapDate(s){
   if(!s)return'';
+  // 优先直接从 yyyy-mm-dd / yyyy/mm/dd 取月日，避开 new Date 的时区偏移
+  const iso=String(s).match(/\d{4}[-/](\d{1,2})[-/](\d{1,2})/);
+  if(iso)return parseInt(iso[1])+'月'+parseInt(iso[2])+'日';
   const d=new Date(s);
   if(isNaN(d.getTime())){
-    // 兜底：尝试从 yyyy-mm-dd 直接取月日
     const mth=String(s).match(/(\d{1,2})[-/](\d{1,2})(?!\d)/);
     if(mth)return parseInt(mth[1])+'月'+parseInt(mth[2])+'日';
     return'';
@@ -732,7 +734,7 @@ function fmtRecapDate(s){
 function recapSubLabel(r,m){
   const track=r.track||(m&&m.track)||'main';
   if(track==='baby'){
-    const dt=fmtRecapDate((m&&m.date)||r.created);
+    const dt=fmtRecapDate(r.date||(m&&m.date)||r.week||r.created);
     return dt?('🐣 宝宝赛 · '+dt):'🐣 宝宝赛';
   }
   return '第'+esc(r.week)+'周';
@@ -766,8 +768,10 @@ async function doEnter(){
   // 安全检测：这个昵称是否已经被某个账号绑定过。已绑定的话，不能再靠直接输入昵称进入，必须密码登录
   try{
     const profiles=await fb.get('tournament/userProfiles')||{};
-    const boundUid=Object.entries(profiles).find(([uid,p])=>p.displayName===n)?.[0];
-    if(boundUid && (!authUser || authUser.uid!==boundUid)){
+    // 找出所有绑定了这个昵称的账户（可能不止一个，历史重名数据）
+    const boundUids=Object.entries(profiles).filter(([uid,p])=>p.displayName===n).map(([uid])=>uid);
+    // 只要当前登录账户就是绑定该昵称的账户之一，就放行；否则（该名已被他人绑定且你不是本人）才拦
+    if(boundUids.length && !(authUser && boundUids.includes(authUser.uid))){
       const hint=document.getElementById('nameHint');
       hint.textContent='🔒 这个名字已绑定账号，请先登录后再进入';
       hint.className='n-hint';
@@ -1267,14 +1271,26 @@ async function loadRecapsView(){
   const matches=Object.values(matchData||{});
   const playerMap=playerData||{};
   // 给每篇复盘找到对应的那局战绩（周+局都匹配）
-  function findMatch(week,game){
-    return matches.find(m=>String(m.week)===String(week)&&String(m.round)===String(game));
+  function findMatch(r,game){
+    // 兼容旧调用：若第一个参数不是对象（是week值），按原week+game匹配
+    if(typeof r!=='object'||r===null){
+      const week=r;
+      return matches.find(m=>String(m.week)===String(week)&&String(m.round)===String(game));
+    }
+    const track=r.track||'main';
+    const g=r.game;
+    if(track==='baby'){
+      // 宝宝赛：用日期+局号配对（复盘的date优先，兜底用week里存的日期或created）
+      const rd=String(r.date||r.week||(r.created||'').slice(0,10)).slice(0,10);
+      return matches.find(m=>m.track==='baby'&&String((m.date||'').slice(0,10))===rd&&String(m.round)===String(g));
+    }
+    return matches.find(m=>String(m.week)===String(r.week)&&String(m.round)===String(g));
   }
   // 按当前选中的赛道筛选：优先用复盘自带的track字段（新数据），没有的话用findMatch查原始战绩的track（兼容历史数据）
   const list=allList.filter(r=>{
     const recapTrack=r.track;
     if(recapTrack)return recapTrack===recapsViewTrack;
-    const m=findMatch(r.week,r.game);
+    const m=findMatch(r,r.game);
     const matchTrack=(m&&m.track)||'main';
     return matchTrack===recapsViewTrack;
   });
@@ -1314,7 +1330,7 @@ async function loadRecapsView(){
     return;
   }
   el.innerHTML=trackTabs+list.map((r,i)=>{
-    const m=findMatch(r.week,r.game);
+    const m=findMatch(r,r.game);
     const seatTable=seatTableHtml(m);
     const bodyHtml=annotateBody(r.body,m);
     return`
@@ -1975,7 +1991,7 @@ async function loadMatchHist(){
   el.innerHTML=matches.slice(0,20).map(m=>`
     <div class="hist-row">
       <div class="hist-head">
-        <div class="hist-title">${m.date||''} · 第${m.week||'?'}周第${m.round||''}局${m.track==='baby'?' <span style="color:#ff6b9d;">🐣宝宝赛</span>':''}</div>
+        <div class="hist-title">${m.date||''} · ${m.track==='baby'?`第${m.round||''}局 <span style="color:#ff6b9d;">🐣宝宝赛</span>`:`第${m.week||'?'}周第${m.round||''}局`}</div>
         <div style="display:flex;gap:6px;">
           <button class="btn-line" style="padding:5px 12px;font-size:12px;" onclick="editMatch('${m.id}')">✏️ 编辑</button>
           <button class="btn-danger" onclick="delMatch('${m.id}')">撤销</button>
