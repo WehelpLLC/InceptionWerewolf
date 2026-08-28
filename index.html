@@ -361,7 +361,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
 <div class="pg" id="pg-player">
   <div class="topbar">
     <div><div class="topbar-title" id="topName"></div><div class="topbar-sub">北美盗梦空间狼人杀联赛</div></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="leagueShow()">🏆 联赛中心</button><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="openRename()">✏️ 改名</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
   </div>
   <div id="bindHint" style="display:none;padding:10px 16px;background:rgba(255,215,60,.1);border-bottom:1px solid rgba(255,215,60,.25);font-size:12px;color:var(--G);display:flex;justify-content:space-between;align-items:center;gap:10px">
     <span>🔒 建议绑定账号密码，防止他人用你的名字登录、消耗你的积分</span>
@@ -744,8 +744,10 @@ function recapDisplayTitle(r,m){
   const track=r.track||(m&&m.track)||'main';
   let t=normalizeRecapTitle(r.title||'');
   if(track==='baby'){
-    // 去掉开头的 "S3 Week N" / "Week N"，保留"第X局复盘（…）"部分
-    t=t.replace(/^\s*S3\s*Week\s*\S+\s*/i,'').replace(/^\s*Week\s*\S+\s*/i,'').trim();
+    // 宝宝赛：局号以 game 字段为准（title 里的局号可能录错），副标题取 title 括号内容
+    const sub=(t.match(/[（(]([^）)]*)[）)]/)||[])[1]||'';
+    const g=r.game||'';
+    t='第'+g+'局复盘'+(sub?('（'+sub+'）'):'');
   }
   return esc(t);
 }
@@ -2461,12 +2463,12 @@ async function shopConfirmRedeem(itemId){
 // ══ Firebase Auth：玩家账号（邮箱/密码）══
 const authConfig={apiKey:'AIzaSyAgirINMy8jx6W1joRyj1LvSazYCk5t0Z8',authDomain:'werewolf-favourite-tournament.firebaseapp.com',databaseURL:'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com',projectId:'werewolf-favourite-tournament',appId:'1:663863021546:web:ee6183ba5232630ffdec93'};
 let authApp,authApi,authUser=null;
-async function authInit(){try{const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');authApi=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');authApp=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const auth=authApi.getAuth(authApp);authApi.onAuthStateChanged(auth,u=>{authUser=u;authUpdateButton();if(u)authLoadProfile();});}catch(e){console.warn('Firebase Auth unavailable',e);}}
+async function authInit(){try{const appSdk=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');authApi=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');authApp=appSdk.getApps().length?appSdk.getApp():appSdk.initializeApp(authConfig);const auth=authApi.getAuth(authApp);authApi.onAuthStateChanged(auth,u=>{authUser=u;authUpdateButton();if(u)authLoadProfile(false);});}catch(e){console.warn('Firebase Auth unavailable',e);}}
 async function authDb(path,method='GET',data){const token=authUser?await authUser.getIdToken():'';const r=await fetch(`${DB}/${path}.json${token?'?auth='+encodeURIComponent(token):''}`,{method,headers:{'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});if(!r.ok){let detail='';try{const body=await r.text();detail=body;}catch(e){}console.error('authDb失败:',r.status,detail);throw new Error(`无法保存账户资料（状态码${r.status}：${detail||'无详情'}）`);}return method==='GET'?r.json():true;}
 function authUpdateButton(){const b=document.getElementById('authOpenBtn');if(!b)return;b.textContent=authUser?`👤 ${authUser.email.split('@')[0]}`:'🔐 玩家登录';}
 function authOpen(){document.getElementById('authOverlay').classList.add('on');document.getElementById('authError').textContent='';}
 function authClose(){document.getElementById('authOverlay').classList.remove('on');}
-async function authSubmit(create){const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value,name=document.getElementById('authName').value.trim(),err=document.getElementById('authError');err.textContent='';if(!email||!pw||(create&&!name)){err.textContent='请填写邮箱、密码和玩家昵称。';return;}try{const auth=authApi.getAuth(authApp);const cred=create?await authApi.createUserWithEmailAndPassword(auth,email,pw):await authApi.signInWithEmailAndPassword(auth,email,pw);authUser=cred.user;if(create)await authDb(`tournament/userProfiles/${authUser.uid}`,'PUT',{displayName:name,emoji:'🎭',email,createdAt:new Date().toISOString()});await authLoadProfile();authClose();toast(create?'注册成功，欢迎加入！':'登录成功！');}catch(e){err.textContent=e.code==='auth/email-already-in-use'?'这个邮箱已注册，请直接登录。':e.code==='auth/invalid-credential'?'邮箱或密码不正确。':e.code==='auth/operation-not-allowed'?'请先在 Firebase Authentication 启用 Email/Password。':e.code==='auth/too-many-requests'?'尝试次数过多，请稍等几分钟后再试，或点击下方"忘记密码？"重置。':'登录失败：'+e.message;}}
+async function authSubmit(create){const email=document.getElementById('authEmail').value.trim(),pw=document.getElementById('authPassword').value,name=document.getElementById('authName').value.trim(),err=document.getElementById('authError');err.textContent='';if(!email||!pw||(create&&!name)){err.textContent='请填写邮箱、密码和玩家昵称。';return;}try{const auth=authApi.getAuth(authApp);const cred=create?await authApi.createUserWithEmailAndPassword(auth,email,pw):await authApi.signInWithEmailAndPassword(auth,email,pw);authUser=cred.user;if(create)await authDb(`tournament/userProfiles/${authUser.uid}`,'PUT',{displayName:name,emoji:'🎭',email,createdAt:new Date().toISOString()});authClose();toast(create?'注册成功，欢迎加入！':'登录成功！');await authLoadProfile(true);}catch(e){err.textContent=e.code==='auth/email-already-in-use'?'这个邮箱已注册，请直接登录。':e.code==='auth/invalid-credential'?'邮箱或密码不正确。':e.code==='auth/operation-not-allowed'?'请先在 Firebase Authentication 启用 Email/Password。':e.code==='auth/too-many-requests'?'尝试次数过多，请稍等几分钟后再试，或点击下方"忘记密码？"重置。':'登录失败：'+e.message;}}
 async function authForgotPassword(){
   const email=document.getElementById('authEmail').value.trim();
   const err=document.getElementById('authError');
@@ -2482,7 +2484,23 @@ async function authForgotPassword(){
     err.textContent=e.code==='auth/user-not-found'?'这个邮箱还没有注册过账号。':e.code==='auth/invalid-email'?'邮箱格式不正确。':e.code==='auth/too-many-requests'?'请求过于频繁，请稍后再试。':'发送失败：'+e.message;
   }
 }
-async function authLoadProfile(){if(!authUser)return;try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);if(p?.displayName){cName=p.displayName;cEmoji=p.emoji||'🎭';}}catch(e){console.warn(e);}}
+async function authLoadProfile(autoEnter){if(!authUser)return;try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);if(p?.displayName){cName=p.displayName;cEmoji=p.emoji||'🎭';
+  // 登录后：直接用账户绑定的昵称加载其投票记录并进入，无需再手输昵称
+  if(autoEnter){
+    try{
+      const key=encodeKey(cName);
+      const data=await fb.get(`tournament/playerBrackets/${key}`);
+      if(data){cEmoji=data.emoji||cEmoji;bWins=normW(data.wins);}
+      goPlayer();
+    }catch(e){console.warn('自动进入失败，请手动输入昵称',e);}
+  }else{
+    // 停在首页（联赛中心在首页），但把昵称自动填好并激活进入按钮，用户点一下即可进入
+    try{
+      const inp=document.getElementById('nameInput');
+      if(inp){inp.value=cName;onName(cName);}
+    }catch(e){console.warn(e);}
+  }
+}}catch(e){console.warn(e);}}
 async function authLogout(){if(authApi&&authApp)await authApi.signOut(authApi.getAuth(authApp));authUser=null;authUpdateButton();toast('已退出登录');}
 function addAuthUI(){const style=document.createElement('style');style.textContent=`.auth-open{margin:0 0 10px!important;color:var(--G)!important;border-color:rgba(255,215,60,.6)!important;background:rgba(255,215,60,.12)!important}.auth-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:20px}.auth-overlay.on{display:flex}.auth-box{width:min(390px,100%);background:#101633;border:1px solid rgba(255,215,60,.42);border-radius:14px;padding:24px;box-shadow:0 20px 50px #0009}.auth-box h2{margin:0 0 6px;color:var(--G);font-size:21px}.auth-box p{font-size:12px;color:var(--dim);line-height:1.55}.auth-box input{width:100%;margin:7px 0;background:#080c20;border:1px solid var(--line);border-radius:7px;padding:11px;color:var(--text);font-family:inherit}.auth-actions{display:flex;gap:8px;margin-top:9px}.auth-actions button{flex:1}.auth-err{min-height:18px;color:#ffaaa5;font-size:12px;margin-top:8px}`;document.head.appendChild(style);const box=document.querySelector('#pg-name .n-box');const b=document.createElement('button');b.id='authOpenBtn';b.className='n-admin auth-open';b.onclick=authUser?authLogout:authOpen;b.textContent='🔐 玩家登录 / 注册';box.insertBefore(b,box.firstChild);const ov=document.createElement('div');ov.id='authOverlay';ov.className='auth-overlay';ov.innerHTML=`<div class="auth-box"><h2>玩家账户</h2><p>登录后可保存你的玩家资料，并用于后续的个人数据与权限绑定。</p><input id="authName" maxlength="12" placeholder="玩家昵称（注册时必填）"><input id="authEmail" type="email" placeholder="邮箱"><input id="authPassword" type="password" minlength="6" placeholder="密码（至少 6 位）"><div class="auth-actions"><button class="btn-line" onclick="authSubmit(false)">登录</button><button class="btn-gold" onclick="authSubmit(true)">注册</button></div><div id="authError" class="auth-err"></div><button onclick="authForgotPassword()" style="display:block;margin:2px auto 0;background:none;border:0;color:var(--dim);font-size:12px;text-decoration:underline;cursor:pointer">忘记密码？</button><button onclick="authClose()" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--dim);cursor:pointer">取消</button></div>`;document.body.appendChild(ov);authInit();}
 /* 登录/注册暂时隐藏（玩家用名字回看记录即可）。以后要启用把下一行取消注释： */
