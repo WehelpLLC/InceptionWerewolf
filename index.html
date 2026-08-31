@@ -319,6 +319,24 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
 .colosseum-bg-left:after{background:linear-gradient(90deg,transparent 78%,#0a0d2299 100%)}
 .colosseum-bg-right:after{background:linear-gradient(90deg,#0a0d2299 0%,transparent 18%)}
 .dream-line-svg{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+/* ── 手机版梦境地图（方案S：竖版列表）── */
+.mmap{position:relative;padding:8px 0 16px;}
+.mmap .axis{position:absolute;left:44px;top:8px;bottom:16px;width:3px;background:repeating-linear-gradient(180deg,rgba(255,215,60,.5) 0 4px,transparent 4px 12px);z-index:0;}
+.mmap-row{position:relative;display:flex;align-items:flex-start;gap:10px;padding:5px 12px 5px 0;min-height:48px;z-index:1;}
+.mmap-row.lm{background:linear-gradient(90deg,rgba(40,30,10,.5),transparent 72%);border-radius:12px;margin:4px 0;}
+.mmap-node{flex:none;width:40px;display:flex;justify-content:center;z-index:2;}
+.mmap-tile{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(8,12,28,.9);border:1px solid rgba(200,160,40,.4);font-family:'Courier Prime',monospace;font-size:13px;color:rgba(255,215,60,.8);box-shadow:0 2px 8px rgba(0,0,0,.6);}
+.mmap-lmdot{width:48px;height:48px;margin-left:-8px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;background:linear-gradient(140deg,rgba(30,22,8,.95),rgba(50,36,12,.9));border:2px solid rgba(255,215,60,.6);box-shadow:0 4px 16px rgba(0,0,0,.6);}
+.mmap-lmdot.start{border-color:rgba(80,200,120,.6);background:linear-gradient(140deg,rgba(8,34,18,.95),rgba(12,50,26,.9));}
+.mmap-lmlabel{flex:none;display:flex;flex-direction:column;justify-content:center;min-width:76px;}
+.mmap-lmlabel .nm{font-size:17px;font-weight:900;color:var(--G);text-shadow:0 1px 6px #000;line-height:1.15;}
+.mmap-lmlabel .ps{font-family:'Courier Prime',monospace;font-size:10px;color:rgba(255,215,60,.6);margin-top:2px;}
+.mmap-players{flex:1;display:flex;flex-wrap:wrap;gap:5px 7px;align-content:center;padding-top:4px;}
+.mmap-player{display:flex;align-items:center;gap:5px;background:rgba(5,7,18,.85);border:1px solid rgba(200,160,40,.3);border-radius:20px;padding:3px 10px 3px 3px;box-shadow:0 1px 5px rgba(0,0,0,.5);}
+.mmap-player.me{border-color:var(--G);box-shadow:0 0 10px rgba(255,215,60,.6);}
+.mmap-player .pa{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;border:1.5px solid rgba(255,215,60,.7);background:rgba(20,14,4,.96);overflow:hidden;}
+.mmap-player .pa img{width:100%;height:100%;object-fit:cover;}
+.mmap-player .pn{font-size:12.5px;font-weight:700;color:#f6e6aa;white-space:nowrap;}
 .dream-line-svg path{fill:none;stroke:#dfba55;stroke-width:7;stroke-linecap:round;filter:drop-shadow(0 0 8px rgba(255,215,60,.45));stroke-dasharray:2 14}
 .dream-tile{position:absolute;width:26px;height:26px;transform:translateX(-50%);z-index:2;display:grid;place-items:center;border-radius:7px;background:rgba(18,23,48,.85);border:1px solid rgba(255,215,60,.28);font-family:'Courier Prime',monospace;font-size:11px;color:rgba(232,210,130,.7);box-shadow:0 2px 6px #0006}
 .dream-tile.milestone{background:rgba(255,215,60,.16);border-color:rgba(255,215,60,.6);color:var(--G);font-weight:bold}
@@ -1098,7 +1116,8 @@ function renderMapList(){
   }).join('');
 }
 async function loadMapTab(){
-  buildMap();
+  const isMobileMap=window.innerWidth<768;
+  if(!isMobileMap)buildMap();
   if(!document.getElementById('mapLegend')){
     const legend=document.createElement('div');legend.id='mapLegend';legend.className='map-legend';
     legend.innerHTML='<div><b>🧭 梦境远征 · 玩家足迹</b><br><span>地图头像下方显示玩家姓名；下方列表可查看完整进度。</span></div><span>🏁 终点：奇迹宫殿</span>';
@@ -1121,10 +1140,20 @@ async function loadMapTab(){
     document.getElementById('myPosN').textContent=lmName;
     document.getElementById('myNextN').textContent=next?'距'+next+' '+nd+'格':'🏆 已到达终点！';
   }else card.style.display='none';
-  placeMarkers();renderMapList();
-  setTimeout(resizeMap,100);
+  if(isMobileMap){buildMapMobile();}
+  else{placeMarkers();setTimeout(resizeMap,100);}
+  renderMapList();
 }
-window.addEventListener('resize',()=>{if(mapBuilt)resizeMap();});
+// 屏宽跨越 768 断点时重新渲染地图，切换手机/电脑布局
+let _mapWasMobile=window.innerWidth<768;
+window.addEventListener('resize',()=>{
+  const nowMobile=window.innerWidth<768;
+  if(nowMobile!==_mapWasMobile){
+    _mapWasMobile=nowMobile;
+    mapBuilt=false; // 允许重建
+    if(document.getElementById('tp1')?.classList.contains('on'))loadMapTab();
+  }else if(mapBuilt&&!nowMobile){resizeMap();}
+});
 
 // ══ 2c. 我的数据 ══
 async function loadMyData(){
@@ -1312,20 +1341,28 @@ async function loadRecapsView(){
     return`<div style="background:rgba(8,10,28,.6);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;">
       <div style="font-size:11px;letter-spacing:2px;color:var(--G);margin-bottom:6px;">🪑 本局座位表</div>${rows}</div>`;
   }
-  // 把正文里的"N号"标注上玩家名 → "N号(玩家名)"，只作用于显示
+  // 正文标名：身份信息段的独立数字 + 过程段的"N号"，都标注玩家名
   function annotateBody(body,m){
-    let safe=esc(body||'');
-    if(!m||!m.entries)return safe;
-    // 建座位→玩家名映射
+    let raw=String(body||'');
+    if(!m||!m.entries)return esc(raw);
     const seat2name={};
     m.entries.forEach(e=>{const p=playerMap[e.playerId];if(e.seat&&p)seat2name[e.seat]=p.name;});
-    // 匹配"数字+号"，在号后追加(玩家名)。从大到小替换避免"12号"被当"1号"+"2号"
-    // 用正则一次性处理：\d+号
-    safe=safe.replace(/(\d+)号/g,(match,num)=>{
+    const tag=nm=>`<span style="color:#1a4a8a;font-weight:700;">(${esc(nm)})</span>`;
+    // 用第一个夜晚/白天符号把正文切成 身份段 | 过程段
+    const splitIdx=(()=>{const mm=raw.match(/[🌙☀]/);return mm?mm.index:raw.length;})();
+    let head=esc(raw.slice(0,splitIdx));   // 身份信息段
+    let tail=esc(raw.slice(splitIdx));     // 过程段
+    // 身份段：给未紧跟"号"、未已带括号的独立数字标名（如 2/6/10、预言家5）
+    head=head.replace(/(\d+)(?![号\d])(?![）)])/g,(match,num)=>{
       const nm=seat2name[parseInt(num)];
-      return nm?`${num}号<span style="color:var(--G);font-size:12px;">(${esc(nm)})</span>`:match;
+      return nm?`${num}${tag(nm)}`:match;
     });
-    return safe;
+    // 过程段：给"N号"标名（号码后已有括号则跳过）
+    tail=tail.replace(/(\d+)号(?![（(])/g,(match,num)=>{
+      const nm=seat2name[parseInt(num)];
+      return nm?`${num}号${tag(nm)}`:match;
+    });
+    return head+tail;
   }
   if(!list.length){
     el.innerHTML=trackTabs+`<div class="no-data">暂无${recapsViewTrack==='baby'?'宝宝赛':'正赛'}战报<br><small>${recapsViewTrack==='baby'?'宝宝赛的复盘可能还没有录入，或历史复盘未标记赛道':'对局复盘由管理员发布后显示'}</small></div>`;
@@ -1345,8 +1382,7 @@ async function loadRecapsView(){
         <div style="font-size:12px;color:var(--dim);" id="rcArrow${i}">▾</div>
       </div>
       <div id="rcContent${i}" style="display:none;padding:0 16px 16px;border-top:1px solid var(--line);padding-top:12px;">
-        ${seatTable}
-        <div style="font-size:13px;line-height:1.75;white-space:pre-wrap;color:var(--text);">${bodyHtml}</div>
+        <div style="font-size:15px;font-weight:600;line-height:1.9;white-space:pre-wrap;color:#1a2040;background:#faf0d0;border:1px solid rgba(200,160,40,.45);border-radius:10px;padding:16px 18px;box-shadow:inset 0 1px 3px rgba(160,120,20,.12);">${bodyHtml}</div>
       </div>
     </div>`;
   }).join('');
@@ -2581,6 +2617,43 @@ function getMapCoord(pos){
   // 小振幅正弦摆动，制造蜿蜒感；乘以(1-t)让摆动在接近终点时收敛，确保终点精确落位
   const wobble=Math.sin(t*Math.PI*2.4)*6*(1-t*0.85);
   return {x:xMain+wobble, y:yMain};
+}
+// 手机版梦境地图（方案S竖版列表）：渲染到 #iboard，读同一份 mapPlayers 数据
+function buildMapMobile(){
+  const b=document.getElementById('iboard');
+  if(!b)return;
+  b.className='mmap';
+  b.style.cssText='display:block;width:100%;min-width:0;border:none;background:radial-gradient(circle at 20% 15%,#283c73 0,transparent 40%),linear-gradient(160deg,#090d24,#12173a 55%,#090b1b);border-radius:16px;';
+  const SEG_END=30; // 与电脑版一致，只显示已开放区间
+  // 按格分组玩家
+  const byPos={};
+  Object.values(mapPlayers).forEach(p=>{
+    const pos=Math.max(0,Math.min(SEG_END,Number(p.position)||0));
+    (byPos[pos]??=[]).push(p);
+  });
+  let rows='<div class="axis"></div>';
+  for(let g=0;g<=SEG_END;g++){
+    const lm=MAP_LMS[g];
+    const ps=byPos[g]||[];
+    let node,label='';
+    if(lm){
+      node=`<div class="mmap-node"><div class="mmap-lmdot ${g===0?'start':''}">${lm.e}</div></div>`;
+      label=`<div class="mmap-lmlabel"><div class="nm">${esc(lm.n)}</div><div class="ps">${g} 格</div></div>`;
+    }else{
+      node=`<div class="mmap-node"><div class="mmap-tile">${g}</div></div>`;
+    }
+    let players='';
+    if(ps.length){
+      players='<div class="mmap-players">'+ps.map(p=>{
+        const av=p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:(p.emoji||'🎭');
+        return `<div class="mmap-player${p.name===cName?' me':''}"><span class="pa">${av}</span><span class="pn">${esc(p.name)}</span></div>`;
+      }).join('')+'</div>';
+    }else{
+      players='<div class="mmap-players"></div>';
+    }
+    rows+=`<div class="mmap-row${lm?' lm':''}">${node}${lm?label:''}${players}</div>`;
+  }
+  b.innerHTML=rows;
 }
 function buildMap(containerId){
   containerId=containerId||'iboard';
