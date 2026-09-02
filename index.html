@@ -577,7 +577,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
             <div class="meta-label">比赛日期</div>
             <input type="date" class="meta-inp" id="mDate">
           </div>
-          <div class="meta-field">
+          <div class="meta-field" id="weekField">
             <div class="meta-label">第几周</div>
             <input type="number" class="meta-inp" id="mWeek" min="1" value="1" style="width:70px;">
           </div>
@@ -742,6 +742,9 @@ function setMatchTrack(track){
     btnMain.classList.toggle('on',track==='main');
     btnBaby.classList.toggle('on',track==='baby');
   }
+  // 宝宝赛不用周数，隐藏"第几周"输入（直接用日期）
+  const wf=document.getElementById('weekField');
+  if(wf)wf.style.display=track==='baby'?'none':'';
 }
 let scorePlayers={};
 let addEmoji='🎭';
@@ -775,22 +778,21 @@ function normalizeRecapTitle(t){
 // 把 ISO 或 yyyy-mm-dd 日期串格式化成 "3月15日"
 function fmtRecapDate(s){
   if(!s)return'';
+  s=String(s);
   // 优先直接从 yyyy-mm-dd / yyyy/mm/dd 取月日，避开 new Date 的时区偏移
-  const iso=String(s).match(/\d{4}[-/](\d{1,2})[-/](\d{1,2})/);
+  const iso=s.match(/\d{4}[-/](\d{1,2})[-/](\d{1,2})/);
   if(iso)return parseInt(iso[1])+'月'+parseInt(iso[2])+'日';
-  const d=new Date(s);
-  if(isNaN(d.getTime())){
-    const mth=String(s).match(/(\d{1,2})[-/](\d{1,2})(?!\d)/);
-    if(mth)return parseInt(mth[1])+'月'+parseInt(mth[2])+'日';
-    return'';
-  }
-  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+  // 形如 m-d / m/d 的短日期
+  const mth=s.match(/(\d{1,2})[-/](\d{1,2})(?!\d)/);
+  if(mth)return parseInt(mth[1])+'月'+parseInt(mth[2])+'日';
+  // 其余情况（如纯数字"3"、周数）不视为日期，返回空，避免被 new Date 误解析成"3月1日"
+  return '';
 }
 // 复盘副标签：正赛显示"第X周"，宝宝赛显示日期（比赛日期优先，创建日期兜底）
 function recapSubLabel(r,m){
   const track=r.track||(m&&m.track)||'main';
   if(track==='baby'){
-    const dt=fmtRecapDate(r.date||(m&&m.date)||r.week||r.created);
+    const dt=fmtRecapDate(r.date||(m&&m.date)||r.created);
     return dt?('🐣 宝宝赛 · '+dt):'🐣 宝宝赛';
   }
   return '第'+esc(r.week)+'周';
@@ -1893,7 +1895,9 @@ function cancelEditMatch(){
 }
 async function saveMatch(){
   const date=document.getElementById('mDate').value;
-  const week=parseInt(document.getElementById('mWeek').value)||1;
+  const trackNow=currentMatchTrack||'main';
+  // 宝宝赛：直接用日期作为 week（不用周数）；正赛：用周数
+  const week=trackNow==='baby'?date:(parseInt(document.getElementById('mWeek').value)||1);
   const round=parseInt(document.getElementById('mRound').value)||1;
   const rows=document.querySelectorAll('#entryRows .entry-row');
   if(!rows.length){toast('请先添加参赛玩家');return;}
@@ -1944,7 +1948,7 @@ async function saveMatch(){
   // 生成复盘草稿
   const tname=document.getElementById('mTemplate').value;
   if(tname){
-    await generateRecapDraft(tname,week,round,entries,ndData,track);
+    await generateRecapDraft(tname,week,round,entries,ndData,track,date);
   }
   const wasEdit=isEdit;
   cancelEditMatch();loadMatchForm();loadMatchHist();
@@ -2029,7 +2033,7 @@ function seatName(entries,seatNo){
   const p=scorePlayers[e.playerId];
   return `${seatNo}号(${p?p.name:'?'})`;
 }
-async function generateRecapDraft(tname,week,round,entries,ndData,track){
+async function generateRecapDraft(tname,week,round,entries,ndData,track,date){
   const t=ROLE_TEMPLATES[tname];
   // 身份信息段
   const wolfNames=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean);
@@ -2072,12 +2076,15 @@ async function generateRecapDraft(tname,week,round,entries,ndData,track){
   document.getElementById('recapBodyInp').value=fullBody;
   document.getElementById('recapDraftBox').style.display='block';
   document.getElementById('recapDraftBox').scrollIntoView({behavior:'smooth',block:'start'});
-  window._pendingRecap={week,round};
+  window._pendingRecap={week,round,track,date};
   // 自动保存复盘，不再需要额外手动点确认，避免因漏点导致复盘（尤其宝宝赛）没有真正存入数据库
   try{
     const title=document.getElementById('recapTitleInp').value.trim();
     const id='rc'+Date.now();
-    await fb.put(`tournament/recaps/${id}`,{id,week:String(week||''),game:String(round||''),title,body:fullBody,track:track||'main',created:new Date().toISOString(),updated:new Date().toISOString()});
+    // 宝宝赛用比赛日期作为 week/date（不用周数），正赛保持周数
+    const isBaby=track==='baby';
+    const weekVal=isBaby?String(date||''):String(week||'');
+    await fb.put(`tournament/recaps/${id}`,{id,week:weekVal,date:String(date||''),game:String(round||''),title,body:fullBody,track:track||'main',created:new Date().toISOString(),updated:new Date().toISOString()});
   }catch(e){
     console.error('复盘自动保存失败:',e);
     toast('⚠️ 复盘草稿已生成，但自动保存失败，请到「复盘管理」手动点保存');
@@ -2089,7 +2096,9 @@ async function confirmSaveRecap(){
   if(!title||!body){toast('标题和正文不能为空');return;}
   const meta=window._pendingRecap||{};
   const id='rc'+Date.now();
-  await fb.put(`tournament/recaps/${id}`,{id,week:String(meta.week||''),game:String(meta.round||''),title,body,track:String(meta.track||'main'),created:new Date().toISOString(),updated:new Date().toISOString()});
+  const isBaby=String(meta.track||'main')==='baby';
+  const weekVal=isBaby?String(meta.date||''):String(meta.week||'');
+  await fb.put(`tournament/recaps/${id}`,{id,week:weekVal,date:String(meta.date||''),game:String(meta.round||''),title,body,track:String(meta.track||'main'),created:new Date().toISOString(),updated:new Date().toISOString()});
   document.getElementById('recapDraftBox').style.display='none';
   toast('✓ 复盘已保存！');
 }
