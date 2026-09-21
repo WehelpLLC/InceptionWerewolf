@@ -2222,6 +2222,55 @@ leagueLoad=async function(){await leagueLoadOnce();await leagueStartRealtime();}
 const leagueLoadWithRealtime=leagueLoad;
 leagueLoad=async function(){await leagueLoadWithRealtime();if(!Object.keys(league.players).length&&!Object.keys(league.matches).length&&league.season!=='s3'){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
 function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,10);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3 style="display:flex;justify-content:space-between;align-items:center">积分一览<span style="display:flex;gap:6px;font-size:11px"><button onclick="shareLeaderboard()" style="padding:4px 10px;border-radius:12px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer">📷 分享</button><button onclick="league.sortBy='score';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='score'?'var(--G)':'transparent'};color:${league.sortBy==='score'?'#0d0f22':'var(--dim)'};cursor:pointer">按积分</button><button onclick="league.sortBy='rate';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='rate'?'var(--G)':'transparent'};color:${league.sortBy==='rate'?'#0d0f22':'var(--dim)'};cursor:pointer">按场次</button></span></h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%${league.sortBy==='rate'&&x.s.games.length<5?' <span style="color:var(--dim);opacity:.7">（未满5场）</span>':''}</small></span><em>${league.sortBy==='rate'?x.s.rate+'%':leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>近两周战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>第${leagueEsc(m.week||'?')}周 · ${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
+function shareHallOfFame(){
+  fb.get('tournament/hallOfFame').then(async data=>{
+    data=data||{};
+    const players=await fb.get('playerProfiles/s3/players')||{};
+    const nameEmoji={};
+    Object.values(players).forEach(p=>{if(p.name)nameEmoji[p.name]=p.emoji||'🎭';});
+    const row=(a)=>{
+      const winner=data[a.key];
+      const emoji=winner?(nameEmoji[winner]||'🏅'):'';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid rgba(160,120,20,.18);">
+        <span style="font-size:22px;width:30px;text-align:center;">${a.icon}</span>
+        <span style="font-size:24px;flex:none;">${winner?emoji:'？'}</span>
+        <div style="flex:1;"><b style="font-size:15px;color:#1a2040;">${esc(a.name)}</b><br><span style="font-size:12px;color:#5a6a8a;">${a.crit}</span></div>
+        <span style="font-size:17px;font-weight:900;color:#1a4a8a;">${winner?esc(winner):'待揭晓'}</span>
+      </div>`;
+    };
+    const mainAwards=HOF_AWARDS.filter(a=>a.tier==='main');
+    const funAwards=HOF_AWARDS.filter(a=>a.tier==='fun');
+    let ov=document.getElementById('hofShareOverlay');
+    if(!ov){ov=document.createElement('div');ov.id='hofShareOverlay';
+      ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(3,5,12,.94);display:flex;flex-direction:column;align-items:center;gap:14px;overflow:auto;padding:24px 12px 40px;';
+      document.body.appendChild(ov);}
+    ov.innerHTML=`
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadHofShare()" style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:14px;padding:9px 20px;border-radius:10px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer;">📷 保存图片</button>
+        <button onclick="document.getElementById('hofShareOverlay').remove()" style="font-family:'Noto Serif SC',serif;font-size:14px;padding:9px 20px;border-radius:10px;border:1px solid rgba(200,200,200,.3);background:rgba(255,255,255,.05);color:#ccc;cursor:pointer;">关闭</button>
+      </div>
+      <div id="hofShareCard" style="width:560px;max-width:94vw;background:linear-gradient(160deg,#101a3a,#0c1330);border:2px solid rgba(255,215,60,.4);border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.7);">
+        <div style="padding:22px 24px 16px;text-align:center;background:linear-gradient(180deg,rgba(20,26,52,.9),transparent);border-bottom:1px solid rgba(255,215,60,.15);">
+          <div style="font-size:12px;letter-spacing:3px;color:rgba(255,215,60,.7);margin-bottom:6px;">SEASON THREE · INCEPTION WEREWOLF LEAGUE</div>
+          <div style="font-size:26px;font-weight:900;color:#fdd840;text-shadow:0 0 18px rgba(255,210,40,.4);">🎭 人无完人 HALL OF FAME</div>
+        </div>
+        <div style="padding:14px;">
+          <div style="background:#faf0d0;border:1px solid rgba(200,160,40,.45);border-radius:12px;overflow:hidden;">${mainAwards.map(row).join('')}</div>
+          <div style="text-align:center;font-size:13px;font-weight:900;color:#e0b25c;letter-spacing:2px;margin:14px 0 8px;">🎉 趣味奖</div>
+          <div style="background:#faf0d0;border:1px solid rgba(200,160,40,.45);border-radius:12px;overflow:hidden;">${funAwards.map(row).join('')}</div>
+        </div>
+        <div style="text-align:center;padding:12px;font-size:12px;color:rgba(200,170,110,.55);border-top:1px solid rgba(255,215,60,.12);letter-spacing:2px;">北美盗梦空间狼人杀联赛</div>
+      </div>`;
+  });
+}
+function downloadHofShare(){
+  const el=document.getElementById('hofShareCard');
+  if(!el||typeof html2canvas==='undefined'){toast('生成失败，请直接截图');return;}
+  toast('正在生成图片...');
+  html2canvas(el,{scale:2,backgroundColor:'#0c1330',useCORS:true,logging:false}).then(c=>{
+    c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='S3荣誉墙_'+new Date().toLocaleDateString()+'.png';a.click();URL.revokeObjectURL(u);toast('✓ 已保存');},'image/png');
+  }).catch(e=>{console.error(e);toast('生成失败，请直接截图');});
+}
 function shareLeaderboard(){
   if(typeof league==="undefined"||!league.rows||!league.rows.length){toast('榜单未加载');return;}
   const byRate=league.sortBy==='rate';
@@ -2547,7 +2596,6 @@ const HOF_AWARDS=[
   {key:'dish',  icon:'🍲', name:'最佳菜肴奖', crit:'Potluck 现场品尝投票', tier:'main'},
   {key:'legend',icon:'🌙', name:'盗梦传奇',   crit:'赛季荣誉致敬', tier:'main'},
   {key:'sharp', icon:'🎤', name:'全场最硬的嘴', crit:'趣味奖', tier:'fun'},
-  {key:'locked',icon:'🎯', name:'身份牌焊脸上奖', crit:'趣味奖', tier:'fun'},
   {key:'judge', icon:'⏳', name:'最让法官头疼奖', crit:'趣味奖', tier:'fun'},
   {key:'goodguy',icon:'😇',name:'我真的是好人奖', crit:'趣味奖', tier:'fun'},
   {key:'scapegoat',icon:'🍳',name:'赛季背锅侠', crit:'趣味奖', tier:'fun'},
@@ -2590,7 +2638,9 @@ async function renderHallOfFameView(){
   const mainRest=HOF_AWARDS.filter(a=>a.tier==='main'&&a.key!=='mvp');
   const funAwards=HOF_AWARDS.filter(a=>a.tier==='fun');
   return `<div class="hof-wall">
-    <div class="hof-title"><div class="hof-season">SEASON THREE</div><div class="hof-h1">🎭 人无完人</div><div class="hof-en">HALL OF FAME</div></div>
+    <div class="hof-title"><div class="hof-season">SEASON THREE</div><div class="hof-h1">🎭 人无完人</div><div class="hof-en">HALL OF FAME</div>
+      <button onclick="shareHallOfFame()" style="margin-top:12px;font-family:inherit;font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer;">📷 生成分享图</button>
+    </div>
     ${card(mvp,true)}
     <div class="hof-grid">${mainRest.map(a=>card(a,false)).join('')}</div>
     <div class="hof-subtitle">🎉 趣味奖 · FUN AWARDS</div>
