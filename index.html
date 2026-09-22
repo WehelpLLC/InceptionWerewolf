@@ -429,7 +429,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
 <div class="pg" id="pg-player">
   <div class="topbar">
     <div><div class="topbar-title" id="topName"></div><div class="topbar-sub">北美盗梦空间狼人杀联赛</div></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="leagueShow()">🏆 联赛中心</button><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="topbar-btn" onclick="leagueShow()">🏆 联赛中心</button><button class="topbar-btn" onclick="shareMyReport()">📷 我的战报</button><button class="topbar-btn" onclick="openEmojiPicker()">🎭 换头像</button><button class="topbar-btn" onclick="document.getElementById('photoInput').click()">📷 照片</button><button class="topbar-btn" onclick="doChangeName()">换人</button></div>
   </div>
   <div id="bindHint" style="display:none;padding:10px 16px;background:rgba(255,215,60,.1);border-bottom:1px solid rgba(255,215,60,.25);font-size:12px;color:var(--G);display:flex;justify-content:space-between;align-items:center;gap:10px">
     <span>🔒 建议绑定账号密码，防止他人用你的名字登录、消耗你的积分</span>
@@ -1720,7 +1720,7 @@ function onPlayerSelChange(sel){
     sel.style.display='';
   }
 }
-const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白神"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","通灵师"],"wolfSpecial":"狼术师","nightFields":["魔术师交换目标","狼术师交换目标","狼人击杀","女巫救","女巫毒","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"鹊桥红线":{"roles":["预言家","女巫","猎人","守卫"],"wolfSpecial":null,"thirdParty":"织女","thirdPartyMembers":["织女","牛郎","月老"],"nightFields":["织女牵红线目标","鹊桥眷侣交流内容","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","断桥情况"],"winOptions":["狼人阵营胜","好人阵营胜","鹊桥阵营胜"]},"九人动物局":{"roles":["企鹅","熊","乌鸦"],"wolfSpecial":"黑狼王","seatCount":9,"nightFields":["企鹅冰冻","狼人击杀","乌鸦技能","熊咆哮情况"],"dayExtra":["黑狼王带人"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]}};
+const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白神"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","通灵师"],"wolfSpecial":"狼术师","nightFields":["魔术师交换目标","狼术师交换目标","狼人击杀","女巫救","女巫毒","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"鹊桥红线":{"roles":["预言家","女巫","猎人","守卫"],"wolfSpecial":null,"thirdParty":"织女","thirdPartyMembers":["织女","牛郎","月老"],"nightFields":["织女牵红线目标","鹊桥眷侣交流内容","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","断桥情况"],"winOptions":["狼人阵营胜","好人阵营胜","鹊桥阵营胜"]},"九人动物局":{"roles":["企鹅","熊","乌鸦"],"wolfSpecial":"黑狼王","seatCount":9,"nightFields":["企鹅冰冻","狼人击杀","乌鸦技能","熊咆哮情况"],"dayExtra":["黑狼王带人"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]}};
 function initTemplateSelect(){
   const sel=document.getElementById('mTemplate');
   if(!sel||sel.options.length>1)return;
@@ -2269,6 +2269,92 @@ function downloadHofShare(){
   toast('正在生成图片...');
   html2canvas(el,{scale:2,backgroundColor:'#0c1330',useCORS:true,logging:false}).then(c=>{
     c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='S3荣誉墙_'+new Date().toLocaleDateString()+'.png';a.click();URL.revokeObjectURL(u);toast('✓ 已保存');},'image/png');
+  }).catch(e=>{console.error(e);toast('生成失败，请直接截图');});
+}
+// ══ 我的S3战报分享卡 ══
+async function shareMyReport(){
+  if(!cName){toast('请先进入玩家页');return;}
+  toast('正在生成战报...');
+  try{
+    // 1) 联赛数据：积分/胜率/场次/常玩角色
+    if(!league.players||!Object.keys(league.players).length){
+      const[p,m]=await Promise.all([fb.get(`${leaguePath()}/players`),fb.get(`${leaguePath()}/matches`)]);
+      league.players=p||{};league.matches=m||{};
+      Object.entries(league.players).forEach(([id,x])=>{if(!x.id)x.id=id;});
+    }
+    const row=Object.values(league.players).find(p=>p.name===cName);
+    const stats=row?leagueStats(row.id):{score:0,games:[],rate:0,entries:[]};
+    const roles={};
+    stats.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});
+    const topRoles=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).slice(0,3);
+    // 2) 地图：走到第几格、对应哪个奇迹
+    const mapP=await fb.get('tournament/mapPlayers')||{};
+    const myMap=Object.values(mapP).find(p=>p.name===cName);
+    const pos=myMap?Number(myMap.position)||0:0;
+    let reached='梦境之门';
+    Object.entries(MAP_LMS).forEach(([g,l])=>{if(Number(g)<=pos)reached=l.n;});
+    // 迷你远征地图：所有已开放奇迹节点，已到达高亮
+    const lmEntries=Object.entries(MAP_LMS).sort((a,b)=>Number(a[0])-Number(b[0]));
+    const maxG=Number(lmEntries[lmEntries.length-1][0])||1;
+    const miniMapHtml=`<div style="position:relative;height:54px;margin:14px 4px 4px;">
+      <div style="position:absolute;left:0;right:0;top:26px;height:2px;background:rgba(200,160,80,.25);"></div>
+      <div style="position:absolute;left:0;top:26px;height:2px;width:${Math.min(100,pos/maxG*100)}%;background:linear-gradient(90deg,#7de5b0,#fdd840);"></div>
+      ${lmEntries.map(([g,l])=>{
+        const gi=Number(g);const done=gi<=pos;const left=maxG?(gi/maxG*100):0;
+        return `<div style="position:absolute;left:${left}%;top:0;transform:translateX(-50%);text-align:center;width:40px;">
+          <div style="width:24px;height:24px;line-height:24px;border-radius:50%;margin:0 auto;font-size:13px;background:${done?'linear-gradient(145deg,#ffe9a8,#e8b563)':'rgba(60,50,30,.6)'};border:1.5px solid ${done?'#e8b563':'rgba(200,160,80,.3)'};opacity:${done?1:.45};">${l.e}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+    // 3) 荣誉墙：这个名字拿了哪些奖
+    const hof=await fb.get('tournament/hallOfFame')||{};
+    const myAwards=HOF_AWARDS.filter(a=>{
+      const w=hof[a.key];
+      if(!w)return false;
+      return String(w).split(/[、/,，]/).map(x=>x.trim()).includes(cName);
+    });
+    // 渲染分享卡
+    let ov=document.getElementById('myReportOverlay');
+    if(!ov){ov=document.createElement('div');ov.id='myReportOverlay';
+      ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(3,5,12,.94);display:flex;flex-direction:column;align-items:center;gap:14px;overflow:auto;padding:24px 12px 40px;';
+      document.body.appendChild(ov);}
+    const rolesHtml=topRoles.length?topRoles.map(([r,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(160,120,20,.15);"><span style="font-weight:700;color:#1a2040;">${esc(r)}</span><span style="color:#5a6a8a;font-size:12px;">${v.n}场 · 胜率${Math.round(v.w/v.n*100)}%</span></div>`).join(''):'<div style="color:#8a7a5a;font-size:13px;text-align:center;padding:8px;">暂无对局记录</div>';
+    const awardsHtml=myAwards.length?myAwards.map(a=>`<span style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;margin:3px 4px 0 0;">${a.icon} ${esc(a.name)}</span>`).join(''):'<div style="color:#8a7a5a;font-size:13px;">本赛季暂无荣誉墙记录</div>';
+    ov.innerHTML=`
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadMyReport()" style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:14px;padding:9px 20px;border-radius:10px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer;">📷 保存图片</button>
+        <button onclick="document.getElementById('myReportOverlay').remove()" style="font-family:'Noto Serif SC',serif;font-size:14px;padding:9px 20px;border-radius:10px;border:1px solid rgba(200,200,200,.3);background:rgba(255,255,255,.05);color:#ccc;cursor:pointer;">关闭</button>
+      </div>
+      <div id="myReportCard" style="width:520px;max-width:94vw;background:linear-gradient(160deg,#101a3a,#0c1330);border:2px solid rgba(255,215,60,.4);border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.7);">
+        <div style="padding:24px 24px 16px;text-align:center;background:linear-gradient(180deg,rgba(20,26,52,.9),transparent);border-bottom:1px solid rgba(255,215,60,.15);">
+          <div style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:12px;font-weight:900;padding:3px 14px;border-radius:12px;letter-spacing:2px;margin-bottom:8px;">S3 赛季战报</div>
+          <div style="font-size:11px;letter-spacing:3px;color:rgba(255,215,60,.7);margin-bottom:8px;">SEASON THREE · DREAM EXPEDITION</div>
+          <div style="font-size:52px;line-height:1;margin-bottom:8px;">${esc(cEmoji||'🎭')}</div>
+          <div style="font-size:26px;font-weight:900;color:#fdd840;text-shadow:0 0 18px rgba(255,210,40,.4);">${esc(cName)}</div>
+          <div style="font-size:13px;color:rgba(220,195,140,.7);margin-top:6px;">远征至 · ${esc(reached)}（${pos} 格）</div>
+          ${miniMapHtml}
+        </div>
+        <div style="padding:16px 20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div style="background:#faf0d0;border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:20px;font-weight:900;color:#1a4a8a;">${leagueFmt(stats.score)}</div><div style="font-size:10px;color:#5a6a8a;margin-top:2px;">总积分</div></div>
+            <div style="background:#faf0d0;border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:20px;font-weight:900;color:#1a4a8a;">${stats.games.length}</div><div style="font-size:10px;color:#5a6a8a;margin-top:2px;">参赛场次</div></div>
+            <div style="background:#faf0d0;border-radius:10px;padding:10px 6px;text-align:center;"><div style="font-size:20px;font-weight:900;color:#1a4a8a;">${stats.rate}%</div><div style="font-size:10px;color:#5a6a8a;margin-top:2px;">综合胜率</div></div>
+          </div>
+          <div style="font-size:13px;font-weight:900;color:#e0b25c;letter-spacing:2px;margin-bottom:8px;">🎭 常玩身份</div>
+          <div style="background:#faf0d0;border-radius:10px;padding:8px 14px;margin-bottom:16px;">${rolesHtml}</div>
+          <div style="font-size:13px;font-weight:900;color:#e0b25c;letter-spacing:2px;margin-bottom:8px;">🏆 赛季荣誉</div>
+          <div style="background:#faf0d0;border-radius:10px;padding:10px 14px;">${awardsHtml}</div>
+        </div>
+        <div style="text-align:center;padding:12px;font-size:12px;color:rgba(200,170,110,.55);border-top:1px solid rgba(255,215,60,.12);letter-spacing:2px;">北美盗梦空间狼人杀联赛</div>
+      </div>`;
+  }catch(e){console.error(e);toast('生成失败，请重试');}
+}
+function downloadMyReport(){
+  const el=document.getElementById('myReportCard');
+  if(!el||typeof html2canvas==='undefined'){toast('生成失败，请直接截图');return;}
+  toast('正在生成图片...');
+  html2canvas(el,{scale:2,backgroundColor:'#0c1330',useCORS:true,logging:false}).then(c=>{
+    c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='我的S3战报_'+cName+'.png';a.click();URL.revokeObjectURL(u);toast('✓ 已保存');},'image/png');
   }).catch(e=>{console.error(e);toast('生成失败，请直接截图');});
 }
 function shareLeaderboard(){
