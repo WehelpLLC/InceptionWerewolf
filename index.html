@@ -561,12 +561,12 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
       <div class="sec-title" style="margin-top:0;">📝 录入比赛</div>
       <div class="match-form">
         <div class="meta-field" style="margin-bottom:10px;">
-          <div class="meta-label">🏁 赛道</div>
+          <div class="meta-label">🏁 桌别</div>
           <div style="display:flex;gap:8px;">
-            <button class="wr-btn win on" id="trackBtnMain" onclick="setMatchTrack('main')" style="flex:1;">🏆 正赛</button>
-            <button class="wr-btn lose" id="trackBtnBaby" onclick="setMatchTrack('baby')" style="flex:1;">🐣 宝宝赛</button>
+            <button class="wr-btn win on" id="trackBtnMain" onclick="setMatchTrack('main')" style="flex:1;">🏯 仙门主桌 · 正赛</button>
+            <button class="wr-btn lose" id="trackBtnBaby" onclick="setMatchTrack('baby')" style="flex:1;">🌱 学徒历练 · 宝宝赛 / 娱乐赛</button>
           </div>
-          <div style="font-size:10px;color:var(--dim);margin-top:4px;">正赛胜一局 +2格　·　宝宝赛胜一局 +1格　·　出席（本周不分赛道首次）+1格　·　负不移动<br>同一玩家本周不论打了几局、跨不跨赛道，出席分只加一次</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:4px;">仙门主桌（A 桌）赢一局 +2格　·　学徒历练（B 桌）赢一局 +1格　·　出席（本周首次）+1格　·　负不移动<br>同一玩家本周不论打了几局、坐哪一桌，出席分只加一次</div>
         </div>
         <div class="meta-field" style="margin-bottom:10px;">
           <div class="meta-label">🎭 选择版型</div>
@@ -755,6 +755,7 @@ let mapBuilt=false,mapPlayers={};
 let currentMatchTrack='main'; // 'main'=正赛, 'baby'=宝宝赛
 function setMatchTrack(track){
   currentMatchTrack=track;
+  if(!window._tblSync&&typeof setMatchTable==='function'){window._tblSync=1;try{setMatchTable(track==='baby'?'B':'A');}finally{window._tblSync=0;}}
   const btnMain=document.getElementById('trackBtnMain'),btnBaby=document.getElementById('trackBtnBaby');
   if(btnMain&&btnBaby){
     btnMain.classList.toggle('on',track==='main');
@@ -1717,7 +1718,7 @@ function onPlayerSelChange(sel){
     sel.style.display='';
   }
 }
-const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","通灵师"],"wolfSpecial":"狼术师","nightFields":["魔术师交换目标","狼术师交换目标","狼人击杀","女巫救","女巫毒","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"鹊桥红线":{"roles":["预言家","女巫","猎人","守卫"],"wolfSpecial":null,"thirdParty":"织女","thirdPartyMembers":["织女","牛郎","月老"],"nightFields":["织女牵红线目标","鹊桥眷侣交流内容","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","断桥情况"],"winOptions":["狼人阵营胜","好人阵营胜","鹊桥阵营胜"]},"九人动物局":{"roles":["企鹅","熊","乌鸦"],"wolfSpecial":"黑狼王","seatCount":9,"nightFields":["企鹅冰冻","狼人击杀","乌鸦技能","熊咆哮情况"],"dayExtra":["黑狼王带人"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":15,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"幽灵狼":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼换位","幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]}};
+const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["狼术师交换目标","狼人击杀","女巫救","女巫毒","魔术师交换目标","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"鹊桥红线":{"roles":["预言家","女巫","猎人","守卫"],"wolfSpecial":null,"thirdParty":"织女","thirdPartyMembers":["织女","牛郎","月老"],"nightFields":["织女牵红线目标","鹊桥眷侣交流内容","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","断桥情况"],"winOptions":["狼人阵营胜","好人阵营胜","鹊桥阵营胜"]},"九人动物局":{"roles":["企鹅","熊","乌鸦"],"wolfSpecial":"黑狼王","seatCount":9,"nightFields":["企鹅冰冻","狼人击杀","乌鸦技能","熊咆哮情况"],"dayExtra":["黑狼王带人"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"幽灵狼":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼换位","幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]},"星移入瞳":{"roles":["毒师","猎人","白痴","鬼瞳"],"wolfSpecial":"奎木狼","nightFields":["奎木狼星移（方向）","击杀号码","毒师毒杀","鬼瞳瞳照"],"dayExtra":["猎人是否开枪","猎人开枪目标","瞳照狼人翻牌"]},"灵魂锁链":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]}};
 function initTemplateSelect(){
   const sel=document.getElementById('mTemplate');
   if(!sel||sel.options.length>1)return;
@@ -3438,8 +3439,8 @@ loadMapTab=async function(){
   }else card.style.display='none';
   buildRealmMap('iboard',mapPlayers,cName);
   renderRealmList(mapPlayers,cName);
-  const myCell=document.querySelector('#iboard .rm7-d.me,#iboard .rm6-n.me,#iboard .rm2-cell.me,#iboard .rm-cell.me,#iboard .rm5-dot.me');
-  const target=myCell||document.querySelector('#iboard .rm7-d.start,#iboard .rm6-n.start,#iboard .rm2-cell.start');if(target)setTimeout(()=>target.scrollIntoView({block:'center',inline:'center',behavior:'smooth'}),150);
+  const myCell=document.querySelector('#iboard .rm9-c.me,#iboard .rm7-d.me,#iboard .rm6-n.me,#iboard .rm2-cell.me,#iboard .rm-cell.me,#iboard .rm5-dot.me');
+  const target=myCell||document.querySelector('#iboard .rm7-d.start,#iboard .rm6-n.start,#iboard .rm2-cell.start');if(target)setTimeout(()=>{const r=target.getBoundingClientRect();window.scrollTo({top:window.scrollY+r.top-window.innerHeight/2,behavior:'smooth'});},150);
 };
 
 // 管理员地图页：加「宝宝赛赢 +1」和境界显示
@@ -3530,22 +3531,20 @@ try{addS4Module();}catch(e){console.warn('S4 模块加载失败:',e);}
 // ── 分桌与表演赛（录战绩）──
 window.MATCH_TABLE='A';window.MATCH_EXHIB=false;
 function s4NoExhib(obj){if(!obj)return obj;const o={};Object.entries(obj).forEach(([k,v])=>{if(!v||!v.exhibition)o[k]=v;});return o;}
-function setMatchTable(t){window.MATCH_TABLE=t;document.getElementById('tblBtnA')?.classList.toggle('on',t==='A');document.getElementById('tblBtnB')?.classList.toggle('on',t==='B');}
+function setMatchTable(t){window.MATCH_TABLE=t;if(!window._tblSync){window._tblSync=1;try{setMatchTrack(t==='B'?'baby':'main');}finally{window._tblSync=0;}}document.getElementById('tblBtnA')?.classList.toggle('on',t==='A');document.getElementById('tblBtnB')?.classList.toggle('on',t==='B');}
 function setMatchExhib(v){window.MATCH_EXHIB=!!v;const c=document.getElementById('exhibChk');if(c)c.checked=!!v;const n=document.getElementById('exhibNote');if(n)n.style.display=v?'block':'none';}
 (function(){
   const f=document.getElementById('trackBtnMain')?.closest('.meta-field');if(!f)return;
   f.insertAdjacentHTML('afterend',`<div class="meta-field" style="margin-bottom:10px;">
-    <div class="meta-label">🀄 桌别</div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:none;">
       <button class="wr-btn win on" id="tblBtnA" onclick="setMatchTable('A')" style="flex:1;">仙门主桌（A 桌）</button>
       <button class="wr-btn lose" id="tblBtnB" onclick="setMatchTable('B')" style="flex:1;">学徒历练（B 桌）</button>
     </div>
-    <div style="font-size:10px;color:var(--dim);margin-top:4px;">地图：出席 +1；仙门主桌赢 +2，学徒历练赢 +1</div>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer;"><input type="checkbox" id="exhibChk" onchange="setMatchExhib(this.checked)"> 🎭 表演赛 · 不计分（Pre-Season「渡劫前夜」测试用）</label>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer;"><input type="checkbox" id="exhibChk" onchange="setMatchExhib(this.checked)"> 🎭 表演赛 · 不计分（Pre-Season「渡劫前夜」测试用）</label>
     <div id="exhibNote" style="display:none;font-size:11px;color:#e0a0ff;margin-top:4px;">这局会正常保存战绩和勋章，但不计入 S4 积分榜、地图和个人数据。</div>
   </div>`);
   const _em2=editMatch;
-  editMatch=async function(id){await _em2.apply(this,arguments);const m=await fb.get(`${P_PATH}/matches/${id}`);setMatchTable(m?.table||'A');setMatchExhib(!!m?.exhibition);};
+  editMatch=async function(id){await _em2.apply(this,arguments);const m=await fb.get(`${P_PATH}/matches/${id}`);setMatchTable((m?.table==='B'||m?.track==='baby')?'B':'A');setMatchExhib(!!m?.exhibition);};
   const _cm2=cancelEditMatch;
   cancelEditMatch=function(){const r=_cm2.apply(this,arguments);setMatchTable('A');setMatchExhib(false);return r;};
 })();
@@ -3854,78 +3853,97 @@ function rmCloudCover(x,y,w,h){
 }
 function buildRealmMap(containerId,players,meName){
   const b=document.getElementById(containerId);if(!b)return;
-  const cw=Math.max(300,Math.min(887,b.parentElement?.clientWidth||b.clientWidth||360));
-  if(b._zoom===undefined)b._zoom=cw<600;
-  const W=b._zoom?Math.max(cw,820):cw;
-  b.className='iboard realm-map rm5 rm6 rm7 rm8'+(b._zoom?' zoom':'');b.removeAttribute('style');
-  const k=W/RM_ART_W;
+  const _pe=b.parentElement||b,_cs=getComputedStyle(_pe);const W=Math.max(300,Math.min(887,Math.floor((_pe.clientWidth||360)-parseFloat(_cs.paddingLeft||0)-parseFloat(_cs.paddingRight||0))));
+  const mobile=W<600;
+  b.className='iboard realm-map rm5 rm6 rm7 rm8 rm9';b.removeAttribute('style');
+  const zb=document.getElementById('rmZoomBtn');if(zb)zb.remove();
   const list=Object.values(players||{});
   const maxPos=list.reduce((m,p)=>Math.max(m,Math.min(80,Number(p.position)||0)),0);
   const allOpen=maxPos>=70,openIdx=allOpen?7:REALMS.indexOf(realmOf(Math.min(maxPos,79)));
   const byPos={};list.forEach(p=>{const pos=Math.max(0,Math.min(80,Number(p.position)||0));(byPos[pos]??=[]).push(p);});
   const av=p=>`<span class="rm-av" title="${s4Esc(p.name)}">${p.avatarUrl?`<img src="${s4Esc(p.avatarUrl)}" alt="">`:s4Esc(p.emoji||'🎭')}</span>`;
-  const gy=i=>RM_ANCHORS[i][1];
-  // 每个境界一幅完整画面：上下各留出一段，让场景完整
-  const slice=seg=>({t:seg===7?0:Math.max(0,gy(seg+1)-70),bm:seg===0?RM_ART_H:Math.min(RM_ART_H,Math.max(gy(seg)+55,RM_PLAQUES[seg][3]+14))});
-  let svgAll='';
-  for(let seg=0;seg<8;seg++){let d='';for(let i=0;i<=40;i++){const q=rmSegPoint(seg,i/40);d+=(i?'L':'M')+(q.x*k).toFixed(1)+','+(q.y*k).toFixed(1)+' ';}
-    const st=RM_STAGE[seg];svgAll+=`<path d="${d}" stroke="#fbe7c2" stroke-opacity=".55" stroke-width="${(36*k).toFixed(1)}" fill="none" stroke-linecap="round" filter="url(#rm8glow)"/><path d="${d}" stroke="${st.c}" stroke-opacity=".75" stroke-width="${(3*k+1).toFixed(1)}" fill="none" stroke-linecap="round" stroke-dasharray="${(2*k).toFixed(1)} ${(6*k).toFixed(1)}"/>`;}
-  const dot=Math.max(6,Math.min(10,9*k));
+  const tabs=rmArcTables();
+  const CELL=mobile?20:24,GAP=mobile?24:27;
   b._groups={};let gid=0;
-  const card=(seg)=>{
-    const {t,bm}=slice(seg),h=Math.round((bm-t)*k),off=t*k,st=RM_STAGE[seg],r=REALMS[seg];
+  const view=(seg)=>{
+    const pq=RM_PLAQUES[seg],pq2=seg===7?RM_PLAQUES[8]:null;
     const lo=seg*10,hi=seg===7?80:seg*10+9;
+    const pts=[];for(let pos=lo;pos<=Math.min(hi,80);pos++)pts.push(rmArtPoint(pos));
+    pts.push(rmArtPoint(Math.min(80,(seg+1)*10)));
+    let x0=Math.min(...pts.map(p=>p.x)),x1=Math.max(...pts.map(p=>p.x));
+    let y0=Math.min(...pts.map(p=>p.y)),y1=Math.max(...pts.map(p=>p.y));
+    if(!mobile){x0=Math.min(x0,pq[0]);x1=Math.max(x1,pq[2]);}
+    y0=Math.min(y0,pq[1]);y1=Math.max(y1,pq[3]);
+    if(pq2){y0=Math.min(y0,pq2[1]);if(!mobile){x0=Math.min(x0,pq2[0]);x1=Math.max(x1,pq2[2]);}}
+    if(seg===7)y0=0;
+    y0=Math.max(0,y0-30);y1=Math.min(RM_ART_H,y1+30);
+    const need=(GAP*10)/tabs[seg].L;
+    const fitW=mobile?9:(W-20)/Math.max(1,(x1-x0+40));
+    const sx=Math.max(W/RM_ART_W,Math.min(need,fitW,mobile?1.7:2));
+    const H=Math.round((y1-y0)*sx),imgW=RM_ART_W*sx;
+    const cx=(x0+x1)/2;let left=W/2-cx*sx;left=Math.min(0,Math.max(W-imgW,left));
+    return {s:sx,left,top:-y0*sx,H,imgW,lo,hi};
+  };
+  const card=(seg)=>{
+    const v=view(seg),st=RM_STAGE[seg],r=REALMS[seg];
+    const P=pos=>{const p=rmArtPoint(pos);return {x:p.x*v.s+v.left,y:p.y*v.s+v.top};};
+    // 本境界的一段金色道路
+    let d='';for(let i=0;i<=40;i++){const q=rmSegPoint(seg,i/40);d+=(i?'L':'M')+(q.x*v.s+v.left).toFixed(1)+','+(q.y*v.s+v.top).toFixed(1)+' ';}
+    const road=`<path d="${d}" stroke="#fbe7c2" stroke-opacity=".35" stroke-width="${CELL*1.5}" fill="none" stroke-linecap="round" filter="url(#rm9glow)"/>`;
     let nodes='';
-    for(let pos=lo;pos<=hi;pos++){
-      const pt=rmArtPoint(pos),has=byPos[pos],gate=pos%10===0,me=has&&has.some(x=>x.name===meName);
-      const cls=['rm7-d',gate?'gate':'',has?'has':'',me?'me rm2-cell':'',pos===0?'rm2-cell start':''].join(' ');
-      const sz=gate?dot*4.4:(has?dot*1.7:dot);
-      nodes+=`<i class="${cls}" style="left:${(pt.x*k).toFixed(1)}px;top:${(pt.y*k-off).toFixed(1)}px;width:${sz.toFixed(1)}px;height:${sz.toFixed(1)}px;--c:${st.c};--g:${st.g}" title="第 ${pos} 格 · ${realmOf(pos).n}" onclick="rmPop(${pos})"></i>`;
+    for(let pos=v.lo;pos<=v.hi;pos++){
+      const p=P(pos),has=byPos[pos],gate=pos%10===0,me=has&&has.some(x=>x.name===meName);
+      const cls=['rm9-c',gate?'gate':'',has?'has':'',me?'me rm7-d':'',pos===0?'start rm7-d':''].join(' ');
+      nodes+=`<i class="${cls}" style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px;--c:${st.c};--g:${st.g}" title="第 ${pos} 格 · ${realmOf(pos).n}" onclick="rmPop(${pos})">${gate?'':pos}</i>`;
     }
-    let marks='';const poss=Object.keys(byPos).map(Number).filter(p=>p>=lo&&p<=hi).sort((a,c)=>a-c);const groups=[];
-    poss.forEach(pos=>{const pt=rmArtPoint(pos);const g=groups[groups.length-1];
-      if(g&&Math.hypot((pt.x-g.x)*k,(pt.y-g.y)*k)<38)g.items.push(pos);else groups.push({x:pt.x,y:pt.y,items:[pos]});});
-    groups.forEach(g=>{
+    // 玩家
+    let marks='';const poss=Object.keys(byPos).map(Number).filter(p=>p>=v.lo&&p<=v.hi).sort((a,c)=>a-c);const groups=[];
+    poss.forEach(pos=>{const p=P(pos);const g=groups[groups.length-1];
+      if(g&&Math.hypot(p.x-g.x,p.y-g.y)<CELL*1.7)g.items.push(pos);else groups.push({x:p.x,y:p.y,items:[pos]});});
+    const plaqueRight=RM_PLAQUES[seg][0]>RM_ART_W/2;
+    groups.forEach((g,k)=>{
       const pl=g.items.flatMap(pos=>byPos[pos].map(p=>({...p,_pos:pos}))).sort((a,c)=>(c.name===meName)-(a.name===meName)||c._pos-a._pos);
       const gi=gid++;b._groups[gi]=pl;
-      const x=g.x*k,y=g.y*k-off,right=seg%2===1,hasMe=pl.some(p=>p.name===meName);
-      const label=pl.length===1?`${s4Esc(pl[0].name)} · ${pl[0]._pos}`:(b._zoom?`${pl.length} 人`:(hasMe?`你和 ${pl.length-1} 位道友`:`${pl.length} 位道友`)+` · ${g.items.length>1?g.items[0]+'–'+g.items[g.items.length-1]:g.items[0]} 格`);
-      marks+=`<div class="rm7-who ${right?'r':'l'}${hasMe?' me':''}" style="${right?'left':'right'}:${right?x+14:W-x+14}px;top:${y}px" onclick="rmGroupPop(${gi},this)"><span class="rm7-stack">${pl.slice(0,3).map(av).join('')}</span>${pl.length>3?`<span class="rm7-count">+${pl.length-3}</span>`:''}<span class="rm7-name">${label}</span></div>`;
+      let right=mobile?(g.x<W/2):!plaqueRight;const LW=mobile?128:170;
+      if(right&&g.x+CELL+LW>W)right=false;if(!right&&g.x-CELL-LW<0)right=true;
+      const hasMe=pl.some(p=>p.name===meName);
+      const rng=g.items.length>1?g.items[0]+'–'+g.items[g.items.length-1]:g.items[0];
+      const label=pl.length===1?`${s4Esc(pl[0].name)} · ${pl[0]._pos}`:(hasMe?`你和 ${pl.length-1} 人`:`${pl.length} 人`)+` · ${rng}`;
+      const off=CELL*0.9;
+      marks+=`<div class="rm7-who rm9-who ${right?'r':'l'}${hasMe?' me':''}" style="${right?'left':'right'}:${(right?g.x+off:W-g.x+off).toFixed(1)}px;top:${g.y.toFixed(1)}px" onclick="rmGroupPop(${gi},this)"><span class="rm7-stack">${pl.slice(0,3).map(av).join('')}</span>${pl.length>3?`<span class="rm7-count">+${pl.length-3}</span>`:''}<span class="rm7-name">${label}</span></div>`;
     });
-    // 盖住不属于本境界的牌匾，让每幅画面只讲自己的境界
-    let covers='';
-    RM_PLAQUES.forEach((pq,j)=>{if(j===seg||(seg===7&&j===8))return;
-      if(pq[3]<t||pq[1]>bm)return;
-      const pad=58;covers+=`<div class="rm8-mist" style="left:${((pq[0]-pad)*k).toFixed(1)}px;top:${((pq[1]-pad)*k-off).toFixed(1)}px;width:${((pq[2]-pq[0]+2*pad)*k).toFixed(1)}px;height:${((pq[3]-pq[1]+2*pad)*k).toFixed(1)}px"></div>`;});
-    return `<section class="rm8-card" style="height:${h}px;--c:${st.c}">
-      <div class="rm8-scene" style="height:${h}px"><img src="${RM_ART_SRC}" alt="${r.n}" style="top:${-off}px;width:${W}px">
-        <svg width="${W}" height="${h}"><g transform="translate(0,${-off})">${svgAll}</g></svg>${covers}${nodes}${marks}</div>
-      <div class="rm8-tag">${r.e} ${r.n}<small>${lo}–${hi===80?'80':hi} 格</small></div></section>`;
+    let tagSty='';if(mobile){const tg=rmArtPoint(Math.min(80,(seg+1)*10));const gx=tg.x*v.s+v.left;tagSty=gx<W/2?'left:auto;right:8px;transform:none':'left:8px;transform:none';}
+    return `<section class="rm8-card rm9-card" style="height:${v.H}px;--c:${st.c}">
+      <div class="rm8-scene" style="height:${v.H}px"><img src="${RM_ART_SRC}" alt="${r.n}" style="left:${v.left.toFixed(1)}px;top:${v.top.toFixed(1)}px;width:${v.imgW.toFixed(1)}px">
+        <svg width="${W}" height="${v.H}">${road}</svg>${nodes}${marks}</div>
+      <div class="rm8-tag" style="${tagSty}">${r.e} ${r.n}<small>${v.lo}–${v.hi} 格</small></div></section>`;
   };
   const gateDiv=seg=>`<div class="rm8-gate" style="--c:${RM_STAGE[seg].c}"><span>⛩ 第 ${seg*10} 格 · 突破至${REALMS[seg].n}</span></div>`;
   let html='';
-  if(!allOpen){const nx=REALMS[openIdx+1],sl=slice(openIdx+1),h=Math.round(150*Math.max(k,.8));
-    html+=`<section class="rm8-card rm8-lock" style="height:${h}px"><div class="rm8-scene" style="height:${h}px"><img src="${RM_ART_SRC}" alt="" style="top:${-(sl.bm*k-h)}px;width:${W}px"></div>
+  if(!allOpen){const nx=REALMS[openIdx+1],v=view(openIdx+1),h=Math.round(mobile?130:160);
+    html+=`<section class="rm8-card rm8-lock" style="height:${h}px"><div class="rm8-scene" style="height:${h}px"><img src="${RM_ART_SRC}" alt="" style="left:${v.left.toFixed(1)}px;top:${(v.top+v.H*0.25).toFixed(1)}px;width:${v.imgW.toFixed(1)}px"></div>
       <div class="rm8-seal"><b>🔒 ${nx.e} ${nx.n} · 尚未开启</b><small>待有道友突破至第 ${nx.min} 格，前路自现</small></div></section>`+gateDiv(openIdx+1);}
   for(let seg=openIdx;seg>=0;seg--){html+=card(seg);if(seg>0)html+=gateDiv(seg);}
-  b.innerHTML=`<div class="rm8-wrap" style="width:${W}px"><svg width="0" height="0" style="position:absolute"><defs><filter id="rm8glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${(4*k).toFixed(1)}"/></filter></defs></svg>${html}<div class="rm7-pop" id="rm7Pop" hidden></div></div>`;
-  let zb=document.getElementById('rmZoomBtn');
-  if(cw<600){if(!zb){zb=document.createElement('button');zb.id='rmZoomBtn';zb.className='rm6-zoom';zb.onclick=rmToggleZoom;b.parentElement.insertBefore(zb,b);}zb.textContent=b._zoom?'🔭 看全景':'🔍 放大看格子';}else if(zb)zb.remove();
-  b._players=byPos;b._w=cw;
-  if(b._zoom){const mine=list.find(p=>p.name===meName);const ref=rmArtPoint(mine?Math.min(80,Number(mine.position)||0):0);
-    requestAnimationFrame(()=>{b.scrollLeft=Math.max(0,ref.x*k-cw/2);});}
+  b.innerHTML=`<div class="rm8-wrap" style="width:${W}px"><svg width="0" height="0" style="position:absolute"><defs><filter id="rm9glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter></defs></svg>${html}<div class="rm7-pop" id="rm7Pop" hidden></div></div>`;
+  b._players=byPos;b._w=W;
 }
-function rmGroupPop(gi,el){
-  const b=document.getElementById('iboard'),pop=document.getElementById('rm7Pop'),wrap=b&&b.querySelector('.rm8-wrap');if(!b||!pop||!wrap)return;
-  const pl=b._groups?.[gi]||[];
-  pop.innerHTML=`<div class="h">${pl.length} 位道友</div>`+pl.map(p=>`<div class="r"><span class="rm-av">${p.avatarUrl?`<img src="${s4Esc(p.avatarUrl)}" alt="">`:s4Esc(p.emoji||'🎭')}</span><span>${s4Esc(p.name)}</span><em>${p._pos} 格 · ${realmOf(p._pos).n}</em></div>`).join('');
-  const wr=wrap.getBoundingClientRect(),r=el.getBoundingClientRect();
-  pop.hidden=false;
-  const ph=pop.offsetHeight,below=wr.bottom-r.bottom;
-  pop.style.left=Math.max(6,Math.min(wr.width-230,r.left-wr.left))+'px';
-  pop.style.top=(below>ph+10?r.bottom-wr.top+6:Math.max(6,r.top-wr.top-ph-6))+'px';
-  setTimeout(()=>document.addEventListener('click',function h(e){if(!pop.contains(e.target)){pop.hidden=true;document.removeEventListener('click',h);}}),0);
-}
+(function(){
+  const st=document.createElement('style');
+  st.textContent=`
+.rm9-c{position:absolute;transform:translate(-50%,-50%);z-index:3;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;font:600 11px/1 "Noto Serif SC","Noto Serif CJK SC",serif;color:#fbe7c2;font-style:normal;
+  background:radial-gradient(circle at 50% 40%,rgba(28,40,66,.92),rgba(6,16,32,.92));
+  box-shadow:0 0 0 1.2px var(--c),0 0 0 3px rgba(6,21,42,.55),0 0 10px var(--g)}
+.rm9-c.gate{width:44px;height:44px;background:transparent;box-shadow:0 0 0 2px var(--c),0 0 16px var(--g);opacity:.9}
+.rm9-c.has{color:#06152a;background:radial-gradient(circle at 40% 35%,#fff,var(--c) 70%);box-shadow:0 0 0 1.5px #fff3c8,0 0 14px var(--g)}
+.rm9-c.gate.has{background:rgba(255,243,200,.18);color:transparent}
+.rm9-c.me{box-shadow:0 0 0 2px #fff3c8,0 0 0 5px rgba(240,201,138,.45),0 0 24px 6px rgba(255,236,180,.9)!important}
+.rm9-who{z-index:5}
+@media(max-width:600px){.rm9-c{width:20px;height:20px;font-size:9.5px}.rm9-c.gate{width:34px;height:34px}.rm9-who .rm7-name{max-width:96px}}
+@media(prefers-reduced-motion:no-preference){.rm9-c.me{animation:rm9p 2.2s ease-in-out infinite}@keyframes rm9p{50%{box-shadow:0 0 0 2px #fff3c8,0 0 0 7px rgba(240,201,138,.3),0 0 30px 10px rgba(255,236,180,.95)}}}`;
+  document.head.appendChild(st);
+})();
+
 function rmPop(pos){const b=document.getElementById('iboard');const pl=(b&&b._players&&b._players[pos])||[];
   toast(pl.length?`第 ${pos} 格 · ${realmOf(pos).n}：${pl.map(p=>p.name).join('、')}`:`第 ${pos} 格 · ${realmOf(pos).n}`);}
 function rmToggleZoom(){const b=document.getElementById('iboard');if(!b)return;b._zoom=!b._zoom;buildRealmMap('iboard',mapPlayers,cName);
@@ -4228,7 +4246,7 @@ const CUSTOM_WOLVES=new Set();
 // 内置版型的法官夜间顺序与规则链接（录战绩时显示给法官）
 const BOARD_NOTES={
   '阴阳师':{link:'https://werewolves.games/yin-yang-shi/',order:'天黑请闭眼\n恶灵请睁眼，选择今晚催眠的玩家\n守卫请睁眼，选择今晚守护的玩家\n3 名普通狼人请睁眼，确认身份并选择袭击目标\n女巫请睁眼：昨夜倒牌的是 X 号，救吗？毒吗？\n阴阳师请睁眼：先告知上个白天被放逐者阵营；查验的玩家今晚行动 / 未行动\n小精灵请睁眼，选择今晚附身的玩家（第二晚起）\n天亮了'},
-  '幽灵狼':{link:'https://werewolves.games/you-ling-lang/',order:'天黑请闭眼\n幽灵狼请睁眼（第一晚告知狼队友号码）：今晚是否换位；选择链接的两名玩家或空连\n道士请睁眼，选择今晚结印的三名玩家\n守卫请睁眼，选择今晚守护的玩家\n3 名普通狼人请睁眼，确认身份并选择袭击目标\n女巫请睁眼：昨夜倒牌的是 X 号，救吗？毒吗？\n先知请睁眼，查验一名玩家（告知狼人 / 神职 / 平民）\n天亮了'},
+  '幽灵狼':{link:'https://werewolves.games/you-ling-lang/',order:'天黑请闭眼\n幽灵狼请睁眼（第一晚告知狼队友号码）：今晚是否换位；选择链接的两名玩家或空连\n道士请睁眼，选择今晚结印的三名玩家\n守卫请睁眼，选择今晚守护的玩家\n3 名普通狼人请睁眼，确认身份并选择袭击目标\n女巫请睁眼：昨夜倒牌的是 X 号，救吗？毒吗？\n先知请睁眼，查验一名玩家（告知其是否为平民）\n天亮了'},
 };
 function bdSplit(v){return String(v||'').split(/[,，、\n]/).map(x=>x.trim()).filter(Boolean);}
 function bdEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -4367,14 +4385,14 @@ try{addBoardModule();}catch(e){console.warn('版型管理加载失败:',e);}
 </script>
 <!-- ══ 版型规则库 ══ -->
 <script>
-// 版型规则库：种子内容。status: ok = 已按权威规则页整理；std = 按通行规则整理，需店内法官确认口径；todo = 店内原创 / 规则待补充
+// 版型规则库：种子内容。status: ok = 已按权威规则页整理；std = 按通行规则整理，需店内法官确认规则；todo = 店内原创 / 规则待补充
 const RULE_SKILLS={
   '预言家':'每晚查验一名玩家，得知其身份为好人或狼人。',
-  '先知':'每晚查验一名玩家，得知其身份为狼人、神职或平民。',
+  '先知':'每晚查验一名玩家，得知其身份是否为平民',
   '女巫':'一瓶解药、一瓶毒药，每晚最多用一瓶。法官告知当晚倒牌者，女巫决定救或毒。',
   '猎人':'出局时可开枪带走一名玩家；被女巫毒死不能开枪。',
   '白痴':'被白天放逐时翻牌免死，之后失去投票权；夜里被刀照常出局。',
-  '白神':'按店内口径：混血儿板子中的白痴位神牌。',
+  '白神':'按本店规则：混血儿板子中的白痴位神牌。',
   '守卫':'每晚守护一名玩家，使其免于狼刀；不能连续两晚守同一人。同守同救（守卫与女巫解药作用于同一人）按通行规则该玩家死亡。',
   '狼王':'狼人阵营。出局时可开枪带走一名玩家；被毒死不能开枪。',
   '摄梦人':'每晚必须选一名玩家入梦：梦游者当晚免疫夜间死亡；连续两晚入梦同一人，该玩家死亡；摄梦人夜间死亡时，当晚梦游者一同死亡。',
@@ -4403,11 +4421,11 @@ const BOARD_RULES={
    "天亮了"
   ],
   "notes": [
-   "女巫首夜能否自救：按店内口径执行。"
+   "女巫首夜能否自救：按本店规则执行。"
   ]
  },
  "预女猎白混": {
-  "summary": "好人：预言家、女巫、猎人、白痴、3 平民、混血儿；狼人：4 狼人。",
+  "summary": "",
   "order": [
    "入夜",
    "混血儿睁眼（首夜选榜样）",
@@ -4430,7 +4448,7 @@ const BOARD_RULES={
   }
  },
  "预女猎禁混": {
-  "summary": "好人：预言家、女巫、猎人、禁言长老、3 平民、混血儿；狼人：4 狼人。",
+  "summary": "",
   "order": [
    "入夜",
    "混血儿睁眼（首夜选榜样）",
@@ -4453,7 +4471,7 @@ const BOARD_RULES={
   }
  },
  "狼王守卫": {
-  "summary": "好人：预言家、女巫、猎人、守卫、4 平民；狼人：3 狼人、狼王。",
+  "summary": "",
   "order": [
    "入夜",
    "守卫睁眼",
@@ -4488,7 +4506,7 @@ const BOARD_RULES={
   "notes": []
  },
  "梦魇摄梦": {
-  "summary": "好人：预言家、女巫、猎人、摄梦人、4 平民；狼人：3 狼人、梦魇。",
+  "summary": "",
   "order": [
    "入夜",
    "摄梦人睁眼",
@@ -4511,7 +4529,7 @@ const BOARD_RULES={
   }
  },
  "石像鬼守墓人": {
-  "summary": "好人：预言家、女巫、猎人、守墓人、4 平民；狼人：3 狼人、石像鬼。",
+  "summary": "",
   "order": [
    "入夜",
    "石像鬼举手",
@@ -4539,7 +4557,7 @@ const BOARD_RULES={
   "summary": "机械狼可学习其他玩家技能，通灵师查验具体身份。",
   "order": [],
   "notes": [
-   "机械狼学习规则（学到什么、何时生效）各店差异大，请按店内口径补充。"
+   "机械狼学习规则（学到什么、何时生效）各店差异大，请按本店规则补充。"
   ]
  },
  "杠精板子": {
@@ -4547,26 +4565,74 @@ const BOARD_RULES={
   "summary": "旧版杠精板子（带狼王）。店内现行规则见「针锋相杠」。",
   "order": [],
   "notes": [
-   "开杠的发起时机、判定方式、每局次数，请补充店内口径。"
+   "开杠的发起时机、判定方式、每局次数，请补充本店规则。"
   ]
  },
  "永序之轮": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "预言家": "每晚可查验一名存活玩家的身份是好人或狼人。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "守卫": "每晚可守护一名玩家免于狼刀，连续两晚不能守同一人，可以不发动。",
+   "定序王子": "时序回溯：每天第一次放逐投票结束后，可翻牌使本次投票无效并回到投票前；定序王子获得一次额外发言，随后重新投票。全局限一次，平票后的再次投票不能发动。",
+   "蚀时狼妃": "时间封锁：每晚可封锁一名玩家，当夜好人阵营对该玩家使用的查验、毒药、守护都会反弹到技能使用者自己身上。技能成功生效后，下一夜起失去封锁能力；不能连续两晚封锁同一人。"
+  },
+  "order": [
+   "入夜",
+   "蚀时狼妃睁眼",
+   "守卫睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "预言家睁眼",
+   "天亮"
+  ],
+  "notes": [],
+  "status": "ok"
  },
  "诡术之境": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "预言家": "每晚可查验一名存活玩家的身份是好人或狼人。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "魔术师": "每晚可选择两名玩家交换号码，当晚所有针对这两人的技能目标随号码交换而改变；每名玩家整局只能被交换一次。",
+   "定序王子": "时序回溯：第一次放逐投票结束后，可翻牌使本轮投票无效并重新投票；发动后可额外发言一次，全局限一次。",
+   "诡术师": "诡术换号：每晚可交换两名玩家的号码，每名玩家整局只能被交换一次。交换会影响白天的放逐投票结果，让实际出局的玩家与大家看到的号码错位。"
+  },
+  "order": [
+   "入夜",
+   "魔术师睁眼",
+   "诡术师睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "预言家睁眼",
+   "天亮"
+  ],
+  "notes": [
+   "魔术师与诡术师若选择完全相同的两个号码交换，双方技能均无效。"
+  ],
+  "status": "ok"
  },
  "魔幻对决": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "预言家": "每晚可查验一名存活玩家的身份是好人或狼人。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "猎人": "死于狼刀或白天被公投出局时可开枪带走一名玩家，被毒则无法开枪。",
+   "魔术师": "幻术换位：每晚可选择两名玩家交换号码，当夜生效；之后所有针对这两人的技能目标按交换后的号码结算。每名玩家整局只能被交换一次。",
+   "狼术师": "每晚可交换两名玩家的号码，效果仅当夜生效；每名玩家整局只能被交换一次。"
+  },
+  "order": [
+   "入夜",
+   "狼术师睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "猎人睁眼",
+   "魔术师睁眼",
+   "预言家睁眼",
+   "天亮"
+  ],
+  "notes": [],
+  "status": "ok"
  },
  "孤注一掷": {
   "status": "todo",
@@ -4575,22 +4641,80 @@ const BOARD_RULES={
   "notes": []
  },
  "假面舞会": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "预言家": "每晚可查验一名存活玩家的身份是好人或狼人。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "白痴": "若白天被公投出局，翻牌成为明白痴。",
+   "舞者": "从第二夜开始，每晚选 3 名玩家进入舞池：三人同阵营则无人出局；阵营不同则人数较少一方于次日出局。每名玩家整局只能进一次舞池。舞者选自己进舞池时，当晚三名舞池玩家免疫狼刀；舞者自身免疫女巫毒药。",
+   "假面": "不与普通狼人见面。从第二夜开始，可查看指定玩家是否进入舞池，并可为一名舞池玩家戴上面具，使其在舞池结算时改变阵营。假面免疫女巫毒药。"
+  },
+  "order": [
+   "入夜",
+   "舞者睁眼",
+   "假面睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "预言家睁眼",
+   "白痴睁眼",
+   "天亮"
+  ],
+  "notes": [
+   "每名玩家只能进入一次舞池；假面通过改变舞池里的阵营构成，干扰舞者结算。"
+  ],
+  "status": "ok"
  },
  "奇迹商人": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "预言家": "每晚可查验一名存活玩家的身份是好人或狼人。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "守卫": "每晚可守护一名玩家免于狼刀，连续两晚不能守同一人，可以不发动。",
+   "奇迹商人": "每晚可选一名玩家成为幸运儿，从查验、毒药、守护三种一次性技能中选一种赋予他；幸运儿的新技能与原身份技能互不冲突。若幸运儿是狼人，交易失败，奇迹商人次日出局。",
+   "狼王": "拥有狼枪，出局后可发动技能带走一名玩家。"
+  },
+  "order": [
+   "入夜",
+   "奇迹商人睁眼",
+   "守卫睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "预言家睁眼",
+   "天亮"
+  ],
+  "notes": [],
+  "status": "ok"
  },
  "迷雾装甲": {
-  "status": "todo",
   "summary": "",
-  "order": [],
-  "notes": []
+  "skills": {
+   "通灵师": "每晚可查验一名玩家的具体身份；查验到机械狼、装甲狼时，显示其学习之后的身份。",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "猎人": "死于狼刀或白天被公投出局时可开枪带走一名玩家，被毒则无法开枪。",
+   "守卫": "每晚可守护一名玩家免于狼刀，连续两晚不能守同一人，可以不发动。",
+   "机械狼": "与普通狼人、装甲狼互不相认。首夜学习一名玩家的技能并获得对方身份，所学技能当夜不能发动。普通狼人全部出局后带刀，不能自爆。",
+   "装甲狼": "与普通狼人、机械狼互不相认。首夜学习一名玩家的技能并获得对方身份，所学技能当夜不能发动。普通狼人和机械狼全部出局后带刀，不能自爆。"
+  },
+  "order": [
+   "入夜",
+   "确认入夜存活玩家",
+   "通灵师举手",
+   "守卫睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "猎人睁眼",
+   "机械狼学习技能",
+   "装甲狼学习技能",
+   "通灵师睁眼",
+   "天亮"
+  ],
+  "notes": [
+   "学到的技能：双刀狼（学狼人或装甲狼）——所有小狼出局后可带双刀，必须当晚使用、仅一次，一晚击杀两人；第二刀不破盾，双刀砍同一人只算一刀。",
+   "机械 / 装甲通灵师：每晚可查验一名玩家的具体身份。机械 / 装甲守卫：可守护狼刀和女巫毒药，仅一次。",
+   "机械 / 装甲女巫：一瓶毒药。机械 / 装甲猎人：除被毒外，出局可开枪带走一人。机械 / 装甲平民：无技能。",
+   "机械狼、装甲狼与普通狼人互不相认。"
+  ],
+  "status": "ok"
  },
  "鹊桥红线": {
   "status": "todo",
@@ -4605,7 +4729,7 @@ const BOARD_RULES={
   "notes": []
  },
  "盗宝大师": {
-  "summary": "好人：通灵师、毒师、摄梦人、猎人、蒙面人、5 平民；狼人：3 狼人、狼王、盗宝大师。",
+  "summary": "",
   "order": [
    "首夜：盗宝大师选牌",
    "猎人举手",
@@ -4619,6 +4743,7 @@ const BOARD_RULES={
    "次夜起：摄梦人 → 狼人 → 毒师 → 盗宝大师（选牌并选目标）→ 通灵师 → 猎人（技能状态）"
   ],
   "notes": [
+   "12 人局：共 15 张身份牌，12 张发给玩家入座，剩余 3 张底牌由盗宝大师首夜查看。",
    "本版型首夜没有狼刀，只进行夜间战术交流。"
   ],
   "status": "ok",
@@ -4645,7 +4770,7 @@ const BOARD_RULES={
    "天亮了"
   ],
   "notes": [
-   "丘比特能否连自己、情侣胜利条件细则，按店内口径执行。"
+   "丘比特能否连自己、情侣胜利条件细则，按本店规则执行。"
   ]
  },
  "唐伯虎点秋香": {
@@ -4655,9 +4780,9 @@ const BOARD_RULES={
   "notes": []
  },
  "幽灵狼": {
-  "status": "ok",
+  "status": "std",
   "link": "https://werewolves.games/you-ling-lang/",
-  "summary": "12 人换位锁链版型：道士结印、幽灵狼一次性换位、灵魂锁链共同制造连带死亡。本店用先知代替预言家。",
+  "summary": "LAL 版（含幽灵狼一次换位）。店内现行规则见「灵魂锁链」。",
   "order": [
    "天黑请闭眼",
    "幽灵狼请睁眼（第一晚告知狼队友号码）：今晚是否换位；选择链接的两名玩家或空连",
@@ -4665,35 +4790,40 @@ const BOARD_RULES={
    "守卫请睁眼，选择守护目标",
    "3 名普通狼人请睁眼，确认身份并选择击杀目标",
    "女巫请睁眼：昨夜倒牌的是 X 号，救吗？毒吗？",
-   "先知请睁眼，查验一名玩家（告知狼人 / 神职 / 平民）",
+   "先知请睁眼，查验一名玩家（告知其是否为平民）",
    "天亮了"
   ],
   "notes": [
    "复盘要记：是否换位、每晚链接对象、前一天是否有狼被放逐、链子是否被解除、幽灵狼是否死亡。",
-   "待定口径：道士其他结印组合是否无效；锁链未生效时当晚链接是否作废；连带死亡能否被守护或解药挡住；道士能否结印自己。"
+   "待定规则：道士其他结印组合是否无效；锁链未生效时当晚链接是否作废；连带死亡能否被守护或解药挡住；道士能否结印自己。"
   ]
  },
  "阴阳师": {
-  "status": "ok",
-  "link": "https://werewolves.games/yin-yang-shi/",
-  "summary": "12 人行动信息版型：阴阳师查行动、小精灵附身、恶灵催眠。",
+  "summary": "",
+  "skills": {
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "守卫": "每晚可守护一名玩家免于狼刀，连续两晚不能守同一人，可以不发动。",
+   "阴阳师": "每晚选择一名玩家，查验其当晚是否使用技能；同时获知上一个白天被放逐玩家的阵营。被恶灵催眠时相关技能失效。",
+   "小精灵": "从第二夜开始，每晚附身一名其他玩家：附身目标被狼刀或女巫毒死，小精灵随之死亡；附身狼人小精灵也会死亡。不能连续两晚附身同一人。",
+   "恶灵": "不与普通狼人见面，每晚可催眠一名玩家：催眠神职则该神职当晚技能失效；催眠狼人则狼人阵营当晚无法出刀；催眠平民则该平民次日投票不计票。"
+  },
   "order": [
-   "天黑请闭眼",
-   "恶灵请睁眼，选择今晚催眠的玩家",
-   "守卫请睁眼，选择守护目标",
-   "3 名普通狼人请睁眼，确认身份并选择击杀目标（被催眠时告知今晚无刀）",
-   "女巫请睁眼：昨夜倒牌的是 X 号，救吗？毒吗？",
-   "阴阳师请睁眼：先告知上个白天被放逐者阵营；查验的玩家今晚行动 / 未行动（被催眠时先告知）",
-   "小精灵请睁眼，选择今晚附身的玩家（第二晚起）",
-   "天亮了"
+   "入夜",
+   "恶灵睁眼",
+   "守卫睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "阴阳师睁眼",
+   "小精灵睁眼",
+   "天亮"
   ],
   "notes": [
-   "女巫全程不可自救；守卫不能连续守同一人。",
-   "待定口径：「行动过」如何认定；小精灵附身是否计入行动；附身者被守住或救下时小精灵是否死亡；被催眠平民不计票是否公开。"
-  ]
+   "恶灵是独立行动的狼人角色，不与普通狼人共同睁眼。"
+  ],
+  "status": "ok"
  },
  "针锋相杠": {
-  "summary": "好人：预言家、女巫、猎人、杠精、3 平民、混血儿；狼人：4 狼人。",
+  "summary": "",
   "order": [
    "入夜",
    "混血儿睁眼（首夜选榜样）",
@@ -4716,7 +4846,7 @@ const BOARD_RULES={
   }
  },
  "狼美骑士": {
-  "summary": "好人：预言家、女巫、守卫、骑士、4 平民；狼人：3 狼人、狼美人。",
+  "summary": "",
   "order": [
    "入夜",
    "守卫睁眼",
@@ -4742,7 +4872,7 @@ const BOARD_RULES={
   }
  },
  "鬼魂新娘": {
-  "summary": "好人：预言家、女巫、守卫、猎人、4 平民；狼人：3 狼人；第三方：鬼魂新娘（与新郎、证婚人组成第三方）。",
+  "summary": "",
   "order": [
    "入夜",
    "鬼魂新娘睁眼（首夜选新郎）",
@@ -4768,13 +4898,61 @@ const BOARD_RULES={
    "猎人": "死于狼刀或白天被公投出局时，可以开枪射杀一名玩家；被毒则无法发动技能。",
    "鬼魂新娘": "第三方阵营。第一夜选定一名玩家作为新郎，再和新郎共同指定一名证婚人；新娘、新郎、证婚人三人组成第三方阵营。新娘与新郎夜间可以交流，证婚人只知道新娘和新郎的号码。"
   }
+ },
+ "星移入瞳": {
+  "summary": "",
+  "skills": {
+   "毒师": "拥有一瓶毒药，可在夜间毒杀一名玩家。",
+   "猎人": "死于狼刀或白天被公投出局时可开枪带走一名玩家，被毒则无法开枪。",
+   "白痴": "若白天被公投出局，翻牌成为明白痴。",
+   "鬼瞳": "天生异瞳，夜晚双瞳自动感应危险。瞳照：离你位置最近的狼人在你左边则左瞳发光，在右边则右瞳发光，距离相同则双瞳发光。被瞳光照过的狼人，出局时翻牌。",
+   "奎木狼": "不入狼窝，独狼带刀。星移（主动技，全局一次）：夜间可令当夜所有指定性技能（狼刀、毒药、当夜触发的猎枪）向左或向右偏移一个号码。"
+  },
+  "order": [
+   "入夜",
+   "确认入夜存活玩家（今夜瞳照、星移以此刻存活玩家结算）",
+   "奎木狼睁眼",
+   "狼人睁眼",
+   "毒师睁眼",
+   "猎人睁眼",
+   "白痴睁眼",
+   "鬼瞳睁眼"
+  ],
+  "notes": [
+   "本版型狼人首夜无刀。"
+  ],
+  "status": "ok"
+ },
+ "灵魂锁链": {
+  "summary": "",
+  "skills": {
+   "先知": "每晚查验一名玩家，得知其身份是否为平民",
+   "女巫": "有一瓶解药、一瓶毒药，每晚最多用一瓶，不可自救。",
+   "守卫": "每晚可守护一名玩家免于狼刀，连续两晚不能守同一人，可以不发动。",
+   "道士": "每晚选 3 名玩家结印：一狼一神一民解除灵魂锁链；三神当晚免疫狼刀；三狼则狼人当晚无法出刀；三民则道士白天额外多 2 票。",
+   "幽灵狼": "不与普通狼人共同睁眼。每晚可选两名玩家建立灵魂锁链，也可空连；若前一晚有狼人被放逐，链子生效，此后链上任意一方死亡，另一方也随之死亡。每名玩家整局只能被链一次；幽灵狼死亡后锁链自动失效。"
+  },
+  "order": [
+   "入夜",
+   "幽灵狼睁眼",
+   "道士睁眼",
+   "守卫睁眼",
+   "狼人睁眼",
+   "女巫睁眼",
+   "先知睁眼",
+   "天亮"
+  ],
+  "notes": [
+   "锁链需要满足「前一晚有狼人被放逐」等触发条件后才生效。"
+  ],
+  "status": "ok"
  }
 };
 
 // ══ 📖 版型规则库：玩家 / 法官可看，管理员可在后台补充修改 ══
 const BOARD_RULES_PATH='tournament/boardRules';
 let BOARD_RULE_OVR={};
-const RULE_STATUS={ok:['已整理','#8fd6a8'],std:['需确认口径','#f0c070'],todo:['待补充','#e0705f']};
+const RULE_STATUS={ok:['已整理','#8fd6a8'],std:['需确认规则','#f0c070'],todo:['待补充','#e0705f']};
 function brEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function brLines(v){return String(v||'').split('\n').map(x=>x.trim()).filter(Boolean);}
 function boardRoleList(t){
@@ -4851,11 +5029,11 @@ function addRulesModule(){
     ap9.insertAdjacentHTML('beforeend',`<div class="sec-title">📖 规则说明（显示在版型规则库）</div>
       <div class="bd-form">
         <label>选择版型<select class="meta-inp" id="brBoard" onchange="brLoad()"></select></label>
-        <label>状态<select class="meta-inp" id="brStatus"><option value="ok">已整理</option><option value="std">需确认口径</option><option value="todo">待补充</option></select></label>
+        <label>状态<select class="meta-inp" id="brStatus"><option value="ok">已整理</option><option value="std">需确认规则</option><option value="todo">待补充</option></select></label>
         <label>一句话简介<input class="meta-inp" id="brSummary"></label>
         <label>角色技能（每行「角色：技能」，只写本店和通行规则不同或新增的角色）<textarea class="meta-inp" id="brSkills" rows="5"></textarea></label>
         <label>法官夜间顺序（每行一步）<textarea class="meta-inp" id="brOrder" rows="7"></textarea></label>
-        <label>本店口径 / 注意事项（每行一条）<textarea class="meta-inp" id="brNotes" rows="4"></textarea></label>
+        <label>本店规则 / 注意事项（每行一条）<textarea class="meta-inp" id="brNotes" rows="4"></textarea></label>
         <label>规则链接（选填）<input class="meta-inp" id="brLink"></label>
       </div>
       <button class="btn-gold" style="width:100%;margin-top:12px" onclick="brSave()">✓ 保存规则说明</button>`);
@@ -4880,13 +5058,13 @@ function rulesCardHtml(name){
   const seats=t.seatCount||12,[stLabel,stColor]=RULE_STATUS[r.status]||RULE_STATUS.todo;
   const allRoles=[...good,...wolves,...third];
   const skillRows=allRoles.map(ro=>{const sk=skillFor(name,ro);return `<tr><td>${brEsc(ro)}</td><td>${sk?brEsc(sk):'<span class="todo">技能待补充</span>'}</td></tr>`;}).join('');
-  return `<details class="rl-card" data-n="${brEsc(name)}"><summary><b>${brEsc(name)}</b><small>${seats} 人 · ${brEsc(good.join('、'))}${wolves.length?' ｜ '+brEsc(wolves.join('、')):''}</small><span class="rl-st" style="color:${stColor}">${stLabel}</span></summary>
+  return `<details class="rl-card" data-n="${brEsc(name)}"><summary><b>${brEsc(name)}</b><small>${seats} 人局</small><span class="rl-st" style="color:${stColor}">${stLabel}</span></summary>
     <div class="rl-body">
-      ${r.summary?`<p>${brEsc(r.summary)}</p>`:''}
+      ${r.summary&&!/^好人[：:]/.test(r.summary)?`<p>${brEsc(r.summary)}</p>`:''}
       <h4>配置</h4><p>好人阵营：${brEsc(good.join('、'))}${t.seatCount===9?'':'、平民'}<br>狼人阵营：${wolves.length?brEsc(wolves.join('、'))+' + ':''}狼人${third.length?`<br>第三方：${brEsc(third.join('、'))}`:''}</p>
       <h4>角色技能</h4><table>${skillRows}</table>
       <h4>法官夜间顺序</h4>${r.order&&r.order.length?`<ol>${r.order.map(s=>`<li>${brEsc(s)}</li>`).join('')}</ol>`:'<p class="todo">待补充</p>'}
-      ${r.notes&&r.notes.length?`<h4>本店口径 / 注意</h4><ul>${r.notes.map(s=>`<li>${brEsc(s)}</li>`).join('')}</ul>`:''}
+      ${r.notes&&r.notes.length?`<h4>本店规则 / 注意</h4><ul>${r.notes.map(s=>`<li>${brEsc(s)}</li>`).join('')}</ul>`:''}
       <h4>录战绩要记</h4><p class="rl-fields">夜间：${brEsc((t.nightFields||[]).join('、')||'—')}${(t.dayExtra||[]).length?`<br>白天：${brEsc(t.dayExtra.join('、'))}`:''}</p>
       ${r.link?`<p><a href="${brEsc(r.link)}" target="_blank" rel="noopener" style="color:var(--G)">📖 查看完整规则</a></p>`:''}
     </div></details>`;
@@ -5027,6 +5205,7 @@ body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:46vh;z-ind
 .rm8-seal b{font-family:"Noto Serif SC","Noto Serif CJK SC",serif;font-size:18px;letter-spacing:2px;color:#f0c98a;text-shadow:0 2px 10px #000}
 .rm8-seal small{font-size:12px;color:rgba(239,227,207,.78);margin-top:4px}
 .rm8-mist{position:absolute;z-index:1;pointer-events:none;border-radius:50%;backdrop-filter:blur(14px) brightness(1.05) saturate(.6);-webkit-backdrop-filter:blur(14px) brightness(1.05) saturate(.6);background:radial-gradient(ellipse closest-side,rgba(236,231,222,.92) 0%,rgba(226,222,216,.8) 45%,rgba(214,212,214,.45) 72%,rgba(214,212,214,0) 100%);-webkit-mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 100%);mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 100%)}
+.rm9-card .rm8-scene::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(6,21,42,.55),transparent 9%,transparent 91%,rgba(6,21,42,.55))}
 </style>
 </body>
 </html>
