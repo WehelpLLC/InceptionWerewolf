@@ -5345,7 +5345,7 @@ function addGoogleUI(){
   document.body.appendChild(ov);
   authUpdateButton();
   // 手机浏览器拦截弹窗时会走跳转登录，回来后在这里接上
-  (async()=>{try{await gReady();const r=await authApi.getRedirectResult(authApi.getAuth(authApp));if(r&&r.user){authUser=r.user;authUpdateButton();await gAfterLogin();}}catch(e){const m=gErr(e);if(m)toast(m,4000);}})();
+  (async()=>{try{await gReady();const r=await authApi.getRedirectResult(authApi.getAuth(authApp));if(r&&r.user){authUser=r.user;authUpdateButton();await gAfterLogin();}}catch(e){if(e&&e.code){const m=gErr(e);if(m)toast(m,4000);}}})();
 }
 
 // ── 管理员：👥 客户资料 ──
@@ -5380,7 +5380,7 @@ async function custAdmLoad(){
   st.textContent='加载中…';
   try{
     const [c,profiles,players]=await Promise.all([authDb(CUST_PATH),fb.get('tournament/userProfiles'),fb.get(`${P_PATH}/players`)]);
-    const names=new Set(Object.values(players||{}).map(p=>p&&p.name).filter(Boolean));
+    const names=new Set(Object.values(players||{}).map(p=>p&&p.name).filter(Boolean));window._custPlayers=players||{};window._custProfiles=profiles||{};
     const rows={};
     Object.entries(c||{}).forEach(([uid,x])=>{rows[uid]={uid,...x};});
     // 老的邮箱注册账号：还没登录过新版的，也从 userProfiles 补进来
@@ -5391,24 +5391,194 @@ async function custAdmLoad(){
     custRender();
   }catch(e){st.innerHTML='读取失败：'+gEsc(e.message)+'<br>请确认 Firebase 规则里已经加了 customers（见说明）。';}
 }
+let custEditing=null;
 function custRender(){
   const list=document.getElementById('custList');if(!list)return;
   const q=(document.getElementById('custQ')?.value||'').trim().toLowerCase();
   const rs=custCache.filter(r=>!q||[r.displayName,r.email,r.phone,r.accountName].some(x=>String(x||'').toLowerCase().includes(q)));
   const d=s=>s?String(s).slice(0,10):'—';
-  list.innerHTML=rs.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px">
-    <tr style="color:var(--G);text-align:left">${['昵称','邮箱','手机','生日','通知','联赛','首次','最近登录'].map(h=>`<th style="padding:6px;border-bottom:1px solid var(--line)">${h}</th>`).join('')}</tr>
-    ${rs.map(r=>`<tr>${[r.displayName||'<span style="color:var(--dim)">未填</span>',gEsc(r.email),gEsc(r.phone||''),gEsc(r.birthday||''),r.optIn===false?'✗':r.optIn?'✓':'',r.isLeaguePlayer?'✓':'',d(r.createdAt),d(r.lastLogin)].map((v,i)=>`<td style="padding:6px;border-bottom:1px solid rgba(255,255,255,.06)">${i===0&&r.displayName?gEsc(v):v}</td>`).join('')}</tr>`).join('')}</table></div>`:'<div class="no-data">没有符合的客户</div>';
+  const names=[...new Set(Object.values(window._custPlayers||{}).map(p=>p&&p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh'));
+  const td='padding:6px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle';
+  const sb='background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin:2px';
+  const bindCell=r=>{
+    if(custEditing===r.uid)return `<input class="meta-inp" id="custBindIn" list="custBindList" value="${gEsc(r.displayName||'')}" style="width:120px;padding:5px;font-size:12px" placeholder="选联赛玩家"><datalist id="custBindList">${names.map(n=>`<option value="${gEsc(n)}">`).join('')}</datalist><br><button style="${sb};color:var(--G);border-color:var(--G)" onclick="custBindSave('${r.uid}')">确定</button><button style="${sb}" onclick="custEditing=null;custRender()">取消</button>`;
+    const tag=r.displayName?(r.isLeaguePlayer?`<b style="color:#8ee6a8">${gEsc(r.displayName)}</b>`:`${gEsc(r.displayName)} <span style="color:#f0c070;font-size:10px">（联赛里没有这个名字）</span>`):'<span style="color:var(--dim)">未绑定</span>';
+    return `${tag}<br><button style="${sb}" onclick="custEditing='${r.uid}';custRender();setTimeout(()=>document.getElementById('custBindIn')?.focus(),50)">改绑</button>${r.displayName?`<button style="${sb};color:#ffaaa5" onclick="custUnbind('${r.uid}')">解绑</button>`:''}`;
+  };
+  list.innerHTML=rs.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:720px">
+    <tr style="color:var(--G);text-align:left">${['绑定的联赛玩家','邮箱','手机','生日','通知','首次','最近登录'].map(h=>`<th style="padding:6px;border-bottom:1px solid var(--line)">${h}</th>`).join('')}</tr>
+    ${rs.map(r=>`<tr><td style="${td};min-width:150px">${bindCell(r)}</td>${[gEsc(r.email),gEsc(r.phone||''),gEsc(r.birthday||''),r.optIn===false?'✗':r.optIn?'✓':'',d(r.createdAt),d(r.lastLogin)].map(v=>`<td style="${td}">${v}</td>`).join('')}</tr>`).join('')}</table></div>`:'<div class="no-data">没有符合的客户</div>';
 }
+async function custBindSave(uid){
+  const name=(document.getElementById('custBindIn')?.value||'').trim();
+  if(!name){toast('请选一个联赛玩家');return;}
+  const pl=Object.values(window._custPlayers||{}).find(p=>p&&p.name===name);
+  if(!pl&&!confirm(`联赛玩家名单里没有「${name}」。\n仍然绑定这个名字吗？（以后录比赛时名字要一字不差才能连上）`))return;
+  try{
+    const profiles=await fb.get('tournament/userProfiles')||{};
+    const others=Object.entries(profiles).filter(([u,p])=>u!==uid&&p&&p.displayName===name).map(([u])=>u);
+    if(others.length){
+      const who=others.map(u=>custCache.find(c=>c.uid===u)?.email||u).join('、');
+      if(!confirm(`「${name}」目前绑在 ${who} 上。\n确定改绑给这个账号吗？原账号会被解绑。`))return;
+      for(const u of others){await authDb(`tournament/userProfiles/${u}`,'PATCH',{displayName:null});try{await authDb(`${CUST_PATH}/${u}`,'PATCH',{displayName:null,isLeaguePlayer:false});}catch(e){}}
+    }
+    const now=new Date().toISOString();
+    await authDb(`tournament/userProfiles/${uid}`,'PATCH',{displayName:name,emoji:(pl&&pl.emoji)||profiles[uid]?.emoji||'🎭',...(profiles[uid]?.createdAt?{}:{createdAt:now}),boundBy:'admin',boundAt:now});
+    try{await authDb(`${CUST_PATH}/${uid}`,'PATCH',{displayName:name,isLeaguePlayer:!!pl});}catch(e){}
+    custEditing=null;toast('✓ 已绑定到 '+name);custAdmLoad();
+  }catch(e){alert('绑定失败：'+e.message+'\n\n如果是 Permission denied：Firebase 规则里 userProfiles / customers 需要允许店长账号写入。');}
+}
+async function custUnbind(uid){
+  const r=custCache.find(c=>c.uid===uid);
+  if(!confirm(`把 ${r?.email||uid} 和「${r?.displayName||''}」解绑？\n解绑后这个名字空出来；这个人下次 Google 登录会重新选名字。`))return;
+  try{
+    await authDb(`tournament/userProfiles/${uid}`,'PATCH',{displayName:null});
+    try{await authDb(`${CUST_PATH}/${uid}`,'PATCH',{displayName:null,isLeaguePlayer:false});}catch(e){}
+    toast('✓ 已解绑');custAdmLoad();
+  }catch(e){alert('解绑失败：'+e.message);}
+}
+// 玩家自己改名后，绑定的账号跟着改
+(function(){
+  if(typeof saveRename!=='function')return;
+  const _sr=saveRename;
+  saveRename=async function(){
+    const old=cName;await _sr.apply(this,arguments);
+    if(!old||cName===old)return;
+    try{const profiles=await fb.get('tournament/userProfiles')||{};
+      for(const [u,p] of Object.entries(profiles)){if(p&&p.displayName===old){
+        try{await authDb(`tournament/userProfiles/${u}`,'PATCH',{displayName:cName});await authDb(`${CUST_PATH}/${u}`,'PATCH',{displayName:cName});}catch(e){console.warn('绑定账号改名失败',e);}
+      }}}catch(e){console.warn(e);}
+  };
+})();
+
 function custExport(){
   if(!custCache.length){toast('先加载客户资料');return;}
-  const cols=[['displayName','昵称'],['email','邮箱'],['phone','手机'],['birthday','生日'],['optIn','接收通知'],['isLeaguePlayer','联赛玩家'],['provider','登录方式'],['accountName','Google名字'],['createdAt','首次登录'],['lastLogin','最近登录'],['loginCount','登录次数']];
+  const cols=[['displayName','绑定的联赛玩家'],['email','邮箱'],['phone','手机'],['birthday','生日'],['optIn','接收通知'],['isLeaguePlayer','联赛玩家'],['provider','登录方式'],['accountName','Google名字'],['createdAt','首次登录'],['lastLogin','最近登录'],['loginCount','登录次数']];
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const csv='﻿'+cols.map(c=>q(c[1])).join(',')+'\n'+custCache.map(r=>cols.map(([k])=>q(typeof r[k]==='boolean'?(r[k]?'是':'否'):r[k])).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`盗梦空间客户_${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
 try{addGoogleUI();}catch(e){console.warn('Google 登录模块加载失败:',e);}
 try{addCustomerAdmin();}catch(e){console.warn('客户管理加载失败:',e);}
+
+</script>
+<!-- ══ 投食付款 ══ -->
+<script>
+// ══ 投食付款：先付款，店里确认到账后才生效 ══
+const PAY={
+  zelleEmail:'inceptionhouston@gmail.com',zelleName:'INCEPTION HOUSTON LLC',
+  aliUrl:'https://qr.alipay.com/fkx11307eqo5g4tv6nfrk44',
+  aliQR:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAAB6UlEQVR4nO2YQWocQQxFX40KstSAD5CLBKpvZuZm1UfxDdRLg8zPonocLzwkm2AtLBoaWpvHR/X1u5p4WG+Xxz34bv6tiQLAAkkm4TN96T2yHO0FhiQYb1dgV4wOJikKansBWtvwW2fneG5ts5eNo/UvBHpY/XwfmwWvT9H89usp+tcB/VPT9XrFXjYLLCoAfVodEHToTgNj9AQXR0Had08YHx+gpCegVYFiJOBaLiGpIm0MfOLTYuDTNCWZZhbVduJKME1pwsCFz7KTkD4tME3FMM3ze1SlhfRpMRIUmCY+69K6TCsejHMkgrJza4E0F7Pibghe0BMuHM+vP2eHzp7QrvRj6+wWRbfDcgPFYI0EmKZV9dsEi/OgLXOwoCitZFIy1kZQDBhW9pQFp6TB4lSwdkRN2gRpnk7LsBiKUVRbKX3CMEkx0oUrfVbVdqRr5UZWgHSZplXdZe8Tm65kpMukqqlmpp8ei8tiLOay+VaSrdUQpC+pqzrY+e8w0pX3ZKs1FeVoLxyttdbZgR+xAwmdUTInXO53NdhLe7vC8WxBsrdrQVrOVSudPna/BCvpCffm0e5jsFuM9Ft+MdDn9THG/MkJrpIZ7ML52zs7SLdkdODY8thKagvrrkZamwIvm2/b903+f2v+BpbinsKh97gbAAAAAElFTkSuQmCC',zelleQR:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVYAAAFWAQAAAAAa1IguAAAEFElEQVR4nO2bQW7cSAxFn0IBXlYDOVD1DXIkn8kHGKD6KD5AAGppgMafBVlyltlo0iNFMBoymguKXST//6QW8bvX57ffNoW/tv9PW+QAJklDGkGnjWjDNMyBbsoj0+MZ/D3QtkuCx7q9rgDE9rpu948bGZPPGybJn8bfQ2xXYKEDH98dML+ZHvf2Zu8/HmD+iO+w3eznc/h7vO2LP9heVzogZ23DnKC/vN//Mx/+nO26333cfI0BY8n/b2/BWMDaWI/14RlskXdJ5kgDoA3zLu8mBeSNSfLT18nHsizQ1+3VvNv7K3lKtvuL97z5XJbl9jT+HmKL6hrkr+/kecjWSVO0sjj5edjun7fHut2lsUIAPJYb5rC9xnZfeXzeDvbhz9sijWgj6AD0oEcb0YakoMu7NOTdTl4fkEaAea+n9oJPAaq8GOY92rnzAkn57ObdvOezm5N/eU6Czunj4N00rD6RQxuRCQLQo43E3iePg2ROtCHve3cwiSbayMYBnP88FHySObQBnTbk2OykFaKT883EDD2rhJyYHDxmiCzBw/njgElZE2jDNALySGR5zGZq568PX1UxmqBnjsiJWSLy/uxxqMoQLVMjGVaXhkkZmWwZp49DNAUERBvRVPWhCcjgmHP2vvmN7W7vy0rhB3u/J7+Ah3lftwX6x411uz+Jv8fYJr9QpgMtc2FkasSEE9F0AfygAg8wE6TbDio0pGFXqJNO9ot6akcq5SFhg+kKOGqFDo8VtN0/bm+0sQAL2hb7+eMf+FiAHutz+Hs0nkzeLZlGEvDUo6KlCnH6foGSbDq0UaiSnjgqE+QrUM/g78H1QU7qD1kn5dCU+gylz5w/Dnll90yGBck3O01yLqE/eM+2yJxWRFNKlDE7SKHrZ/D3UP2hjZ1cJ/1MZSZZRhaQ88fBe4KlJFOmiSJ2ztXy27PnhaRE1FUqs0Km8vCl0lxAty92+cuUM0cY+gVI6ALnYZ9fYKVGVrNIHSb75vl51hQnIzU6hzbyVEzyNewaeVETKxI3Yt7nCIMdW15An1TOrfYzkNC6ZDppV+pOHwdSZmkjwKqBkiAqso9kuXgGf4+NQ2Hp7JXsEmVWj0yKC9RJaqKd4/4BnTkBN40qm6ePQ5LrXaNuNceJkutrinH+OpmzvDniTymmCsJkYbUf8gz+HnseimPOfsHsmLljXIOMs8dB+zgvqjKQU2/mTilwgfOgBAnSF6IukJnL534hPcqmDFUzHa+FsWLffoE9kLlPm3lhU43Z00H7eu0z+HsofqhhTZKsekEn5YjJMi5QH7x/0Yo2pJJforYgpghzgbzYX7qZhEuJIVOyy6HnFfTqWpBLmlmLECnVaspTV+AXQG16JGYo3l3sezBp+KnjsPx9b/Gv7S/Xv5KPXGJK7sD5AAAAAElFTkSuQmCC',
+  rate:null,rateDate:'',fallback:7.2
+};
+async function payRate(){
+  if(PAY.rate)return PAY.rate;
+  try{const r=await fetch('https://open.er-api.com/v6/latest/USD');const j=await r.json();const v=Number(j?.rates?.CNY);if(v>5&&v<10){PAY.rate=v;PAY.rateDate=(j.time_last_update_utc||'').slice(5,16);return v;}}catch(e){}
+  PAY.rate=Number(FEED?.menu?.cnyRate)||PAY.fallback;PAY.rateDate='参考汇率';return PAY.rate;
+}
+const payCny=(usd,rate)=>(Math.ceil(usd*rate*10)/10).toFixed(1);
+const payCode=()=>{const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s;};
+const payIsMobile=()=>/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent||'');
+function payCopy(t,btn){const ok=()=>{if(btn){const o=btn.textContent;btn.textContent='✓ 已复制';setTimeout(()=>btn.textContent=o,1500);}};try{navigator.clipboard.writeText(t).then(ok,()=>{prompt('长按复制：',t);});}catch(e){prompt('长按复制：',t);}}
+function payTab(m){document.querySelectorAll('#payBox .pay-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));document.querySelectorAll('#payBox .pay-pane').forEach(p=>p.style.display=p.dataset.m===m?'block':'none');}
+async function payRender(order){
+  const rate=await payRate();const cny=payCny(order.price,rate);
+  const aliDeep='alipays://platformapi/startapp?saId=10000007&qrcode='+encodeURIComponent(PAY.aliUrl);
+  const memo=`#${order.code} ${order.from}`;
+  document.getElementById('feedDone').innerHTML=`<div class="feed-done pay-box" id="payBox">
+    <div class="pay-top">📝 订单 <b class="pay-code">#${feedEsc(order.code)}</b> 已生成 · 待付款</div>
+    <div class="pay-what">送给 <b>${feedEsc(order.to)}</b>：${feedEsc(order.item)}</div>
+    <div class="pay-amt">$${order.price} <small>≈ ¥${cny}</small></div>
+    <div class="pay-tabs"><button data-m="zelle" class="on" onclick="payTab('zelle')">Zelle 付美元</button><button data-m="ali" onclick="payTab('ali')">支付宝 付人民币</button></div>
+    <div class="pay-pane" data-m="zelle">
+      <img src="${PAY.zelleQR}" alt="Zelle 二维码" class="pay-qr">
+      <div class="pay-line">收款人：<b>${PAY.zelleName}</b></div>
+      <div class="pay-line">${PAY.zelleEmail} <button class="pay-cp" onclick="payCopy('${PAY.zelleEmail}',this)">复制邮箱</button></div>
+      <div class="pay-line">金额：<b>$${order.price}</b></div>
+      <div class="pay-tip">用银行 App 里的 Zelle 扫码，或粘贴邮箱转账</div>
+    </div>
+    <div class="pay-pane" data-m="ali" style="display:none">
+      <img src="${PAY.aliQR}" alt="支付宝收款码" class="pay-qr">
+      ${payIsMobile()?`<a class="pay-open" href="${aliDeep}">打开支付宝付款 →</a>`:''}
+      <div class="pay-line">金额：<b>¥${cny}</b> <button class="pay-cp" onclick="payCopy('${cny}',this)">复制金额</button></div>
+      <div class="pay-tip">按今日汇率 1 USD ≈ ¥${rate.toFixed(2)}${PAY.rateDate&&PAY.rateDate!=='参考汇率'?'（'+feedEsc(PAY.rateDate)+'）':'（参考汇率）'}；用支付宝扫码，手动输入金额</div>
+    </div>
+    <div class="pay-memo">⚠️ 转账备注请写：<b>${feedEsc(memo)}</b> <button class="pay-cp" onclick="payCopy(${JSON.stringify(memo).replace(/"/g,'&quot;')},this)">复制</button></div>
+    <button class="btn-gold pay-done" id="payClaimBtn" onclick="payClaim('${order.id}')">我已付款 ✓</button>
+    <div class="pay-tip" style="margin-top:8px">店里确认收到款后，投食才会生效、出现在动态和榜单里，并在局间送达。</div>
+  </div>`;
+}
+async function payClaim(id){
+  const btn=document.getElementById('payClaimBtn');if(btn){btn.disabled=true;btn.textContent='提交中…';}
+  try{const o=await fb.get(`${FEED_ORDERS_PATH}/${id}`);if(!o)throw new Error('订单不存在');
+    const m=document.querySelector('#payBox .pay-tabs button.on')?.dataset.m||'';
+    await fbPutStrict(`${FEED_ORDERS_PATH}/${id}`,{...o,claimed:true,claimedAt:Date.now(),payMethod:m==='ali'?'支付宝':'Zelle'});
+    document.getElementById('feedDone').innerHTML=`<div class="feed-done">🙏 收到！订单 <b>#${feedEsc(o.code||'')}</b> 等待店里确认到账<br><span style="font-size:12px;color:var(--dim)">确认后会出现在「今日投食动态」，局间送达</span></div>`;
+  }catch(e){alert('提交失败：'+e.message);if(btn){btn.disabled=false;btn.textContent='我已付款 ✓';}}
+}
+feedSubmit=async function(){
+  const it=feedCurItem();
+  const from=(cName||document.getElementById('feedFromName').value||'').trim();
+  const msg=document.getElementById('feedMsg').value.trim();
+  if(!from){toast('先填上你的名字');return;}
+  if(!FEED.to){toast('先选送给谁');return;}
+  if(!it||feedPrice(it.price)===null){toast('先选一样');return;}
+  if(it.needMsg&&!msg){toast('喝彩需要写一句应援');return;}
+  const btn=document.getElementById('feedSubmit');btn.disabled=true;
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const order={id,code:payCode(),season:SEASON,date:feedToday(),ts:Date.now(),from,to:FEED.to==='__ALL__'?'全场':FEED.to,itemId:it.id,item:`${it.e} ${it.n}`,price:feedPrice(it.price),msg,status:'pending',...(authUser?{uid:authUser.uid}:{})};
+  try{
+    await fbPutStrict(`${FEED_ORDERS_PATH}/${id}`,order);
+    FEED.item=null;document.getElementById('feedMsg').value='';feedRenderItems();feedRenderSum();
+    await payRender(order);feedRefresh();
+    document.getElementById('feedDone').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){alert('下单失败：'+e.message);}
+  btn.disabled=false;
+};
+// 动态只显示已确认到账的订单
+feedRefresh=async function(){
+  const all=Object.values(await fb.get(FEED_ORDERS_PATH)||{}).filter(o=>o&&o.season===SEASON);
+  FEED.orders=all;
+  const today=all.filter(o=>o.date===feedToday()&&o.status!=='pending').sort((a,b)=>b.ts-a.ts);
+  const st={paid:'已到账',done:'已送达'};
+  document.getElementById('feedLog').innerHTML=today.length?today.slice(0,30).map(o=>`<div><span>${feedEsc(o.from)} → <b>${feedEsc(o.to)}</b> ${feedEsc(o.item)}${o.msg?`<br><i>「${feedEsc(o.msg)}」</i>`:''}</span><span class="feed-st ${o.status}">${st[o.status]||o.status}</span></div>`).join(''):'<div class="no-data" style="display:block">今天还没有人投食，来当第一个！</div>';
+  feedRank(FEED.rankMode);
+};
+// 后台：显示订单号、玩家是否点了「我已付款」
+feedAdmOrders=async function(){
+  const el=document.getElementById('feedAdmOrders');
+  const all=Object.values(await fb.get(FEED_ORDERS_PATH)||{}).filter(o=>o&&o.date===feedToday()).sort((a,b)=>(b.status==='pending'&&b.claimed)-(a.status==='pending'&&a.claimed)||b.ts-a.ts);
+  if(!all.length){el.innerHTML='<div class="no-data">今天还没有订单</div>';return;}
+  const sum=all.filter(o=>o.status!=='pending').reduce((s,o)=>s+(Number(o.price)||0),0);
+  const wait=all.filter(o=>o.status==='pending'&&o.claimed).length;
+  const st={pending:'待付款',paid:'已到账',done:'已送达'};
+  el.innerHTML=`<div style="font-size:12px;color:var(--dim);margin-bottom:8px">共 ${all.length} 单 · 已收 $${sum}${wait?` · <b style="color:#f0c070">${wait} 单说已付款，等你确认</b>`:''}<br>对账：看 Zelle / 支付宝转账备注里的订单号（#xxxx）</div>`+all.map(o=>`<div class="fa-order"${o.status==='pending'&&o.claimed?' style="border-color:#f0c070"':''}>
+    ${o.code?`<b style="color:var(--G)">#${feedEsc(o.code)}</b>　`:''}<b>${feedEsc(o.from)}</b> → <b>${feedEsc(o.to)}</b>　${feedEsc(o.item)} · $${o.price} <span class="feed-st ${o.status}">${st[o.status]}</span>
+    ${o.status==='pending'?(o.claimed?`<div style="color:#f0c070;font-size:12px">💰 玩家说已用${feedEsc(o.payMethod||'')}付款，请核对到账</div>`:'<div style="color:var(--dim);font-size:12px">还没点「我已付款」</div>'):''}
+    ${o.msg?`<div style="color:var(--dim)">附言：「${feedEsc(o.msg)}」</div>`:''}
+    <div style="margin-top:6px;display:flex;gap:6px">
+      ${o.status==='pending'?`<button class="adm-btn g" onclick="feedAdmSet('${o.id}','paid')">✓ 已到账</button>`:''}
+      ${o.status!=='done'?`<button class="adm-btn y" onclick="feedAdmSet('${o.id}','done')">🍿 已送达</button>`:''}
+      <button class="adm-btn" style="color:rgba(181,69,58,.9)" onclick="feedAdmDel('${o.id}')">删除</button>
+    </div></div>`).join('');
+};
+(function(){
+  const st=document.createElement('style');st.textContent=`
+  .pay-box{text-align:left}
+  .pay-top{font-size:14px;text-align:center}.pay-code{color:var(--G);font-size:18px;letter-spacing:1px}
+  .pay-what{text-align:center;font-size:13px;margin-top:4px}
+  .pay-amt{text-align:center;font-size:30px;font-weight:700;color:var(--G);margin:8px 0}.pay-amt small{font-size:14px;color:var(--dim);font-weight:400}
+  .pay-tabs{display:flex;gap:6px;margin:6px 0 10px}.pay-tabs button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);font-family:inherit;cursor:pointer}
+  .pay-tabs button.on{background:rgba(255,215,60,.14);border-color:var(--G);color:var(--G)}
+  .pay-qr{display:block;width:170px;height:170px;margin:4px auto 10px;border-radius:8px;image-rendering:pixelated;background:#fff;padding:6px}
+  .pay-line{font-size:13px;margin:5px 0;text-align:center}
+  .pay-tip{font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
+  .pay-cp{background:none;border:1px solid var(--line);color:var(--G);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-left:4px}
+  .pay-open{display:block;text-align:center;background:#1677ff;color:#fff;border-radius:8px;padding:10px;margin:0 auto 8px;max-width:240px;text-decoration:none;font-weight:600}
+  .pay-memo{margin:12px 0 4px;padding:9px;border-radius:8px;background:rgba(240,192,112,.12);border:1px dashed #f0c070;font-size:13px;text-align:center}
+  .pay-done{width:100%;margin-top:10px}`;
+  document.head.appendChild(st);
+})();
 
 </script>
 </body>
