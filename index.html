@@ -278,7 +278,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
 .adm-btn.y{border-color:rgba(255,215,60,.35);color:var(--G);}
 
 /* 锁屏 */
-.lock-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+.lock-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:950;
   display:none;align-items:center;justify-content:center;}
 .lock-overlay.on{display:flex;}
 .lock-box{background:#0d1138;border:1px solid var(--line);border-radius:12px;
@@ -5228,6 +5228,7 @@ async function gAfterLogin(){
   custTouch(u,p);
   if(gpAdminMode){gpAdminMode=false;toast('✓ 已用 '+u.email+' 登录');custAdmLoad();return;}
   if(p&&p.displayName){toast('欢迎回来，'+p.displayName);await _gAuthLoad(true);return;}
+  if(custIsAdmin()){toast('✓ 店长账号已登录');return;}
   gpOpen();
 }
 // ── 首次 Google 登录：完善资料 ──
@@ -5242,7 +5243,7 @@ async function gpOpen(){
   try{const ps=await fb.get(`${P_PATH}/players`)||{};const names=[...new Set(Object.values(ps).map(p=>p&&p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh'));
     document.getElementById('gpList').innerHTML=names.map(n=>`<option value="${gEsc(n)}">`).join('');window._gpPlayers=ps;}catch(e){}
 }
-function gpClose(){document.getElementById('gpOverlay')?.classList.remove('on');}
+function gpClose(){document.getElementById('gpOverlay')?.classList.remove('on');try{sessionStorage.setItem('gpSkip','1');}catch(e){}}
 async function gpSave(){
   const err=document.getElementById('gpErr');err.textContent='';
   const name=document.getElementById('gpName').value.trim();
@@ -5274,7 +5275,8 @@ authLoadProfile=async function(autoEnter){
   try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);
     if(!autoEnter)custTouch(authUser,p);
     const isG=(authUser.providerData||[]).some(x=>x.providerId==='google.com');
-    if(!p?.displayName&&isG&&!gpAdminMode)gpOpen();
+    let skip=false;try{skip=sessionStorage.getItem('gpSkip')==='1';}catch(e){}
+    if(!p?.displayName&&isG&&!gpAdminMode&&!custIsAdmin()&&!skip)gpOpen();
   }catch(e){}
 };
 authUpdateButton=function(){
