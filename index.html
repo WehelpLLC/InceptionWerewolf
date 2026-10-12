@@ -1718,7 +1718,7 @@ function onPlayerSelChange(sel){
     sel.style.display='';
   }
 }
-const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["狼术师交换目标","狼人击杀","女巫救","女巫毒","魔术师交换目标","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"孤注一掷":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"典狱长","nightFields":["梦游目标","交易对象","交易对象1选择","交易对象2选择","交易结果","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"鹊桥红线":{"roles":["预言家","女巫","猎人","守卫"],"wolfSpecial":null,"thirdParty":"织女","thirdPartyMembers":["织女","牛郎","月老"],"nightFields":["织女牵红线目标","鹊桥眷侣交流内容","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","断桥情况"],"winOptions":["狼人阵营胜","好人阵营胜","鹊桥阵营胜"]},"九人动物局":{"roles":["企鹅","熊","乌鸦"],"wolfSpecial":"黑狼王","seatCount":9,"nightFields":["企鹅冰冻","狼人击杀","乌鸦技能","熊咆哮情况"],"dayExtra":["黑狼王带人"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"幽灵狼":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼换位","幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]},"星移入瞳":{"roles":["毒师","猎人","白痴","鬼瞳"],"wolfSpecial":"奎木狼","nightFields":["奎木狼星移（方向）","击杀号码","毒师毒杀","鬼瞳瞳照"],"dayExtra":["猎人是否开枪","猎人开枪目标","瞳照狼人翻牌"]},"灵魂锁链":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]}};
+const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["狼术师交换目标","狼人击杀","女巫救","女巫毒","魔术师交换目标","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"动物园":{"roles":["熊","企鹅","乌鸦","狐狸"],"wolfSpecial":"狼王","seatCount":12,"nightFields":["企鹅冰冻","狼人击杀","乌鸦诅咒","狐狸查验","熊是否咆哮"],"dayExtra":["狼王开枪目标"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"幽灵狼":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼换位","幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]},"星移入瞳":{"roles":["毒师","猎人","白痴","鬼瞳"],"wolfSpecial":"奎木狼","nightFields":["奎木狼星移（方向）","击杀号码","毒师毒杀","鬼瞳瞳照"],"dayExtra":["猎人是否开枪","猎人开枪目标","瞳照狼人翻牌"]},"灵魂锁链":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]}};
 function initTemplateSelect(){
   const sel=document.getElementById('mTemplate');
   if(!sel||sel.options.length>1)return;
@@ -4634,12 +4634,6 @@ const BOARD_RULES={
   "notes": [],
   "status": "ok"
  },
- "孤注一掷": {
-  "status": "todo",
-  "summary": "",
-  "order": [],
-  "notes": []
- },
  "假面舞会": {
   "summary": "",
   "skills": {
@@ -4716,17 +4710,29 @@ const BOARD_RULES={
   ],
   "status": "ok"
  },
- "鹊桥红线": {
-  "status": "todo",
+ "动物园": {
+  "status": "std",
   "summary": "",
-  "order": [],
-  "notes": []
- },
- "九人动物局": {
-  "status": "todo",
-  "summary": "9 人局。",
-  "order": [],
-  "notes": []
+  "skills": {
+   "熊": "同驯熊师：每天天亮时，若熊左右两边最近的存活玩家中有狼人，法官宣布「熊咆哮了」；都不是狼人则不叫。熊被企鹅冰冻时，白天不叫。",
+   "企鹅": "每晚可冰冻一名玩家，被冰者当晚失去功能：冰到熊，白天不叫；冰到狐狸，当晚不能验人；冰到狼人，整个狼队当晚不能刀人；冰到乌鸦，当晚不能诅咒。不能连续两晚冰同一人。",
+   "乌鸦": "每晚可诅咒一名玩家，被诅咒者在次日白天放逐投票时，被票数额外 +2 票。",
+   "狐狸": "每晚可查验 3 个相连玩家，得知其中是否有狼人。若有狼人，下一夜可以继续验人；若 3 人都是好人，狐狸永久失去验人能力。",
+   "狼王": "狼人阵营，与小狼见面。出局时可以开枪带走一名玩家。"
+  },
+  "order": [
+   "入夜",
+   "企鹅睁眼，选择冰冻一名玩家",
+   "狼人睁眼（含狼王），选择击杀目标",
+   "乌鸦睁眼，选择诅咒一名玩家",
+   "狐狸睁眼，选择查验的 3 个相连玩家（告知其中是否有狼人）",
+   "天亮：法官宣布熊是否咆哮，再公布昨夜信息"
+  ],
+  "notes": [
+   "12 人局：狼王、3 狼人；熊、企鹅、乌鸦、狐狸、4 兔兔。兔兔即平民，录战绩时选「平民」。",
+   "被企鹅冰冻的玩家当晚失去功能，冰到任意一名狼人则整个狼队当晚不能刀人。",
+   "夜间顺序为暂定（企鹅最先，冰冻对当晚生效），请法官确认后在后台改成「已整理」。"
+  ]
  },
  "盗宝大师": {
   "summary": "",
@@ -5207,5 +5213,203 @@ body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:46vh;z-ind
 .rm8-mist{position:absolute;z-index:1;pointer-events:none;border-radius:50%;backdrop-filter:blur(14px) brightness(1.05) saturate(.6);-webkit-backdrop-filter:blur(14px) brightness(1.05) saturate(.6);background:radial-gradient(ellipse closest-side,rgba(236,231,222,.92) 0%,rgba(226,222,216,.8) 45%,rgba(214,212,214,.45) 72%,rgba(214,212,214,0) 100%);-webkit-mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 100%);mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 100%)}
 .rm9-card .rm8-scene::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(6,21,42,.55),transparent 9%,transparent 91%,rgba(6,21,42,.55))}
 </style>
+<!-- ══ Google 登录 + 客户资料 ══ -->
+<script>
+// ══ Google 一键登录 + 客户资料（customers/{uid} 只有本人和管理员能读）══
+const ADMIN_EMAILS=['laxuejie@gmail.com'];
+const CUST_PATH='customers';
+let gpAdminMode=false;
+function gEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function gInApp(){return /MicroMessenger|WeChat|Instagram|FBAN|FBAV|Line\/|xiaohongshu|XHS|TikTok|musical_ly|Snapchat/i.test(navigator.userAgent||'');}
+async function gReady(){for(let i=0;i<60&&!(authApi&&authApp);i++)await new Promise(r=>setTimeout(r,100));if(!authApi)throw new Error('登录模块没加载出来，请刷新页面再试');}
+function gErr(e){const c=e&&e.code||'';return c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'?'':c==='auth/operation-not-allowed'?'Google 登录还没开启（管理员需在 Firebase → Authentication 里启用 Google）':c==='auth/unauthorized-domain'?'当前网址未授权（管理员需在 Firebase 授权域名里加上 wehelpllc.github.io）':c==='auth/network-request-failed'?'网络不稳定，请再试一次':c==='auth/account-exists-with-different-credential'?'这个邮箱之前用密码注册过，请用「邮箱登录」':'登录失败：'+(e&&e.message||e);}
+async function googleLogin(adminMode){
+  gpAdminMode=!!adminMode;
+  const hint=document.getElementById('gHint');if(hint){hint.textContent='';hint.style.color='';}
+  if(gInApp()){if(hint)hint.innerHTML='📱 微信 / IG 里不支持 Google 登录：点右上角「···」→「在浏览器中打开」，再点一次。<br>或者用下面的「邮箱登录」。';return;}
+  try{
+    await gReady();
+    const auth=authApi.getAuth(authApp);const pv=new authApi.GoogleAuthProvider();pv.setCustomParameters({prompt:'select_account'});
+    let cred;
+    try{cred=await authApi.signInWithPopup(auth,pv);}
+    catch(e){if(e.code==='auth/popup-blocked'){await authApi.signInWithRedirect(auth,pv);return;}throw e;}
+    authUser=cred.user;authUpdateButton();
+    await gAfterLogin();
+  }catch(e){const m=gErr(e);if(m){if(hint)hint.textContent=m;else toast(m,4000);}}
+}
+// 每次登录都把账号信息同步到客户资料（PATCH，不会覆盖手机/生日）
+async function custTouch(u,profile){
+  if(!u)return;
+  const now=new Date().toISOString();
+  const d={uid:u.uid,email:u.email||'',accountName:u.displayName||'',photoURL:u.photoURL||'',provider:(u.providerData?.[0]?.providerId||'password').replace('.com',''),lastLogin:now};
+  if(profile?.displayName)d.displayName=profile.displayName;
+  try{const old=await authDb(`${CUST_PATH}/${u.uid}`);if(!old||!old.createdAt)d.createdAt=now;d.loginCount=((old&&old.loginCount)||0)+1;await authDb(`${CUST_PATH}/${u.uid}`,'PATCH',d);}
+  catch(e){console.warn('客户资料同步失败（检查 Firebase 规则 customers）',e);}
+}
+async function gAfterLogin(){
+  const u=authUser;if(!u)return;
+  let p=null;try{p=await authDb(`tournament/userProfiles/${u.uid}`);}catch(e){}
+  custTouch(u,p);
+  if(gpAdminMode){gpAdminMode=false;toast('✓ 已用 '+u.email+' 登录');custAdmLoad();return;}
+  if(p&&p.displayName){toast('欢迎回来，'+p.displayName);await _gAuthLoad(true);return;}
+  gpOpen();
+}
+// ── 首次 Google 登录：完善资料 ──
+async function gpOpen(){
+  const ov=document.getElementById('gpOverlay');if(!ov)return;
+  const u=authUser||{};
+  document.getElementById('gpAcct').textContent=u.email?`已登录：${u.email}`:'';
+  const nm=document.getElementById('gpName');
+  const guess=(typeof cName==='string'&&cName)||'';nm.value=guess;
+  document.getElementById('gpErr').textContent='';
+  ov.classList.add('on');
+  try{const ps=await fb.get(`${P_PATH}/players`)||{};const names=[...new Set(Object.values(ps).map(p=>p&&p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh'));
+    document.getElementById('gpList').innerHTML=names.map(n=>`<option value="${gEsc(n)}">`).join('');window._gpPlayers=ps;}catch(e){}
+}
+function gpClose(){document.getElementById('gpOverlay')?.classList.remove('on');}
+async function gpSave(){
+  const err=document.getElementById('gpErr');err.textContent='';
+  const name=document.getElementById('gpName').value.trim();
+  const phone=document.getElementById('gpPhone').value.trim();
+  const bday=document.getElementById('gpBday').value.trim();
+  const optIn=document.getElementById('gpOpt').checked;
+  if(!authUser){err.textContent='登录已失效，请重新点 Google 登录';return;}
+  if(!name){err.textContent='请填写你在联赛里的昵称';return;}
+  if(bday&&!/^(0?[1-9]|1[0-2])[-/.月](0?[1-9]|[12]\d|3[01])日?$/.test(bday)){err.textContent='生日请写成 05-20 这样的格式';return;}
+  const btn=document.getElementById('gpBtn');btn.disabled=true;btn.textContent='保存中…';
+  try{
+    const profiles=await fb.get('tournament/userProfiles')||{};
+    const taken=Object.entries(profiles).some(([uid,p])=>uid!==authUser.uid&&p&&p.displayName===name);
+    if(taken)throw new Error('「'+name+'」已经绑定了别的账号。如果是你本人，请联系管理员处理。');
+    const pl=Object.values(window._gpPlayers||{}).find(p=>p&&p.name===name);
+    const now=new Date().toISOString();
+    await authDb(`tournament/userProfiles/${authUser.uid}`,'PUT',{displayName:name,emoji:(pl&&pl.emoji)||'🎭',provider:'google',createdAt:now});
+    try{await authDb(`${CUST_PATH}/${authUser.uid}`,'PATCH',{displayName:name,phone,birthday:bday.replace(/[/.月]/,'-').replace('日',''),optIn,isLeaguePlayer:!!pl,profileAt:now});}catch(e){console.warn('客户资料保存失败',e);}
+    gpClose();toast(pl?'✓ 已连上你的联赛战绩':'✓ 注册成功，欢迎入道！');
+    await _gAuthLoad(true);
+  }catch(e){err.textContent=e.message||String(e);}
+  finally{btn.disabled=false;btn.textContent='进入联赛 →';}
+}
+// ── 登录状态下的按钮 ──
+const _gAuthLoad=authLoadProfile;
+authLoadProfile=async function(autoEnter){
+  await _gAuthLoad.apply(this,arguments);
+  if(!authUser)return;
+  try{const p=await authDb(`tournament/userProfiles/${authUser.uid}`);
+    if(!autoEnter)custTouch(authUser,p);
+    const isG=(authUser.providerData||[]).some(x=>x.providerId==='google.com');
+    if(!p?.displayName&&isG&&!gpAdminMode)gpOpen();
+  }catch(e){}
+};
+authUpdateButton=function(){
+  const b=document.getElementById('authOpenBtn'),g=document.getElementById('gLoginWrap');
+  if(b){if(authUser){b.textContent='👤 '+(authUser.email||'已登录')+' · 退出登录';b.onclick=async()=>{await authLogout();};}else{b.textContent='✉️ 邮箱登录 / 注册';b.onclick=authOpen;}}
+  if(g)g.style.display=authUser?'none':'';
+  const bh=document.getElementById('bindHint');if(bh&&authUser)bh.style.display='none';
+};
+function addGoogleUI(){
+  const st=document.createElement('style');st.textContent=`
+  .g-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1f1f1f;border:0;border-radius:10px;padding:13px 14px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.35);transition:transform .15s}
+  .g-btn:hover{transform:translateY(-1px)}.g-btn svg{width:20px;height:20px;flex-shrink:0}
+  .g-sub{font-size:11px;color:var(--dim);text-align:center;margin:7px 0 0;line-height:1.6}
+  #gHint{font-size:12px;color:#ffc9a0;text-align:center;margin-top:6px;line-height:1.6}
+  .g-or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-size:11px;color:var(--dim)}.g-or:before,.g-or:after{content:'';flex:1;height:1px;background:var(--line)}
+  #gpOverlay label{display:block;font-size:12px;color:var(--dim);margin-top:10px}
+  #gpOverlay .gp-chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text)}
+  #gpOverlay .gp-chk input{width:auto;margin:0}`;
+  document.head.appendChild(st);
+  const G='<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+  const box=document.querySelector('#pg-name .n-box');
+  if(box){
+    const w=document.createElement('div');w.id='gLoginWrap';
+    w.innerHTML=`<button class="g-btn" onclick="googleLogin()">${G}<span>使用 Google 一键登录</span></button><div class="g-sub">老玩家登录后选你原来的名字，战绩自动连上</div><div id="gHint"></div>`;
+    box.insertBefore(w,box.firstChild);
+    const ab=document.getElementById('authOpenBtn');if(ab){w.after(ab);ab.style.marginTop='12px';ab.style.width='100%';ab.style.display='block';}
+    const inp=document.getElementById('nameInput');
+    if(inp){const or=document.createElement('div');or.className='g-or';or.textContent='不想登录？游客进入';inp.before(or);}
+  }
+  const sub=document.querySelector('#pg-name .n-sub');if(sub)sub.textContent='Google 一键登录，战绩和你的账号永久绑定';
+  // 玩家页的绑定提示 → 改成 Google 一键绑定
+  const bh=document.getElementById('bindHint');
+  if(bh){const sp=bh.querySelector('span');if(sp)sp.textContent='🔒 用 Google 一键绑定，防止别人用你的名字登录';const go=bh.querySelector('button');if(go){go.textContent='Google 绑定';go.onclick=()=>googleLogin();}}
+  const ov=document.createElement('div');ov.id='gpOverlay';ov.className='auth-overlay';
+  ov.innerHTML=`<div class="auth-box"><h2>🌱 入道登记</h2><p id="gpAcct"></p>
+    <label>你在联赛里的昵称（老玩家请选原来的名字）<input id="gpName" list="gpList" maxlength="12" placeholder="例如：小行" autocomplete="off"></label><datalist id="gpList"></datalist>
+    <label>手机号（选填 · 活动和包场通知）<input id="gpPhone" type="tel" maxlength="20" placeholder="例如 832-xxx-xxxx"></label>
+    <label>生日（选填 · 生日当月有小惊喜）<input id="gpBday" maxlength="6" placeholder="例如 05-20" inputmode="numeric"></label>
+    <div class="gp-chk"><input type="checkbox" id="gpOpt" checked><span>接收盗梦空间的活动通知</span></div>
+    <div class="auth-actions"><button class="btn-gold" id="gpBtn" onclick="gpSave()">进入联赛 →</button></div>
+    <div id="gpErr" class="auth-err"></div>
+    <p style="margin-top:6px">手机和生日只有你自己和店长能看到，不会公开。</p>
+    <button onclick="gpClose()" style="display:block;margin:6px auto 0;background:none;border:0;color:var(--dim);cursor:pointer">稍后再填</button></div>`;
+  document.body.appendChild(ov);
+  authUpdateButton();
+  // 手机浏览器拦截弹窗时会走跳转登录，回来后在这里接上
+  (async()=>{try{await gReady();const r=await authApi.getRedirectResult(authApi.getAuth(authApp));if(r&&r.user){authUser=r.user;authUpdateButton();await gAfterLogin();}}catch(e){const m=gErr(e);if(m)toast(m,4000);}})();
+}
+
+// ── 管理员：👥 客户资料 ──
+let custCache=[];
+function addCustomerAdmin(){
+  const at9=document.getElementById('at9'),ap9=document.getElementById('ap9');
+  if(!at9||!ap9)return;
+  at9.insertAdjacentHTML('afterend','<div class="adm-tab-btn" id="at10" onclick="switchAdmTab(10)">👥 客户</div>');
+  ap9.insertAdjacentHTML('afterend',`<div class="adm-pane" id="ap10"><div class="adm-body">
+    <div class="sec-title" style="margin-top:0;">👥 客户资料</div>
+    <div id="custStatus" style="font-size:12px;color:var(--dim);line-height:1.8;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <input class="meta-inp" id="custQ" placeholder="搜昵称 / 邮箱 / 手机" oninput="custRender()" style="flex:1;min-width:160px">
+      <button class="btn-line" onclick="custAdmLoad()">刷新</button>
+      <button class="btn-gold" onclick="custExport()">导出 CSV</button>
+    </div>
+    <div id="custList"></div></div></div>`);
+  const _sw=switchAdmTab;
+  switchAdmTab=function(n){
+    if(n===10){for(let i=0;i<11;i++){document.getElementById('at'+i)?.classList.toggle('on',i===10);document.getElementById('ap'+i)?.classList.toggle('on',i===10);}custAdmLoad();return;}
+    document.getElementById('at10')?.classList.remove('on');document.getElementById('ap10')?.classList.remove('on');
+    return _sw.apply(this,arguments);
+  };
+}
+function custIsAdmin(){return !!(authUser&&authUser.email&&ADMIN_EMAILS.includes(authUser.email.toLowerCase()));}
+async function custAdmLoad(){
+  const st=document.getElementById('custStatus'),list=document.getElementById('custList');if(!st)return;
+  if(!custIsAdmin()){
+    st.innerHTML=`客户的邮箱、手机、生日是私密资料，需要用店长的 Google 账号（${gEsc(ADMIN_EMAILS[0])}）登录才能查看。${authUser?`<br>当前登录的是 ${gEsc(authUser.email||'')}，不是店长账号。`:''}<br><button class="g-btn" style="margin-top:10px;max-width:320px" onclick="googleLogin(true)"><span>用店长 Google 账号登录</span></button>`;
+    list.innerHTML='';return;
+  }
+  st.textContent='加载中…';
+  try{
+    const [c,profiles,players]=await Promise.all([authDb(CUST_PATH),fb.get('tournament/userProfiles'),fb.get(`${P_PATH}/players`)]);
+    const names=new Set(Object.values(players||{}).map(p=>p&&p.name).filter(Boolean));
+    const rows={};
+    Object.entries(c||{}).forEach(([uid,x])=>{rows[uid]={uid,...x};});
+    // 老的邮箱注册账号：还没登录过新版的，也从 userProfiles 补进来
+    Object.entries(profiles||{}).forEach(([uid,p])=>{if(!p)return;const r=rows[uid]||(rows[uid]={uid});r.displayName=r.displayName||p.displayName;r.email=r.email||p.email||'';r.createdAt=r.createdAt||p.createdAt;});
+    custCache=Object.values(rows).map(r=>({...r,isLeaguePlayer:names.has(r.displayName)})).sort((a,b)=>String(b.lastLogin||b.createdAt||'').localeCompare(String(a.lastLogin||a.createdAt||'')));
+    const g=custCache.filter(r=>r.provider==='google').length,ph=custCache.filter(r=>r.phone).length,lp=custCache.filter(r=>r.isLeaguePlayer).length;
+    st.innerHTML=`共 <b style="color:var(--G)">${custCache.length}</b> 个账号 · Google ${g} · 留了手机 ${ph} · 已连上联赛战绩 ${lp}`;
+    custRender();
+  }catch(e){st.innerHTML='读取失败：'+gEsc(e.message)+'<br>请确认 Firebase 规则里已经加了 customers（见说明）。';}
+}
+function custRender(){
+  const list=document.getElementById('custList');if(!list)return;
+  const q=(document.getElementById('custQ')?.value||'').trim().toLowerCase();
+  const rs=custCache.filter(r=>!q||[r.displayName,r.email,r.phone,r.accountName].some(x=>String(x||'').toLowerCase().includes(q)));
+  const d=s=>s?String(s).slice(0,10):'—';
+  list.innerHTML=rs.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px">
+    <tr style="color:var(--G);text-align:left">${['昵称','邮箱','手机','生日','通知','联赛','首次','最近登录'].map(h=>`<th style="padding:6px;border-bottom:1px solid var(--line)">${h}</th>`).join('')}</tr>
+    ${rs.map(r=>`<tr>${[r.displayName||'<span style="color:var(--dim)">未填</span>',gEsc(r.email),gEsc(r.phone||''),gEsc(r.birthday||''),r.optIn===false?'✗':r.optIn?'✓':'',r.isLeaguePlayer?'✓':'',d(r.createdAt),d(r.lastLogin)].map((v,i)=>`<td style="padding:6px;border-bottom:1px solid rgba(255,255,255,.06)">${i===0&&r.displayName?gEsc(v):v}</td>`).join('')}</tr>`).join('')}</table></div>`:'<div class="no-data">没有符合的客户</div>';
+}
+function custExport(){
+  if(!custCache.length){toast('先加载客户资料');return;}
+  const cols=[['displayName','昵称'],['email','邮箱'],['phone','手机'],['birthday','生日'],['optIn','接收通知'],['isLeaguePlayer','联赛玩家'],['provider','登录方式'],['accountName','Google名字'],['createdAt','首次登录'],['lastLogin','最近登录'],['loginCount','登录次数']];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv='﻿'+cols.map(c=>q(c[1])).join(',')+'\n'+custCache.map(r=>cols.map(([k])=>q(typeof r[k]==='boolean'?(r[k]?'是':'否'):r[k])).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`盗梦空间客户_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+try{addGoogleUI();}catch(e){console.warn('Google 登录模块加载失败:',e);}
+try{addCustomerAdmin();}catch(e){console.warn('客户管理加载失败:',e);}
+
+</script>
 </body>
 </html>
