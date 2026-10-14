@@ -3951,7 +3951,7 @@ function buildRealmMap(containerId,players,meName){
       <div class="rm8-scene" style="height:${H}px"><img src="${RM_ART_SRC}" alt="${r.n}" style="left:${il.toFixed(1)}px;top:${it.toFixed(1)}px;width:${imgW.toFixed(1)}px;height:${imgH.toFixed(1)}px">
         <div class="rm11-shade"></div>
         <svg width="${W}" height="${H}" style="position:absolute;left:0;top:0;z-index:2">${road}</svg>${nodes}${sides}</div>
-      <div class="rm8-tag rm11-tag">${r.e} ${r.n}<small>${lo}–${Math.min(hi,seg===7?80:hi)} 格 · ${cnt} 位道友</small></div></section>`;
+      <div class="rm8-tag rm11-tag"><span>${r.e} ${r.n}<small>${lo}–${Math.min(hi,seg===7?80:hi)} 格 · ${cnt} 位道友</small></span></div></section>`;
   };
   const gateDiv=seg=>`<div class="rm8-gate" style="--c:${RM_STAGE[seg].c}"><span>⛩ 第 ${seg*10} 格 · 突破至${REALMS[seg].n}</span></div>`;
   let html='';
@@ -5284,8 +5284,9 @@ body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:46vh;z-ind
 .rm8-scene>svg{position:absolute;left:0;top:0;z-index:1;pointer-events:none}
 .rm8-scene::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
   background:linear-gradient(180deg,rgba(6,21,42,.55),transparent 12%,transparent 88%,rgba(6,21,42,.55))}
-.rm8-tag{position:absolute;left:0;right:0;top:10px;margin:0 auto;z-index:8;font-family:"Noto Serif SC","Noto Serif CJK SC",serif;font-size:14px;letter-spacing:2px;color:#f6dfb0;
-  background:rgba(6,21,42,.82);border:1px solid var(--c);padding:4px 16px 4px 14px;white-space:nowrap;line-height:1.5;box-sizing:content-box;width:fit-content;max-width:none;overflow:visible;text-align:center}
+.rm8-tag{position:absolute;left:0;right:0;top:10px;z-index:8;display:flex;justify-content:center;pointer-events:none}
+.rm8-tag>span{display:inline-block;pointer-events:auto;font-family:"Noto Serif SC","Noto Serif CJK SC",serif;font-size:14px;letter-spacing:2px;color:#f6dfb0;
+  background:rgba(6,21,42,.82);border:1px solid var(--c);padding:4px 16px 4px 14px;white-space:nowrap;line-height:1.5}
 .rm8-tag small{font-size:11px;color:rgba(239,227,207,.7);margin-left:8px;letter-spacing:0}
 .rm8-gate{position:relative;text-align:center;margin:14px 0;height:22px}
 .rm8-gate::before{content:"";position:absolute;left:8%;right:8%;top:50%;border-top:1px solid rgba(230,189,130,.4)}
