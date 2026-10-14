@@ -820,6 +820,7 @@ function recapSubLabel(r,m){
 function recapDisplayTitle(r,m){
   const track=r.track||(m&&m.track)||'main';
   let t=normalizeRecapTitle(r.title||'');
+  if(String(r.created||r.date||'')>='2026-10'||String(r.id||'').replace(/^rc/,'')>'1790000000000')t=t.replace(/S3(\s*Week)/i,'S4$1');
   if(track==='baby'){
     // 宝宝赛：局号以 game 字段为准（title 里的局号可能录错），副标题取 title 括号内容
     const sub=(t.match(/[（(]([^）)]*)[）)]/)||[])[1]||'';
@@ -2084,7 +2085,7 @@ async function generateRecapDraft(tname,week,round,entries,ndData,track,date){
     winLine='\n'+((w&&(w.includes('狼')))?'狼人阵营获胜':'好人阵营获胜');
   }
   const fullBody=idInfo+body+winLine;
-  document.getElementById('recapTitleInp').value=`S3 Week ${week} 第${round}局复盘（${tname}）`;
+  document.getElementById('recapTitleInp').value=`S4 Week ${week} 第${round}局复盘（${tname}）`;
   document.getElementById('recapBodyInp').value=fullBody;
   document.getElementById('recapDraftBox').style.display='block';
   document.getElementById('recapDraftBox').scrollIntoView({behavior:'smooth',block:'start'});
@@ -2190,14 +2191,14 @@ async function mapSet(key,name,emoji){
 }
 
 // ══ 联赛中心（增量加入；不改变人气王、地图或后台的原有数据与流程）══
-const league={season:'s3',seasons:[],players:{},matches:{},rows:[],sortBy:'score'};
+const league={season:(typeof SEASON!=='undefined'?SEASON:'s4'),seasons:[],players:{},matches:{},rows:[],sortBy:'score'};
 function leagueEsc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function leagueWolf(role){return /狼|石像鬼|恶灵|梦魇|血月|诡术|假面|盗宝/.test(role||'');}
 function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.filter(e=>e.result==='win');if(!winners.length)return null;return winners.some(e=>leagueWolf(e.role))?'🐺 狼人胜利':'👑 好人胜利';}
 function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
 function leaguePath(){const meta=league.seasons.find(x=>x.id===league.season)?.meta||{};return meta.dataPath||`playerProfiles/${league.season}`;}
 function leagueShow(){showPage('pg-league');leagueLoadSeasons();}
-async function leagueLoadSeasons(){let t={};try{t=await fb.get('tournament')||{};}catch{}const map=t.seasons||{},ids=Object.keys(map);if(!ids.includes('s3'))ids.push('s3');league.seasons=ids.map(id=>({id,meta:map[id]||{}}));if(ids.includes(t.activeSeason))league.season=t.activeSeason;const sel=document.getElementById('leagueSeason');sel.innerHTML=league.seasons.map(x=>`<option value="${leagueEsc(x.id)}">${leagueEsc(x.meta.name||x.meta.title||({s3:'Season 3'}[x.id])||x.id)}</option>`).join('');sel.value=league.season;await leagueLoad();}
+async function leagueLoadSeasons(){let t={};try{t=await fb.get('tournament')||{};}catch{}const map=t.seasons||{},ids=Object.keys(map);if(!ids.includes('s3'))ids.push('s3');if(!ids.includes(SEASON))ids.unshift(SEASON);ids.sort((x,y)=>y.localeCompare(x));league.seasons=ids.map(id=>({id,meta:map[id]||(id===SEASON?{name:'Season 4 · 问道',dataPath:P_PATH}:{})}));league.season=SEASON;const sel=document.getElementById('leagueSeason');sel.innerHTML=league.seasons.map(x=>`<option value="${leagueEsc(x.id)}">${leagueEsc(x.meta.name||x.meta.title||({s3:'Season 3'}[x.id])||x.id)}</option>`).join('');sel.value=league.season;await leagueLoad();}
 async function leagueLoad(){const area=document.getElementById('leagueArea');if(!area)return;area.innerHTML='<div class="no-data">正在加载联赛数据…</div>';try{const[p,m]=await Promise.all([fb.get(`${leaguePath()}/players`),fb.get(`${leaguePath()}/matches`)]);league.players=p||{};league.matches=(typeof s4NoExhib==='function'?s4NoExhib(m):m)||{};Object.entries(league.players).forEach(([id,x])=>{if(!x.id)x.id=id;});league.rows=Object.values(league.players).map(p=>({p,s:leagueStats(p.id)})).sort((a,b)=>{
   if(league.sortBy==='rate'){
     // 按场次数排序（场次多的在前），场次相同看胜率
@@ -2218,7 +2219,7 @@ async function leagueStartRealtime(){const path=leaguePath();if(leagueWatchPath=
 const leagueLoadOnce=leagueLoad;
 leagueLoad=async function(){await leagueLoadOnce();await leagueStartRealtime();};
 const leagueLoadWithRealtime=leagueLoad;
-leagueLoad=async function(){await leagueLoadWithRealtime();if(!Object.keys(league.players).length&&!Object.keys(league.matches).length&&league.season!=='s3'){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
+leagueLoad=async function(){await leagueLoadWithRealtime();if(false){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
 function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,10);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3 style="display:flex;justify-content:space-between;align-items:center">积分一览<span style="display:flex;gap:6px;font-size:11px"><button onclick="shareLeaderboard()" style="padding:4px 10px;border-radius:12px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer">📷 分享</button><button onclick="league.sortBy='score';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='score'?'var(--G)':'transparent'};color:${league.sortBy==='score'?'#0d0f22':'var(--dim)'};cursor:pointer">按积分</button><button onclick="league.sortBy='rate';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='rate'?'var(--G)':'transparent'};color:${league.sortBy==='rate'?'#0d0f22':'var(--dim)'};cursor:pointer">按场次</button></span></h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}${typeof realmChipFor==='function'?realmChipFor(x.p.name):''}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%${league.sortBy==='rate'&&x.s.games.length<5?' <span style="color:var(--dim);opacity:.7">（未满5场）</span>':''}</small></span><em>${league.sortBy==='rate'?x.s.rate+'%':leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>近两周战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>第${leagueEsc(m.week||'?')}周 · ${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
 function shareHallOfFame(){
   fb.get(window.HOF_SRC||'tournament/hallOfFame').then(async data=>{
@@ -2275,8 +2276,9 @@ async function shareMyReport(){
   toast('正在生成战报...');
   try{
     // 1) 联赛数据：积分/胜率/场次/常玩角色
+    if(league.season!==SEASON){league.season=SEASON;league.players={};league.matches={};}
     if(!league.players||!Object.keys(league.players).length){
-      const[p,m]=await Promise.all([fb.get(`${leaguePath()}/players`),fb.get(`${leaguePath()}/matches`)]);
+      const[p,m]=await Promise.all([fb.get(`${P_PATH}/players`),fb.get(`${P_PATH}/matches`)]);
       league.players=p||{};league.matches=(typeof s4NoExhib==='function'?s4NoExhib(m):m)||{};
       Object.entries(league.players).forEach(([id,x])=>{if(!x.id)x.id=id;});
     }
@@ -2325,7 +2327,7 @@ async function shareMyReport(){
       </div>
       <div id="myReportCard" style="width:520px;max-width:94vw;background:linear-gradient(160deg,#101a3a,#0c1330);border:2px solid rgba(255,215,60,.4);border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.7);">
         <div style="padding:24px 24px 16px;text-align:center;background:linear-gradient(180deg,rgba(20,26,52,.9),transparent);border-bottom:1px solid rgba(255,215,60,.15);">
-          <div style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:12px;font-weight:900;padding:3px 14px;border-radius:12px;letter-spacing:2px;margin-bottom:8px;">S3 赛季战报</div>
+          <div style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:12px;font-weight:900;padding:3px 14px;border-radius:12px;letter-spacing:2px;margin-bottom:8px;">S4《问道》赛季战报</div>
           <div style="font-size:11px;letter-spacing:3px;color:rgba(255,215,60,.7);margin-bottom:8px;">SEASON THREE · DREAM EXPEDITION</div>
           <div style="font-size:52px;line-height:1;margin-bottom:8px;">${esc(cEmoji||'🎭')}</div>
           <div style="font-size:26px;font-weight:900;color:#fdd840;text-shadow:0 0 18px rgba(255,210,40,.4);">${esc(cName)}</div>
@@ -2352,7 +2354,7 @@ function downloadMyReport(){
   if(!el||typeof html2canvas==='undefined'){toast('生成失败，请直接截图');return;}
   toast('正在生成图片...');
   html2canvas(el,{scale:2,backgroundColor:'#0c1330',useCORS:true,logging:false}).then(c=>{
-    c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='我的S3战报_'+cName+'.png';a.click();URL.revokeObjectURL(u);toast('✓ 已保存');},'image/png');
+    c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='我的S4战报_'+cName+'.png';a.click();URL.revokeObjectURL(u);toast('✓ 已保存');},'image/png');
   }).catch(e=>{console.error(e);toast('生成失败，请直接截图');});
 }
 function shareLeaderboard(){
@@ -2425,7 +2427,7 @@ function showGrowth(){
   }).join('');
   area.innerHTML=`
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="leagueLoadSeasons()">🏆 本季 S3</button>
+      <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="leagueLoadSeasons()">🏆 本季 S4</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="showHistory('S1')">S1</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="showHistory('S2')">S2</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;background:var(--G);color:#2B1F0A;" onclick="showGrowth()">📈 进步之星</button>
@@ -2463,7 +2465,7 @@ function showHistory(season){
     </div>`).join('');
   area.innerHTML=`
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="leagueLoadSeasons()">🏆 本季 S3</button>
+      <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="leagueLoadSeasons()">🏆 本季 S4</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;${season==='S1'?'background:var(--G);color:#2B1F0A;':''}" onclick="showHistory('S1')">S1</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;${season==='S2'?'background:var(--G);color:#2B1F0A;':''}" onclick="showHistory('S2')">S2</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="showGrowth()">📈 进步之星</button>
@@ -2652,14 +2654,14 @@ function waveY(pct){
 
 // 根据真实日期自动计算当前是赛季第几周，对照Season 3赛程表
 const SEASON3_SCHEDULE=[
-  {week:1,name:'初熟之物·NAIVE',date:'2026-08-01'},
-  {week:2,name:'妥协尽头·STUBBORN',date:'2026-08-08'},
-  {week:3,name:'腹语之术·SHY',date:'2026-08-15'},
-  {week:4,name:'柔韧荆棘·MEAN',date:'2026-08-22'},
-  {week:5,name:'灵魂暗夜·OFF',date:'2026-08-29'},
-  {week:6,name:'体物入微·SENSITIVE',date:'2026-09-05'},
-  {week:7,name:'人无完人·IMPERFECTION',date:'2026-09-12'},
-  {week:8,name:'无缺之战·COMPLETE',date:'2026-09-19'}
+  {week:1,name:'初入仙途',date:'2026-10-10'},
+  {week:2,name:'仙门试炼',date:'2026-10-17'},
+  {week:3,name:'秘境初开',date:'2026-10-24'},
+  {week:4,name:'百鬼夜行',date:'2026-10-31'},
+  {week:5,name:'宗门大比',date:'2026-11-07'},
+  {week:6,name:'雷劫淬体',date:'2026-11-14'},
+  {week:7,name:'群仙论道',date:'2026-11-21'},
+  {week:8,name:'问鼎登天',date:'2026-11-28'}
 ];
 function getCurrentSeasonWeek(){
   const today=new Date();
@@ -4016,7 +4018,7 @@ async function rmShareMap(){
     const wrap=holder.querySelector('.rm8-wrap');
     const head=document.createElement('div');
     head.style.cssText='text-align:center;padding:26px 10px 20px;font-family:"Noto Serif SC",serif;color:#f3e6c8;background:#0c1330';
-    head.innerHTML=`<div style="font-size:15px;letter-spacing:5px;color:#d6ae62">北美盗梦空间狼人杀联赛 · S4《问道》</div><div style="font-size:34px;font-weight:900;margin-top:8px;color:#f6e9cc">境界地图</div><div style="font-size:15px;margin-top:6px;color:#a9b0cc">${d.getMonth()+1} 月 ${d.getDate()} 日 · 出席 +1 · 仙门主桌赢 +2 · 学徒历练赢 +1</div>`;
+    head.innerHTML=`<div style="font-size:15px;letter-spacing:5px;color:#d6ae62">北美盗梦空间狼人杀联赛 · S4《问道》</div><div style="font-size:34px;font-weight:900;margin-top:8px;color:#f6e9cc">境界地图</div>`;
     const foot=document.createElement('div');
     foot.style.cssText='text-align:center;padding:16px 10px 22px;font-size:14px;color:#a9b0cc;background:#0c1330;font-family:"Noto Serif SC",serif;letter-spacing:1px';
     foot.textContent='INCEPTION 盗梦空间 · 9720 Town Park Dr, Houston';
@@ -5652,6 +5654,132 @@ feedAdmOrders=async function(){
   .pay-memo{margin:12px 0 4px;padding:9px;border-radius:8px;background:rgba(240,192,112,.12);border:1px dashed #f0c070;font-size:13px;text-align:center}
   .pay-done{width:100%;margin-top:10px}`;
   document.head.appendChild(st);
+})();
+
+</script>
+<!-- ══ 勋章系统 ══ -->
+<script>
+// ══ S4 勋章系统：统计（人工 + 自动）与展示 ══
+const MEDAL_ICON={'天机窥狼':'🔮','鸩毒判官':'🧪','诛魔一箭':'🏹','护法结界':'🛡️','夺舍伪仙':'🎭','群狼蔽月':'🌑','凡心问道':'🕯️','逆天改命':'⚡'};
+const MEDAL_TIER_STYLE={'初窥':{c:'#c98a5a',g:'rgba(201,138,90,.55)'},'小成':{c:'#cfd6e0',g:'rgba(207,214,224,.6)'},'大成':{c:'#f0c96a',g:'rgba(240,201,106,.75)'},'圆满':{c:'#b993ff',g:'rgba(185,147,255,.85)'}};
+const MEDAL_WOLF_EXTRA=new Set(['石像鬼','恶灵','恶灵骑士','假面','诡术师','蚀时狼妃','梦魇','梦魔','魅魔','狼美人','血月使徒','隐狼','机械狼','装甲狼','奎木狼','幽灵狼','狼术师','黑狼王','白狼王','狼王']);
+function medalIsWolf(role){role=String(role||'');if(!role)return false;if(role.includes('狼'))return true;if(MEDAL_WOLF_EXTRA.has(role))return true;try{if(typeof CUSTOM_WOLVES!=='undefined'&&CUSTOM_WOLVES.has(role))return true;}catch(e){}return false;}
+function medalSeats(v){return String(v||'').match(/\d+/g)?.map(Number)||[];}
+// 一局里自动判定的勋章：返回 [{medal,playerId}]
+function medalAuto(m){
+  const out=[],E=m.entries||[],R=m.recordData||{};
+  const bySeat={};E.forEach(e=>{if(e.seat)bySeat[e.seat]=e;});
+  const holders=roles=>E.filter(e=>roles.includes(e.role));
+  const anyWolfIn=(fields)=>fields.some(f=>Object.values(R[f]||{}).some(v=>medalSeats(v).some(s=>medalIsWolf(bySeat[s]?.role))));
+  const add=(medal,list)=>list.forEach(e=>out.push({medal,playerId:e.playerId,auto:true}));
+  // 天机窥狼：查验到狼人，且好人阵营获胜
+  holders(['预言家','通灵师']).forEach(e=>{if(e.result==='win'&&anyWolfIn(['预言家查验','通灵师查验']))add('天机窥狼',[e]);});
+  // 鸩毒判官：毒中狼人
+  if(anyWolfIn(['女巫毒','毒师毒杀']))add('鸩毒判官',holders(['女巫','毒师']));
+  // 诛魔一箭：猎人带走狼人
+  if(anyWolfIn(['猎人开枪目标']))add('诛魔一箭',holders(['猎人']));
+  // 护法结界：守卫守中当晚的刀口
+  const g=R['守卫目标']||{},k=R['狼人击杀']||{};
+  if(Object.keys(g).some(c=>{const a=medalSeats(g[c]),b=medalSeats(k[c]);return a.length&&a.some(x=>b.includes(x));}))add('护法结界',holders(['守卫']));
+  return out;
+}
+// 统计整季：{pid:{medal:count}}
+function medalTally(matches){
+  const T={};
+  Object.values(matches||{}).forEach(m=>{
+    if(!m||m.exhibition)return;
+    const seen=new Set();
+    [...(m.medals||[]),...medalAuto(m)].forEach(x=>{
+      if(!x||!x.medal||!x.playerId)return;const key=x.playerId+'|'+x.medal;if(seen.has(key))return;seen.add(key);
+      ((T[x.playerId]??={})[x.medal]=(T[x.playerId][x.medal]||0)+1);
+    });
+  });
+  return T;
+}
+function medalNext(count){for(const [c,n] of MEDAL_TIERS)if(count<c)return {c,n,left:c-count};return null;}
+function medalBadge(name,count,small){
+  const tier=medalTier(count),st=MEDAL_TIER_STYLE[tier]||{c:'#5a6280',g:'transparent'};
+  const sz=small?44:62;
+  return `<div class="md-badge${count?'':' off'}${tier==='圆满'?' max':''}" style="--mc:${st.c};--mg:${st.g};width:${sz}px;height:${sz}px;font-size:${small?20:28}px">${MEDAL_ICON[name]||'🏅'}${count?`<i>${tier}</i>`:''}</div>`;
+}
+function medalGrid(counts){
+  return `<div class="md-grid">${MEDALS_S4.map(md=>{const n=counts[md.n]||0,nx=medalNext(n),tier=medalTier(n);
+    const pct=nx?Math.round((n-(MEDAL_TIERS.filter(([c])=>c<=n).pop()?.[0]||0))/(nx.c-(MEDAL_TIERS.filter(([c])=>c<=n).pop()?.[0]||0))*100):100;
+    return `<div class="md-card${n?'':' off'}">${medalBadge(md.n,n)}<b>${md.n}</b><small>${md.d}</small>
+      <span class="md-cnt">${n?`${tier} · ${n} 次`:'未解锁'}</span>
+      <div class="md-bar"><div style="width:${n?pct:0}%"></div></div>
+      <span class="md-next">${nx?`再 ${nx.left} 次升「${nx.n}」`:'已圆满'}</span></div>`;}).join('')}</div>`;
+}
+async function medalRenderMine(){
+  let box=document.getElementById('myMedals');
+  const tp=document.getElementById('tp2');if(!tp)return;
+  if(!box){box=document.createElement('div');box.id='myMedals';const st=document.getElementById('myStats');tp.insertBefore(box,st);}
+  box.innerHTML='<div class="md-title">🏅 我的勋章</div><div class="no-data" style="display:block">加载中…</div>';
+  const [mData,pData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`)]);
+  let pid=null;Object.entries(pData||{}).forEach(([id,p])=>{if(p&&p.name===cName)pid=p.id||id;});
+  const counts=(pid&&medalTally(mData)[pid])||{};
+  const total=Object.values(counts).reduce((a,b)=>a+b,0),kinds=Object.keys(counts).length;
+  box.innerHTML=`<div class="md-title">🏅 我的勋章 <span>${kinds}/8 种 · 共 ${total} 枚</span></div>${medalGrid(counts)}<div class="md-rule">升阶：初窥 1 次 · 小成 3 次 · 大成 5 次 · 圆满 8 次。神职勋章按战绩自动判定，其余由法官录入。</div>`;
+}
+// 联赛中心：勋章殿
+async function medalHall(){
+  let ov=document.getElementById('medalHallOv');
+  if(!ov){ov=document.createElement('div');ov.id='medalHallOv';ov.className='md-ov';document.body.appendChild(ov);}
+  ov.innerHTML='<div class="md-ov-box"><div class="no-data" style="display:block">加载中…</div></div>';ov.style.display='flex';
+  const [mData,pData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`)]);
+  const T=medalTally(mData);const P={};Object.entries(pData||{}).forEach(([id,p])=>{if(p)P[p.id||id]=p;});
+  const sec=MEDALS_S4.map(md=>{
+    const list=Object.entries(T).filter(([,c])=>c[md.n]).map(([pid,c])=>({p:P[pid]||{name:pid,emoji:'🎭'},n:c[md.n]})).sort((a,b)=>b.n-a.n);
+    return `<div class="md-hall-row">${medalBadge(md.n,list[0]?.n||0,true)}<div style="flex:1;min-width:0"><b>${md.n}</b> <small>${md.d}</small>
+      <div class="md-holders">${list.length?list.map(x=>`<span>${s4Esc(x.p.emoji||'🎭')} ${s4Esc(x.p.name)} <em style="color:${(MEDAL_TIER_STYLE[medalTier(x.n)]||{}).c}">${medalTier(x.n)}·${x.n}</em></span>`).join(''):'<span class="none">虚位以待</span>'}</div></div></div>`;
+  }).join('');
+  const top=Object.entries(T).map(([pid,c])=>({p:P[pid]||{name:pid},k:Object.keys(c).length,t:Object.values(c).reduce((a,b)=>a+b,0)})).sort((a,b)=>b.t-a.t||b.k-a.k).slice(0,5);
+  ov.innerHTML=`<div class="md-ov-box"><div class="md-ov-head"><b>🏅 勋章殿 · S4《问道》</b><button onclick="document.getElementById('medalHallOv').style.display='none'">✕</button></div>
+    ${top.length?`<div class="md-top">${top.map((x,i)=>`<span>${['🥇','🥈','🥉','4.','5.'][i]} ${s4Esc(x.p.emoji||'🎭')} ${s4Esc(x.p.name)} · ${x.t} 枚</span>`).join('')}</div>`:''}
+    ${sec}<div class="md-rule">升阶：初窥 1 · 小成 3 · 大成 5 · 圆满 8 次</div></div>`;
+}
+(function(){
+  const st=document.createElement('style');st.textContent=`
+  #myMedals{padding:0 16px 14px}
+  .md-title{font-size:13px;letter-spacing:2px;color:var(--G);font-weight:700;margin:4px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+  .md-title span{font-size:11px;color:var(--dim);letter-spacing:0;font-weight:400}
+  .md-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  @media(max-width:640px){.md-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .md-card{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:14px 8px 10px;border-radius:12px;background:rgba(10,16,44,.72);border:1px solid rgba(214,174,98,.28)}
+  .md-card b{font-size:14px;color:#f3e6c8;font-family:"Noto Serif SC",serif;margin-top:4px}
+  .md-card small{font-size:10.5px;color:var(--dim);line-height:1.45;min-height:30px}
+  .md-card.off b{color:#9aa0b8}
+  .md-cnt{font-size:12px;color:var(--G);font-weight:700}
+  .md-card.off .md-cnt{color:#7d84a0;font-weight:400}
+  .md-bar{width:80%;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}.md-bar div{height:100%;background:linear-gradient(90deg,#c98a5a,#f0c96a)}
+  .md-next{font-size:10px;color:var(--dim)}
+  .md-badge{position:relative;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 50% 35%,rgba(40,52,96,.95),rgba(8,12,34,.95));box-shadow:0 0 0 2.5px var(--mc),0 0 0 6px rgba(8,12,34,.7),0 0 18px var(--mg)}
+  .md-badge::before,.md-badge::after{content:'';position:absolute;top:30%;width:34%;height:42%;border:2px solid var(--mc);border-radius:60% 0 60% 0;opacity:.85}
+  .md-badge::before{left:-26%;transform:rotate(-25deg);border-right:none;border-bottom:none}
+  .md-badge::after{right:-26%;transform:scaleX(-1) rotate(-25deg);border-right:none;border-bottom:none}
+  .md-badge.off{filter:grayscale(1);opacity:.35}.md-badge.off::before,.md-badge.off::after{display:none}
+  .md-badge i{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);font-style:normal;font-size:10px;line-height:1;padding:2px 6px;border-radius:8px;background:var(--mc);color:#14102a;font-weight:700;white-space:nowrap}
+  .md-badge.max{animation:mdGlow 2.4s ease-in-out infinite}@keyframes mdGlow{50%{box-shadow:0 0 0 2.5px var(--mc),0 0 0 6px rgba(8,12,34,.7),0 0 30px 6px var(--mg)}}
+  .md-rule{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.6}
+  .md-ov{position:fixed;inset:0;z-index:900;background:rgba(3,5,14,.88);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
+  .md-ov-box{width:min(720px,100%);background:#0e1536;border:1px solid rgba(214,174,98,.45);border-radius:14px;padding:18px 18px 22px}
+  .md-ov-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.md-ov-head b{color:var(--G);font-size:18px;font-family:"Noto Serif SC",serif}
+  .md-ov-head button{background:none;border:0;color:var(--dim);font-size:20px;cursor:pointer}
+  .md-top{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.md-top span{font-size:13px;padding:4px 10px;border-radius:12px;background:rgba(214,174,98,.14);color:#f3e6c8}
+  .md-hall-row{display:flex;gap:18px;align-items:center;padding:14px 4px 14px 14px;border-top:1px solid rgba(255,255,255,.07)}
+  .md-hall-row b{color:#f3e6c8;font-family:"Noto Serif SC",serif}.md-hall-row small{color:var(--dim);font-size:11px}
+  .md-holders{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.md-holders span{font-size:12px;padding:3px 9px;border-radius:11px;background:rgba(255,255,255,.06);color:#e6dcc4}
+  .md-holders em{font-style:normal;margin-left:3px;font-size:11px}.md-holders .none{color:#7d84a0;background:none;padding-left:0}`;
+  document.head.appendChild(st);
+  if(typeof loadMyData==='function'){const _lm=loadMyData;loadMyData=async function(){const r=await _lm.apply(this,arguments);try{await medalRenderMine();}catch(e){console.warn('勋章加载失败',e);}return r;};}
+  // 联赛中心按钮 + 玩家页按钮
+  const addBtns=()=>{
+    const hb=[...document.querySelectorAll('button')].find(b=>b.getAttribute('onclick')==='toggleHallOfFame()'&&!b.dataset.md);
+    if(hb&&!document.getElementById('mdHallBtn')){const b=document.createElement('button');b.id='mdHallBtn';b.className=hb.className;b.textContent='🏅 勋章殿';b.onclick=medalHall;hb.dataset.md=1;hb.after(b);}
+    const tb=document.querySelector('#pg-player button[onclick="leagueShow()"]');
+    if(tb&&!document.getElementById('mdHallBtn2')){const b=document.createElement('button');b.id='mdHallBtn2';b.className='topbar-btn';b.textContent='🏅 勋章';b.onclick=medalHall;tb.after(b);}
+  };
+  addBtns();const _ls=typeof leagueShow==='function'?leagueShow:null;if(_ls){leagueShow=function(){const r=_ls.apply(this,arguments);setTimeout(addBtns,50);return r;};}
 })();
 
 </script>
