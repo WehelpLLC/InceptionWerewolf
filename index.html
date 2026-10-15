@@ -2498,15 +2498,61 @@ async function leagueFindAllHistory(name){
   }catch(e){console.warn('S3 前世战绩读取失败',e);}
   return out;
 }
+// 个人成长轨迹：不限 prevName，按当前名字直接查 S1/S2/S3/本季S4 的排名，拼成一条路径
+async function leagueGrowthPath(name){
+  if(!name)return[];
+  const out=[];
+  for(const season of['S1','S2']){
+    const hit=(HISTORY_DATA[season]||[]).find(p=>p.name===name);
+    if(hit)out.push({season,rank:+hit.rank});
+  }
+  try{
+    const s3stats=await leagueFetchSeasonStats('playerProfiles/s3',name);
+    if(s3stats)out.push({season:'S3',rank:s3stats.rank});
+  }catch(e){}
+  const liveRow=league.rows.find(x=>x.p.name===name);
+  if(liveRow)out.push({season:SEASON.toUpperCase(),rank:league.rows.indexOf(liveRow)+1});
+  return out;
+}
+function leagueGrowthHtml(path){
+  if(path.length<2)return'';
+  const steps=path.map((s,i)=>{
+    const prev=path[i-1];
+    const delta=prev?prev.rank-s.rank:null; // 名次数字变小 = 进步
+    const arrow=delta==null?'':delta>0?`<span style="color:#7ce8a0;">↑${delta}</span>`:delta<0?`<span style="color:#e98a8a;">↓${-delta}</span>`:`<span style="color:var(--dim);">–</span>`;
+    return`<div style="text-align:center;flex:1;min-width:64px;">
+      <div style="font-size:10px;color:var(--dim);">${leagueEsc(s.season)}</div>
+      <div style="font-size:16px;font-weight:900;color:var(--G);margin:2px 0;">第${s.rank}名</div>
+      <div style="font-size:11px;">${arrow}</div>
+    </div>${i<path.length-1?'<div style="align-self:center;color:var(--dim);font-size:14px;">→</div>':''}`;
+  }).join('');
+  return`<section class="league-card"><h3>📈 成长轨迹</h3><div style="display:flex;align-items:flex-start;gap:4px;flex-wrap:wrap;">${steps}</div></section>`;
+}
 async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';
   const reincTag=p.prevName?`<div style="margin-top:10px;font-size:11px;color:var(--dim);">☯️ 今生「${leagueEsc(p.name)}」· 前世为「${leagueEsc(p.prevName)}」</div>
     <div style="margin-top:8px;display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;">
       <button id="lifeTabNow" onclick="leagueLifeTab('now','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:var(--G);color:#2B1F0A;border:0;cursor:pointer;">🌱 今生记忆</button>
       <button id="lifeTabPrev" onclick="leagueLifeTab('prev','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:transparent;color:var(--dim);border:0;cursor:pointer;">📜 前世记忆</button>
     </div>`:'';
-  const nowBody=`<div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
+  const nowBodyBase=(growthHtml)=>`${growthHtml}<div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
+  const nowBody=nowBodyBase('');
   document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p>${reincTag}</div><div id="lifeBody">${nowBody}</div>`;
   leagueProfileCache={now:nowBody,prev:p.prevName?'<div class="no-data" style="padding:30px 0;">正在查阅前世档案…</div>':''};
+  // 异步补上成长轨迹（需要查 S3 实时数据），查到后原地刷新今生记忆
+  (async()=>{
+    const names=[...new Set([p.name,p.prevName].filter(Boolean))];
+    const paths=await Promise.all(names.map(leagueGrowthPath));
+    const merged={};paths.flat().forEach(s=>{merged[s.season]=s;});
+    const order=['S1','S2','S3',SEASON.toUpperCase()];
+    const path=order.filter(s=>merged[s]).map(s=>merged[s]);
+    const growthHtml=leagueGrowthHtml(path);
+    if(!growthHtml)return;
+    const filledNow=nowBodyBase(growthHtml);
+    leagueProfileCache.now=filledNow;
+    if(document.getElementById('lifeTabPrev')?document.getElementById('lifeTabPrev').style.background==='transparent':true){
+      const lb=document.getElementById('lifeBody');if(lb)lb.innerHTML=filledNow;
+    }
+  })();
   if(p.prevName){
     const history=await leagueFindAllHistory(p.prevName);
     leagueHistoryJumps=history.map(h=>h.jumpTo);
@@ -2611,7 +2657,6 @@ function showHistory(season){
       <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="leagueLoadSeasons()">🏆 本季 S4</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;${season==='S1'?'background:var(--G);color:#2B1F0A;':''}" onclick="showHistory('S1')">S1</button>
       <button class="topbar-btn" style="flex:1;min-width:70px;${season==='S2'?'background:var(--G);color:#2B1F0A;':''}" onclick="showHistory('S2')">S2</button>
-      <button class="topbar-btn" style="flex:1;min-width:70px;" onclick="showGrowth()">📈 进步之星</button>
     </div>
     <div style="font-size:13px;color:var(--G);letter-spacing:2px;margin-bottom:12px;font-weight:900;">🏅 ${season} 赛季 · 荣耀殿堂</div>
     <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:20px;">${podium}</div>
