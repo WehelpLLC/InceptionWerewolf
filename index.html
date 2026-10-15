@@ -2245,7 +2245,12 @@ function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.
 function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
 function leaguePath(){const meta=league.seasons.find(x=>x.id===league.season)?.meta||{};return meta.dataPath||`playerProfiles/${league.season}`;}
 function leagueShow(){showPage('pg-league');leagueLoadSeasons();}
-async function leagueLoadSeasons(){let t={};try{t=await fb.get('tournament')||{};}catch{}const map=t.seasons||{},ids=Object.keys(map);if(!ids.includes('s3'))ids.push('s3');if(!ids.includes(SEASON))ids.unshift(SEASON);ids.sort((x,y)=>y.localeCompare(x));league.seasons=ids.map(id=>({id,meta:map[id]||(id===SEASON?{name:'Season 4 · 问道',dataPath:P_PATH}:{})}));league.season=SEASON;const sel=document.getElementById('leagueSeason');sel.innerHTML=league.seasons.map(x=>`<option value="${leagueEsc(x.id)}">${leagueEsc(x.meta.name||x.meta.title||({s3:'Season 3'}[x.id])||x.id)}</option>`).join('');sel.value=league.season;await leagueLoad();}
+async function leagueLoadSeasons(){let t={};try{t=await fb.get('tournament')||{};}catch{}const map=t.seasons||{},ids=Object.keys(map);if(!ids.includes('s3'))ids.push('s3');if(!ids.includes(SEASON))ids.unshift(SEASON);ids.sort((x,y)=>y.localeCompare(x));league.seasons=ids.map(id=>({id,meta:map[id]||(id===SEASON?{name:'Season 4 · 问道',dataPath:P_PATH}:{})}));league.season=SEASON;const sel=document.getElementById('leagueSeason');const liveOpts=league.seasons.map(x=>`<option value="${leagueEsc(x.id)}">${leagueEsc(x.meta.name||x.meta.title||({s3:'Season 3'}[x.id])||x.id)}</option>`).join('');const histOpts=Object.keys(HISTORY_DATA).sort((a,b)=>b.localeCompare(a)).map(s=>`<option value="${leagueEsc(s)}">${leagueEsc(s==='S1'?'Season 1':s==='S2'?'Season 2':s)}</option>`).join('');sel.innerHTML=liveOpts+histOpts;sel.value=league.season;await leagueLoad();}
+// 赛季下拉切换：S1/S2 是静态往届档案，走 showHistory；S3/S4 是实时数据，走 leagueLoad
+function leagueSeasonChange(v){
+  if(HISTORY_DATA[v]){showHistory(v);return;}
+  league.season=v;leagueLoad();
+}
 async function leagueLoad(){const area=document.getElementById('leagueArea');if(!area)return;area.innerHTML='<div class="no-data">正在加载联赛数据…</div>';try{const[p,m]=await Promise.all([fb.get(`${leaguePath()}/players`),fb.get(`${leaguePath()}/matches`)]);league.players=p||{};league.matches=(typeof s4NoExhib==='function'?s4NoExhib(m):m)||{};Object.entries(league.players).forEach(([id,x])=>{if(!x.id)x.id=id;});league.rows=Object.values(league.players).map(p=>({p,s:leagueStats(p.id)})).sort((a,b)=>{
   if(league.sortBy==='rate'){
     // 按场次数排序（场次多的在前），场次相同看胜率
@@ -2578,6 +2583,7 @@ function showHistory(season){
   const data=HISTORY_DATA[season]||[];
   const area=document.getElementById('leagueArea');
   if(!area)return;
+  const sel=document.getElementById('leagueSeason');if(sel)sel.value=season;
   const medalByRank=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':'';
   const medal=['🥇','🥈','🥉'];
   // 冠亚季军领奖台（rank<=3，含并列）
@@ -2644,7 +2650,7 @@ function addLeagueCenter(){const style=document.createElement('style');style.tex
 .hof-crit{font-size:10px;color:rgba(210,185,130,.6);margin-top:3px;}
 .hof-subtitle{text-align:center;font-size:16px;font-weight:900;color:#e0b25c;letter-spacing:3px;margin:22px 0 14px;padding-top:16px;border-top:1px solid rgba(200,160,80,.25);}
 .hof-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:600px){.hof-grid{grid-template-columns:1fr}}`;document.head.appendChild(style);const entry=document.querySelector('#pg-name .n-box');const button=document.createElement('button');button.className='n-admin league-open';button.textContent='📊 联赛中心';button.onclick=leagueShow;entry.appendChild(button);const page=document.createElement('div');page.className='pg league';page.id='pg-league';page.innerHTML=`<div class="league-head"><button class="topbar-btn" onclick="showPage('pg-name')">← 返回</button><h1>🏆 联赛中心</h1><div style="display:flex;gap:8px;"><button class="topbar-btn" onclick="toggleHallOfFame()">🏆 荣誉墙</button><button class="topbar-btn" onclick="showHistory('S2')">🏅 往届战绩</button><select id="leagueSeason" onchange="league.season=this.value;leagueLoad()"></select></div></div><div class="league-body" id="leagueArea"><div class="no-data">选择赛季后加载</div></div>`;document.body.insertBefore(page,document.getElementById('lockOverlay'));}
+@media(max-width:600px){.hof-grid{grid-template-columns:1fr}}`;document.head.appendChild(style);const entry=document.querySelector('#pg-name .n-box');const button=document.createElement('button');button.className='n-admin league-open';button.textContent='📊 联赛中心';button.onclick=leagueShow;entry.appendChild(button);const page=document.createElement('div');page.className='pg league';page.id='pg-league';page.innerHTML=`<div class="league-head"><button class="topbar-btn" onclick="showPage('pg-name')">← 返回</button><h1>🏆 联赛中心</h1><div style="display:flex;gap:8px;"><button class="topbar-btn" onclick="toggleHallOfFame()">🏆 荣誉墙</button><select id="leagueSeason" onchange="leagueSeasonChange(this.value)"></select></div></div><div class="league-body" id="leagueArea"><div class="no-data">选择赛季后加载</div></div>`;document.body.insertBefore(page,document.getElementById('lockOverlay'));}
 let hofShown=false;
 async function toggleHallOfFame(){
   const area=document.getElementById('leagueArea');if(!area)return;
