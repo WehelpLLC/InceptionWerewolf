@@ -526,7 +526,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
     <div class="adm-tab-btn" id="at2" onclick="switchAdmTab(2)">📝 战绩</div>
     <div class="adm-tab-btn" id="at3" onclick="switchAdmTab(3)">🗺 地图</div>
     <div class="adm-tab-btn" id="at4" onclick="switchAdmTab(4)">📖 复盘</div>
-    <div class="adm-tab-btn" id="at8" onclick="switchAdmTab(8)">📜 命薄审核</div>
+    <div class="adm-tab-btn" id="at11" onclick="switchAdmTab(11)">📜 命薄审核</div>
             <div class="adm-tab-btn" id="at6" onclick="switchAdmTab(6)" style="display:none">🏆 荣誉墙</div>
     <div class="adm-tab-btn" id="at7" onclick="switchAdmTab(7)" style="display:none">📦 S3归档</div>
     <div class="adm-tab-btn" id="atMore" onclick="admToggleMore()" style="flex:0 0 auto;padding:11px 10px;">⋯ 更多</div>
@@ -666,7 +666,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
     </div>
   </div>
   <!-- Adm Tab 8: 修仙命薄审核 -->
-  <div class="adm-pane" id="ap8">
+  <div class="adm-pane" id="ap11">
     <div class="adm-body">
       <div class="sec-title" style="margin-top:0;">📜 修仙命薄 · 每周小结审核</div>
       <div style="font-size:12px;color:var(--dim);line-height:1.9;margin-bottom:12px;">选择周数后一键生成所有人的草稿小结（已发布的不会被覆盖），可以逐个修改文字，确认无误后统一发布，玩家资料页才会显示。</div>
@@ -1290,7 +1290,7 @@ function admToggleMore(){
   const btn=document.getElementById('atMore');if(btn)btn.textContent=admMoreOn?'⋯ 收起':'⋯ 更多';
 }
 function switchAdmTab(n){
-  for(let i=0;i<9;i++){
+  for(let i=0;i<8;i++){
     document.getElementById('at'+i)?.classList.toggle('on',i===n);
     document.getElementById('ap'+i)?.classList.toggle('on',i===n);
   }
@@ -1301,7 +1301,6 @@ function switchAdmTab(n){
   if(n===4)loadRecapsAdm();
   if(n===6)loadHallOfFameEdit();
   if(n===7)s3aAdmStatus();
-  if(n===8)llInit();
 }
 
 // ── 3e. 复盘管理 ──
@@ -6004,6 +6003,15 @@ function custExport(){
 }
 try{addGoogleUI();}catch(e){console.warn('Google 登录模块加载失败:',e);}
 try{addCustomerAdmin();}catch(e){console.warn('客户管理加载失败:',e);}
+// 命薄审核 tab（at11/ap11，静态写在 HTML 里，这里只接入 tab 切换）
+(function(){
+  const _sw=switchAdmTab;
+  switchAdmTab=function(n){
+    if(n===11){for(let i=0;i<12;i++){document.getElementById('at'+i)?.classList.toggle('on',i===11);document.getElementById('ap'+i)?.classList.toggle('on',i===11);}llInit();return;}
+    document.getElementById('at11')?.classList.remove('on');document.getElementById('ap11')?.classList.remove('on');
+    return _sw.apply(this,arguments);
+  };
+})();
 
 </script>
 <!-- ══ 投食付款 ══ -->
