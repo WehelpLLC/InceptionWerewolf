@@ -2723,6 +2723,7 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
   const breakthroughs=events.filter(e=>e.type==='breakthrough');
   const newMedals=events.filter(e=>e.type==='medal');
   const manual=events.filter(e=>e.type==='manual');
+  const hasHighlight=breakthroughs.length||newMedals.length; // 本周是否有"大事"（突破/勋章），决定"第X周"要不要点出来
   if(breakthroughs.length){
     const b=breakthroughs[breakthroughs.length-1]; // 多级跳跃只提最终境界
     parts.push(`在第${weekNum}周一举突破，成功踏入${b.realm}`);
@@ -2730,21 +2731,36 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
   manual.forEach(e=>parts.push(e.text));
   if(newMedals.length){
     const names=newMedals.map(e=>`「${e.medal}」${e.tier?'（'+e.tier+'）':''}`).join('、');
-    parts.push(`斩获${names}`);
+    // 已经在前面点过"第X周"（比如突破）就不用重复说，否则这是本句第一个事件，补上"在第X周，"
+    parts.push(`${breakthroughs.length?'并':parts.length?'':`在第${weekNum}周，`}斩获${names}`);
   }
-  if(stats.bestStreak>=3)parts.push(`本周豪取${stats.bestStreak}连胜`);
-  else if(stats.games>=5&&stats.rate>=70)parts.push(`本周${stats.games}战${stats.wins}胜，状态火热`);
-  else if(stats.games>=8)parts.push(`本周鏖战${stats.games}场，意志坚定`);
+  // 战绩收尾词：按"连胜/战绩热度"分级，和前面的突破/勋章事件是否存在无关，可以叠加在一起说
+  let tail=null;
+  if(stats.bestStreak>=3)tail=`本周豪取${stats.bestStreak}连胜`;
+  else if(stats.games>=8)tail=`本周鏖战${stats.games}场`;
+  else if(stats.games>=5&&stats.rate>=70)tail=`本周${stats.games}战${stats.wins}胜，状态火热`;
+  else if(stats.games>0&&!hasHighlight)tail=`第${weekNum}周出战${stats.games}场，${stats.wins}胜`;
+  if(tail)parts.push(tail);
+  // 情绪收尾词库：按"本周战果力度"分级，挑一个贴在句末，而不是只有一两个固定词
+  let mood;
+  if(hasHighlight&&stats.bestStreak>=3)mood='修为大涨！';
+  else if(hasHighlight&&tail)mood='意志坚定。'; // 前面已经有"鏖战X场/豪取X连胜"这类具体战绩了，收尾就不重复说"小有所成"
+  else if(hasHighlight)mood='小有所成，意志坚定。';
+  else if(stats.bestStreak>=3)mood='修为大涨，再接再厉！';
+  else if(stats.games>=8)mood='意志坚定。';
+  else if(stats.games>0)mood='修行如常。';
+  else mood=null;
   let body;
   if(parts.length){
-    body=parts.join('，');
+    body=parts.join('，')+(mood?'，'+mood:'。');
   }else if(stats.games>0){
-    body=`本周出战${stats.games}场，${stats.wins}胜，修行如常`;
+    body=`本周出战${stats.games}场，${stats.wins}胜，修行如常。`;
   }else{
-    body='本周闭关潜修，暂未出山对局';
+    body='本周闭关潜修，暂未出山对局。';
   }
-  const reincLine=prevName?`${prevName}重生更名为${name}，`:'';
-  return`这一世，${reincLine}${name}${body}。`;
+  const reincLine=prevName?`“${prevName}”重生更名为“${name}”，`:'';
+  // 改名场景下，前面重生更名那句已经点出新名字了，后面正文不用再重复一次主语
+  return`这一世，${reincLine}${reincLine?'':name}${body}`;
 }
 // 批量生成某一周所有玩家的命薄草稿（不覆盖已发布的条目，除非 force）
 async function lifeLogGenerate(weekNum,force){
