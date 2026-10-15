@@ -1657,9 +1657,36 @@ function renderPlayers(){
       <span style="font-size:20px;cursor:pointer;" onclick="openAdmEmoji('${p.id}')" title="点击修改头像">${p.emoji||'🎭'}</span>
       <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${esc(p.name)}${p.prevName?`<span style="font-size:10px;color:var(--dim);font-weight:400;"> · 转生自${esc(p.prevName)}</span>`:''}</div>
         <div style="font-size:10px;color:var(--dim);">${p.created||''}</div></div>
+      <button class="btn-gold" style="padding:5px 10px;font-size:11px;" onclick="adminRenamePlayer('${p.id}')">改名</button>
       <button class="btn-gold" style="padding:5px 10px;font-size:11px;" onclick="setPrevName('${p.id}')">${p.prevName?'改前身':'设前身'}</button>
       <button class="btn-danger" onclick="delPlayer('${p.id}')">删除</button>
     </div>`).join('');
+}
+// 管理员代玩家改名（和玩家自助改名 saveRename 走同一套迁移逻辑：投票/地图/战绩全部跟着新名字走）
+async function adminRenamePlayer(id){
+  const p=scorePlayers[id];if(!p)return;
+  const oldName=p.name;
+  const v=prompt(`把「${oldName}」改名为：`,oldName);
+  if(v===null)return;
+  const newName=v.trim();
+  if(!newName||newName===oldName)return;
+  const oldKey=encodeKey(oldName),newKey=encodeKey(newName);
+  const allBrackets=await fb.get('tournament/playerBrackets')||{};
+  if(allBrackets[newKey]){toast('这个昵称已被占用，换一个吧');return;}
+  if(Object.values(scorePlayers).some(x=>x.id!==id&&x.name===newName)){toast('这个昵称已被占用，换一个吧');return;}
+  try{
+    // 1. 迁移投票数据（含 wins）
+    const bracket=await fb.get(`tournament/playerBrackets/${oldKey}`);
+    if(bracket){bracket.name=newName;await fb.put(`tournament/playerBrackets/${newKey}`,bracket);await fb.del(`tournament/playerBrackets/${oldKey}`);}
+    // 2. 迁移地图数据（含 position）
+    const mapP=await fb.get(`${T_MAP}/${oldKey}`);
+    if(mapP){mapP.name=newName;await fb.put(`${T_MAP}/${newKey}`,mapP);await fb.del(`${T_MAP}/${oldKey}`);}
+    // 3. 更新玩家名单（id 不变，matches 自动跟随）
+    p.name=newName;
+    await fb.put(`${P_PATH}/players/${id}`,p);
+    renderPlayers();
+    toast(`✓ 已把「${oldName}」改名为「${newName}」`);
+  }catch(e){console.warn('管理员改名失败',e);toast('保存失败，请重试');}
 }
 async function setPrevName(id){
   const p=scorePlayers[id];if(!p)return;
