@@ -2671,19 +2671,51 @@ function lifeLogWeekStats(weekNum,playerId){
   let streak=0,best=0;games.forEach(e=>{if(e.result==='win'){streak++;best=Math.max(best,streak);}else streak=0;});
   return{games:games.length,wins,rate:games.length?Math.round(wins/games.length*100):0,bestStreak:best};
 }
-// 读上一周快照（没有则返回 null，表示这是第一次生成，突破部分留空）
+// 旧版"上一周快照"读取，仅作兼容保留（新版突破/勋章判断已改为直接用本局全部战绩回放计算，不再依赖它）
 async function lifeLogPrevSnapshot(beforeWeekId){
   const all=await fb.get(`${LIFELOG_PATH}/snapshots`)||{};
   const ids=Object.keys(all).filter(w=>w<beforeWeekId).sort();
   return ids.length?all[ids[ids.length-1]]:null;
 }
-// 生成「本周所有玩家」的快照：{positions:{name:pos}, medals:{name:{medal:count}}}
+// 生成「本周所有玩家」的快照：{positions:{name:pos}, medals:{name:{medal:count}}}（仍保留写入，留作记录/排查用）
 async function lifeLogBuildSnapshot(){
   const [mapData,matchData]=await Promise.all([fb.get(T_MAP),fb.get(`${P_PATH}/matches`)]);
   const positions={};Object.values(mapData||{}).forEach(p=>{if(p&&p.name)positions[p.name]=Number(p.position)||0;});
   const tally=medalTally(matchData||{}); // {pid:{medal:count}}
   const medals={};Object.values(league.players||{}).forEach(p=>{if(p&&p.name)medals[p.name]=tally[p.id]||{};});
   return{positions,medals,savedAt:new Date().toISOString()};
+}
+// 把全部战绩按"截止到第几周（含）"过滤，用于回放重算"那个时间点"应处的状态
+function lifeLogMatchesThroughWeek(allMatches,weekNum){
+  const out={};
+  Object.entries(allMatches||{}).forEach(([id,m])=>{
+    if(!m||m.exhibition)return;
+    const wk=Number(m.week);
+    if(!isNaN(wk)&&wk<=weekNum)out[id]=m;
+  });
+  return out;
+}
+// 单个玩家：本周结束时所处的境界 vs 本周开始前（即截止上一周）所处的境界——都从真实战绩直接回放算出，不依赖任何存档快照，
+// 所以哪怕是 Week 1（没有"上一周"）也能正确判断：本周开始前视为 0 格 = 凡人，与本周结束后的格数一对比就知道是否跨境界了。
+function lifeLogBreakthrough(playerId,weekNum,allMatches){
+  const afterPos=recomputePlayerPosition(playerId,lifeLogMatchesThroughWeek(allMatches,weekNum));
+  const beforePos=recomputePlayerPosition(playerId,lifeLogMatchesThroughWeek(allMatches,weekNum-1));
+  const before=realmOf(beforePos),after=realmOf(afterPos);
+  return after.min>before.min?after:null;
+}
+// 单个玩家：本周新达成的勋章档位（同样用"截止本周"vs"截止上周"两次 medalTally 回放对比，不依赖快照）
+function lifeLogNewMedalTiers(playerId,weekNum,allMatches){
+  const beforeTally=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum-1))[playerId]||{};
+  const afterTally=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum))[playerId]||{};
+  const out=[];
+  Object.entries(afterTally).forEach(([medal,count])=>{
+    const prevCount=beforeTally[medal]||0;
+    if(count>prevCount){
+      const tier=medalTier(count),prevTier=medalTier(prevCount);
+      if(tier!==prevTier)out.push({medal,tier});
+    }
+  });
+  return out;
 }
 // 把一组"事件"拼成一句修仙语气的话
 function lifeLogCompose(name,weekNum,events,stats,prevName){
@@ -2717,32 +2749,23 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
 // 批量生成某一周所有玩家的命薄草稿（不覆盖已发布的条目，除非 force）
 async function lifeLogGenerate(weekNum,force){
   const weekId=lifeLogWeekId(weekNum);
-  const [prevSnap,manualAll,existing]=await Promise.all([
-    lifeLogPrevSnapshot(weekId),
+  const [allMatches,manualAll,existing]=await Promise.all([
+    fb.get(`${P_PATH}/matches`),
     fb.get(`${LIFELOG_PATH}/manualEvents/${weekId}`),
     fb.get(`${LIFELOG_PATH}/entries/${weekId}`)
   ]);
-  const snap=await lifeLogBuildSnapshot();
   const entries={};
   for(const row of league.rows){
     const {p}=row,name=p.name,pid=p.id;
     if(existing&&existing[pid]&&existing[pid].status==='published'&&!force){entries[pid]=existing[pid];continue;}
     const stats=lifeLogWeekStats(weekNum,pid);
     const events=[];
-    // 境界突破：对比上周快照的格数所在境界 vs 现在格数所在境界
-    if(prevSnap){
-      const before=realmOf(prevSnap.positions?.[name]||0),after=realmOf(snap.positions[name]||0);
-      if(after.min>before.min)events.push({type:'breakthrough',realm:after.n});
-    }
-    // 新获勋章：本周总数 - 上周快照总数 > 0 的，按"本周刚好跨过某个 tier 门槛"报出来
-    const beforeMedals=prevSnap?.medals?.[name]||{},nowMedals=snap.medals[name]||{};
-    Object.entries(nowMedals).forEach(([medal,count])=>{
-      const prevCount=beforeMedals[medal]||0;
-      if(count>prevCount){
-        const tier=medalTier(count),prevTier=medalTier(prevCount);
-        if(tier!==prevTier)events.push({type:'medal',medal,tier});
-      }
-    });
+    // 境界突破：直接回放"截止本周"vs"截止上周"的全部真实战绩来定位格数所在境界，不依赖任何存档快照——
+    // 哪怕是 Week 1（没有"上一周"）也能正确识别，因为"上一周"回放出来的就是 0 格=凡人
+    const brk=lifeLogBreakthrough(pid,weekNum,allMatches);
+    if(brk)events.push({type:'breakthrough',realm:brk.n});
+    // 新获勋章：同样用"截止本周"vs"截止上周"两次战绩回放算出的勋章数对比，不依赖快照
+    lifeLogNewMedalTiers(pid,weekNum,allMatches).forEach(x=>events.push({type:'medal',medal:x.medal,tier:x.tier}));
     // 管理员手动补充的现场花絮
     (manualAll?.[pid]||[]).forEach(text=>events.push({type:'manual',text}));
     // 本周是否刚改名（走改名流程、留了 prevNameAt 时间戳的才算，手动设前身的不算）
@@ -2750,7 +2773,6 @@ async function lifeLogGenerate(weekNum,force){
     entries[pid]={name,text:lifeLogCompose(name,weekNum,events,stats,reincName),status:'draft',editedAt:new Date().toISOString()};
   }
   await fbPutStrict(`${LIFELOG_PATH}/entries/${weekId}`,entries);
-  await fbPutStrict(`${LIFELOG_PATH}/snapshots/${weekId}`,snap);
   return entries;
 }
 // 发布某一周已编辑好的所有草稿
