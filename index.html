@@ -659,6 +659,9 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
       <div style="font-size:12px;color:var(--dim);line-height:1.9;margin:12px 0 14px;">「冻结」会把当前的地图位置、战报、荣誉墙复制一份到 <b>archive/s3</b>。冻结后，S3 历史档案只读这份副本，S4 期间对联赛数据的任何改动都不会影响它。可以重复冻结，以最后一次为准。建议 S4 启动前做一次，并同时下载备份。</div>
       <button class="btn-gold" style="width:100%;" onclick="s3aFreeze()">📦 冻结 S3 数据</button>
       <button class="topbar-btn" style="width:100%;margin-top:10px;padding:10px;" onclick="s3aDownloadBackup()">⬇️ 下载完整备份（JSON）</button>
+      <div class="sec-title" style="margin-top:20px;">✏️ S3 玩家改名</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.9;margin-bottom:10px;">修正 S3 期间玩家用过但跟现在对不上的昵称（比如当时叫"九"，现在叫"九叔"），直接改 S3 存档里的名字，让前世战绩自动连上，不用额外设置前身。</div>
+      <button class="topbar-btn" style="width:100%;padding:10px;" onclick="s3aRenamePlayer()">✏️ 修改 S3 玩家昵称</button>
     </div>
   </div>
 </div>
@@ -2480,19 +2483,23 @@ async function leagueFetchAwards(hofPath,name){
     return HOF_AWARDS.filter(a=>data[a.key]&&String(data[a.key]).trim()===name).map(a=>`${a.icon} ${a.name}`);
   }catch(e){return[];}
 }
-// 汇总一个名字在 S1/S2（静态历史榜）、S3（实时计算 + 归档荣誉墙）的全部前世战绩
-async function leagueFindAllHistory(name){
-  if(!name)return[];
+// 汇总一个或多个名字（当前名+前身名）在 S1/S2（静态历史榜）、S3（实时计算 + 归档荣誉墙）的全部历史战绩
+// names 可以传单个字符串，也可以传数组（比如同时查当前名字和 prevName，覆盖"改过名"和"没改名"两种情况）
+async function leagueFindAllHistory(names){
+  const list=[...new Set((Array.isArray(names)?names:[names]).filter(Boolean))];
+  if(!list.length)return[];
   const out=[];
   for(const season of Object.keys(HISTORY_DATA)){
-    const hit=(HISTORY_DATA[season]||[]).find(p=>p.name===name);
+    let hit=null;
+    for(const name of list){hit=(HISTORY_DATA[season]||[]).find(p=>p.name===name);if(hit)break;}
     if(hit)out.push({season,rank:hit.rank,score:hit.score,games:hit.games,winRate:hit.winRate,goodRate:hit.goodRate,wolfRate:hit.wolfRate,title:hit.title,awards:[],jumpTo:()=>showHistory(season)});
   }
   try{
     const s3src=await s3aResolveSrc();
-    const s3stats=await leagueFetchSeasonStats('playerProfiles/s3',name);
+    let s3stats=null;
+    for(const name of list){s3stats=await leagueFetchSeasonStats('playerProfiles/s3',name);if(s3stats)break;}
     if(s3stats){
-      const awards=await leagueFetchAwards(s3src.hallOfFame,name);
+      const awards=await leagueFetchAwards(s3src.hallOfFame,s3stats.name);
       out.push({season:'S3',rank:s3stats.rank,score:s3stats.score,games:s3stats.games.length,winRate:s3stats.rate+'%',goodRate:s3stats.goodRate!=null?s3stats.goodRate+'%':null,wolfRate:s3stats.wolfRate!=null?s3stats.wolfRate+'%':null,title:null,awards,jumpTo:()=>s3aOpen()});
     }
   }catch(e){console.warn('S3 前世战绩读取失败',e);}
@@ -2529,19 +2536,14 @@ function leagueGrowthHtml(path){
   return`<section class="league-card"><h3>📈 成长轨迹</h3><div style="display:flex;align-items:flex-start;gap:4px;flex-wrap:wrap;">${steps}</div></section>`;
 }
 async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';
-  const reincTag=p.prevName?`<div style="margin-top:10px;font-size:11px;color:var(--dim);">☯️ 今生「${leagueEsc(p.name)}」· 前世为「${leagueEsc(p.prevName)}」</div>
-    <div style="margin-top:8px;display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;">
-      <button id="lifeTabNow" onclick="leagueLifeTab('now','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:var(--G);color:#2B1F0A;border:0;cursor:pointer;">🌱 今生记忆</button>
-      <button id="lifeTabPrev" onclick="leagueLifeTab('prev','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:transparent;color:var(--dim);border:0;cursor:pointer;">📜 前世记忆</button>
-    </div>`:'';
   const nowBodyBase=(growthHtml)=>`${growthHtml}<div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
   const nowBody=nowBodyBase('');
-  document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p>${reincTag}</div><div id="lifeBody">${nowBody}</div>`;
-  leagueProfileCache={now:nowBody,prev:p.prevName?'<div class="no-data" style="padding:30px 0;">正在查阅前世档案…</div>':''};
+  document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p><div id="reincTag"></div></div><div id="lifeBody">${nowBody}</div>`;
+  leagueProfileCache={now:nowBody,prev:''};
   // 异步补上成长轨迹（需要查 S3 实时数据），查到后原地刷新今生记忆
+  const lookupNames=[...new Set([p.name,p.prevName].filter(Boolean))];
   (async()=>{
-    const names=[...new Set([p.name,p.prevName].filter(Boolean))];
-    const paths=await Promise.all(names.map(leagueGrowthPath));
+    const paths=await Promise.all(lookupNames.map(leagueGrowthPath));
     const merged={};paths.flat().forEach(s=>{merged[s.season]=s;});
     const order=['S1','S2','S3',SEASON.toUpperCase()];
     const path=order.filter(s=>merged[s]).map(s=>merged[s]);
@@ -2553,10 +2555,18 @@ async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===
       const lb=document.getElementById('lifeBody');if(lb)lb.innerHTML=filledNow;
     }
   })();
-  if(p.prevName){
-    const history=await leagueFindAllHistory(p.prevName);
-    leagueHistoryJumps=history.map(h=>h.jumpTo);
-    const prevBody=history.length?`<div class="league-cols" style="grid-template-columns:1fr;">${history.map((h,i)=>`
+  // 查历史战绩：不限于设置过前身的玩家，当前名字 + 前身名字一起查，
+  // 没改过名但跨赛季同名出现过的玩家，也能看到完整的前世记忆
+  const history=await leagueFindAllHistory(lookupNames);
+  leagueHistoryJumps=history.map(h=>h.jumpTo);
+  if(history.length){
+    const reincTag=`<div style="margin-top:10px;font-size:11px;color:var(--dim);">☯️ 今生「${leagueEsc(p.name)}」${p.prevName?`· 前世为「${leagueEsc(p.prevName)}」`:'· 曾经的你'}</div>
+      <div style="margin-top:8px;display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+        <button id="lifeTabNow" onclick="leagueLifeTab('now','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:var(--G);color:#2B1F0A;border:0;cursor:pointer;">🌱 今生记忆</button>
+        <button id="lifeTabPrev" onclick="leagueLifeTab('prev','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:transparent;color:var(--dim);border:0;cursor:pointer;">📜 前世记忆</button>
+      </div>`;
+    const tagEl=document.getElementById('reincTag');if(tagEl)tagEl.innerHTML=reincTag;
+    const prevBody=`<div class="league-cols" style="grid-template-columns:1fr;">${history.map((h,i)=>`
       <section class="league-card">
         <h3>前世战绩 · ${leagueEsc(h.season)}${h.title?`<span style="font-size:11px;color:var(--dim);font-weight:400;"> · ${leagueEsc(h.title)}</span>`:''}</h3>
         <div class="league-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
@@ -2569,12 +2579,8 @@ async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===
         ${h.awards&&h.awards.length?`<div style="margin-top:8px;">${h.awards.map(a=>`<span style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;margin:2px 4px 0 0;">${leagueEsc(a)}</span>`).join('')}</div>`:''}
         <button class="topbar-btn" style="width:100%;margin-top:10px;" onclick="leagueHistoryJumps[${i}]&&leagueHistoryJumps[${i}]()">📖 查看 ${leagueEsc(h.season)} 完整档案</button>
       </section>`).join('')}
-    </div>`
-      :`<div class="no-data" style="padding:30px 0;">前世的记忆已随风而逝，未能在往届档案中寻得「${leagueEsc(p.prevName)}」的踪迹</div>`;
+    </div>`;
     leagueProfileCache.prev=prevBody;
-    if(document.getElementById('lifeTabPrev')&&document.getElementById('lifeTabPrev').style.background!=='transparent'){
-      document.getElementById('lifeBody').innerHTML=prevBody;
-    }
   }
 }
 let leagueProfileCache={},leagueHistoryJumps=[];
@@ -3425,6 +3431,26 @@ async function s3aAdmStatus(){
   el.innerHTML=meta&&meta.frozenAt
     ?`✅ 已冻结：${s3aEsc(String(meta.frozenAt).replace('T',' ').slice(0,16))}<br><span style="font-size:11px;color:var(--dim)">地图 ${meta.mapPlayers||0} 人 · 战报 ${meta.recaps||0} 篇 · 荣誉墙 ${meta.hallOfFame||0} 项</span>`
     :'⏳ 尚未冻结：S3 档案目前直接读取联赛当前数据。';
+}
+// 修正 S3 存档里的玩家昵称（比如 S3 当时叫"九"，现在叫"九叔"），让前世战绩自动对上
+async function s3aRenamePlayer(){
+  const oldName=prompt('要修改的 S3 旧昵称是：（比如「九」）');
+  if(oldName===null)return;
+  const old=oldName.trim();if(!old)return;
+  try{
+    const players=await fb.get('playerProfiles/s3/players')||{};
+    const entry=Object.entries(players).find(([id,p])=>p&&p.name===old);
+    if(!entry){alert(`在 S3 存档里没找到昵称「${old}」，请检查拼写`);return;}
+    const [id,p]=entry;
+    const newName=prompt(`把 S3 存档里的「${old}」改成：`,old);
+    if(newName===null)return;
+    const nn=newName.trim();
+    if(!nn||nn===old)return;
+    if(Object.values(players).some(x=>x.name===nn)){alert('S3 存档里已经有这个昵称了，换一个吧');return;}
+    p.name=nn;
+    await fbPutStrict(`playerProfiles/s3/players/${id}`,p);
+    toast(`✓ S3 存档「${old}」已改名为「${nn}」`);
+  }catch(e){alert('修改失败：'+e.message);}
 }
 async function s3aFreeze(){
   if(!confirm('把当前的 S3 地图位置、战报、荣誉墙冻结为归档副本？\n（可重复操作，以最后一次为准）'))return;
