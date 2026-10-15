@@ -1007,8 +1007,9 @@ async function saveRename(){
       await fb.del(`${T_MAP}/${oldKey}`);
     }
     // 3. 更新玩家名单里的 name（id 不变，所以战绩 matches 自动跟随，无需改）
+    // 顺便自动记录前身：改名即转生，老名字自动成为 prevName，前世记忆不用管理员再手动补
     for(const[id,p]of Object.entries(allPlayers)){
-      if(p.name===cName){p.name=newName;await fb.put(`${P_PATH}/players/${id}`,p);break;}
+      if(p.name===cName){p.name=newName;p.prevName=cName;await fb.put(`${P_PATH}/players/${id}`,p);break;}
     }
     // 4. 更新当前会话和界面
     cName=newName;
@@ -1682,7 +1683,8 @@ async function adminRenamePlayer(id){
     const mapP=await fb.get(`${T_MAP}/${oldKey}`);
     if(mapP){mapP.name=newName;await fb.put(`${T_MAP}/${newKey}`,mapP);await fb.del(`${T_MAP}/${oldKey}`);}
     // 3. 更新玩家名单（id 不变，matches 自动跟随）
-    p.name=newName;
+    // 顺便自动记录前身：改名即转生，老名字自动成为 prevName
+    p.name=newName;p.prevName=oldName;
     await fb.put(`${P_PATH}/players/${id}`,p);
     renderPlayers();
     toast(`✓ 已把「${oldName}」改名为「${newName}」`);
