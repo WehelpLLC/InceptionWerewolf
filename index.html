@@ -1033,7 +1033,7 @@ async function saveRename(){
     // 3. 更新玩家名单里的 name（id 不变，所以战绩 matches 自动跟随，无需改）
     // 顺便自动记录前身：改名即转生，老名字自动成为 prevName，前世记忆不用管理员再手动补
     for(const[id,p]of Object.entries(allPlayers)){
-      if(p.name===cName){p.name=newName;p.prevName=cName;await fb.put(`${P_PATH}/players/${id}`,p);break;}
+      if(p.name===cName){p.name=newName;p.prevName=cName;p.prevNameAt=new Date().toISOString();await fb.put(`${P_PATH}/players/${id}`,p);break;}
     }
     // 4. 更新当前会话和界面
     cName=newName;
@@ -1708,7 +1708,7 @@ async function adminRenamePlayer(id){
     if(mapP){mapP.name=newName;await fb.put(`${T_MAP}/${newKey}`,mapP);await fb.del(`${T_MAP}/${oldKey}`);}
     // 3. 更新玩家名单（id 不变，matches 自动跟随）
     // 顺便自动记录前身：改名即转生，老名字自动成为 prevName
-    p.name=newName;p.prevName=oldName;
+    p.name=newName;p.prevName=oldName;p.prevNameAt=new Date().toISOString();
     await fb.put(`${P_PATH}/players/${id}`,p);
     renderPlayers();
     toast(`✓ 已把「${oldName}」改名为「${newName}」`);
@@ -1719,7 +1719,7 @@ async function setPrevName(id){
   const v=prompt(`设置「${p.name}」的前身昵称（转生前用的老名字，留空可清除）：`,p.prevName||'');
   if(v===null)return;
   const name=v.trim();
-  if(name)p.prevName=name;else delete p.prevName;
+  if(name)p.prevName=name;else{delete p.prevName;delete p.prevNameAt;}
   await fb.put(`${P_PATH}/players/${id}`,p);
   renderPlayers();
   toast(name?`✓ 已设置「${p.name}」转生自「${name}」`:'✓ 已清除前身标记');
@@ -2641,6 +2641,23 @@ function lifeLogWeeksInMatches(){
   Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!=='')ws.add(Number(m.week));});
   return[...ws].sort((a,b)=>a-b);
 }
+// 某一周的日期范围（从该周的所有对局 date 字段取 min/max），取不到就返回 null
+function lifeLogWeekDateRange(weekNum){
+  const dates=[];
+  Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&Number(m.week)===Number(weekNum)&&m.date)dates.push(m.date);});
+  if(!dates.length)return null;
+  dates.sort();
+  return{start:dates[0],end:dates[dates.length-1]};
+}
+// 判断某个时间戳是否落在"本周"附近（用本周对局日期范围，前后各放宽3天，兼顾改名可能跟实际对局差一两天）
+function lifeLogIsThisWeek(iso,weekNum){
+  if(!iso)return false;
+  const range=lifeLogWeekDateRange(weekNum);if(!range)return false;
+  const t=new Date(iso).getTime();if(isNaN(t))return false;
+  const pad=3*86400000;
+  const start=new Date(range.start).getTime()-pad,end=new Date(range.end).getTime()+pad;
+  return t>=start&&t<=end;
+}
 // 某一周、某玩家的对局统计（场次/胜率/连胜等）
 function lifeLogWeekStats(weekNum,playerId){
   const games=[];
@@ -2669,7 +2686,7 @@ async function lifeLogBuildSnapshot(){
   return{positions,medals,savedAt:new Date().toISOString()};
 }
 // 把一组"事件"拼成一句修仙语气的话
-function lifeLogCompose(name,weekNum,events,stats){
+function lifeLogCompose(name,weekNum,events,stats,prevName){
   const parts=[];
   const breakthroughs=events.filter(e=>e.type==='breakthrough');
   const newMedals=events.filter(e=>e.type==='medal');
@@ -2694,7 +2711,8 @@ function lifeLogCompose(name,weekNum,events,stats){
   }else{
     body='本周闭关潜修，暂未出山对局';
   }
-  return`这一世，${name}${body}。`;
+  const reincLine=prevName?`${prevName}重生更名为${name}，`:'';
+  return`这一世，${reincLine}${name}${body}。`;
 }
 // 批量生成某一周所有玩家的命薄草稿（不覆盖已发布的条目，除非 force）
 async function lifeLogGenerate(weekNum,force){
@@ -2727,7 +2745,9 @@ async function lifeLogGenerate(weekNum,force){
     });
     // 管理员手动补充的现场花絮
     (manualAll?.[pid]||[]).forEach(text=>events.push({type:'manual',text}));
-    entries[pid]={name,text:lifeLogCompose(name,weekNum,events,stats),status:'draft',editedAt:new Date().toISOString()};
+    // 本周是否刚改名（走改名流程、留了 prevNameAt 时间戳的才算，手动设前身的不算）
+    const reincName=(p.prevName&&p.prevNameAt&&lifeLogIsThisWeek(p.prevNameAt,weekNum))?p.prevName:null;
+    entries[pid]={name,text:lifeLogCompose(name,weekNum,events,stats,reincName),status:'draft',editedAt:new Date().toISOString()};
   }
   await fbPutStrict(`${LIFELOG_PATH}/entries/${weekId}`,entries);
   await fbPutStrict(`${LIFELOG_PATH}/snapshots/${weekId}`,snap);
