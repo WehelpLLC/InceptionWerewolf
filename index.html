@@ -521,13 +521,14 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
     <button class="topbar-btn" onclick="showPage('pg-name')">← 退出</button>
   </div>
   <div class="adm-tab-nav">
-    <div class="adm-tab-btn on" id="at0" onclick="switchAdmTab(0)">🏆 投票</div>
-    <div class="adm-tab-btn" id="at1" onclick="switchAdmTab(1)">👥 玩家</div>
+    <div class="adm-tab-btn" id="at0" onclick="switchAdmTab(0)" style="display:none">🏆 投票</div>
+    <div class="adm-tab-btn on" id="at1" onclick="switchAdmTab(1)">👥 玩家</div>
     <div class="adm-tab-btn" id="at2" onclick="switchAdmTab(2)">📝 战绩</div>
     <div class="adm-tab-btn" id="at3" onclick="switchAdmTab(3)">🗺 地图</div>
     <div class="adm-tab-btn" id="at4" onclick="switchAdmTab(4)">📖 复盘</div>
-            <div class="adm-tab-btn" id="at6" onclick="switchAdmTab(6)">🏆 荣誉墙</div>
-    <div class="adm-tab-btn" id="at7" onclick="switchAdmTab(7)">📦 S3归档</div>
+            <div class="adm-tab-btn" id="at6" onclick="switchAdmTab(6)" style="display:none">🏆 荣誉墙</div>
+    <div class="adm-tab-btn" id="at7" onclick="switchAdmTab(7)" style="display:none">📦 S3归档</div>
+    <div class="adm-tab-btn" id="atMore" onclick="admToggleMore()" style="flex:0 0 auto;padding:11px 10px;">⋯ 更多</div>
   </div>
 
   <!-- Adm Tab 0: 投票结果 -->
@@ -1251,11 +1252,17 @@ function showLock(){
 function hideLock(){document.getElementById('lockOverlay').classList.remove('on');}
 function doAdminLogin(){
   if(document.getElementById('lockPw').value===ADMIN_PW){
-    hideLock();showPage('pg-admin');switchAdmTab(0);
+    hideLock();showPage('pg-admin');switchAdmTab(1);
   }else{
     document.getElementById('lockErr').style.display='block';
     document.getElementById('lockPw').value='';
   }
+}
+let admMoreOn=false;
+function admToggleMore(){
+  admMoreOn=!admMoreOn;
+  ['at0','at6','at7'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=admMoreOn?'':'none';});
+  const btn=document.getElementById('atMore');if(btn)btn.textContent=admMoreOn?'⋯ 收起':'⋯ 更多';
 }
 function switchAdmTab(n){
   for(let i=0;i<8;i++){
