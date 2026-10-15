@@ -2445,20 +2445,83 @@ function downloadLbShare(){
   }).catch(e=>{console.error(e);toast('生成失败，请直接截图');});
 }
 function leagueFindHistory(name){if(!name)return null;for(const season of Object.keys(HISTORY_DATA)){const hit=(HISTORY_DATA[season]||[]).find(p=>p.name===name);if(hit)return{season,player:hit};}return null;}
-function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';
-  const prevHit=p.prevName?leagueFindHistory(p.prevName):null;
+// 独立计算任意赛季路径下某个名字的战绩（不依赖全局 league 状态，S3/S4 都是这样实时算的）
+async function leagueFetchSeasonStats(dataPath,name){
+  try{
+    const[pData,mData]=await Promise.all([fb.get(`${dataPath}/players`),fb.get(`${dataPath}/matches`)]);
+    const players=Object.entries(pData||{}).map(([id,p])=>({...p,id:p.id||id}));
+    const target=players.find(p=>p.name===name);if(!target)return null;
+    const matches=(typeof s4NoExhib==='function'?s4NoExhib(mData):mData)||{};
+    const rows=players.map(p=>{
+      const games=[];Object.values(matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(p.id));if(e)games.push({m,e});});
+      const wins=games.filter(x=>x.e.result==='win').length;
+      const wolves=games.filter(x=>leagueWolf(x.e.role));
+      return{id:p.id,name:p.name,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),games,rate:games.length?Math.round(wins/games.length*100):0,
+        wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};
+    }).sort((a,b)=>b.score-a.score);
+    const idx=rows.findIndex(r=>r.name===name);if(idx<0)return null;
+    return{rank:idx+1,total:rows.length,...rows[idx]};
+  }catch(e){console.warn('读取历史赛季战绩失败',dataPath,e);return null;}
+}
+// 查某名字在某个荣誉墙 path 下拿了哪些奖
+async function leagueFetchAwards(hofPath,name){
+  try{
+    const data=await fb.get(hofPath)||{};
+    return HOF_AWARDS.filter(a=>data[a.key]&&String(data[a.key]).trim()===name).map(a=>`${a.icon} ${a.name}`);
+  }catch(e){return[];}
+}
+// 汇总一个名字在 S1/S2（静态历史榜）、S3（实时计算 + 归档荣誉墙）的全部前世战绩
+async function leagueFindAllHistory(name){
+  if(!name)return[];
+  const out=[];
+  for(const season of Object.keys(HISTORY_DATA)){
+    const hit=(HISTORY_DATA[season]||[]).find(p=>p.name===name);
+    if(hit)out.push({season,rank:hit.rank,score:hit.score,games:hit.games,winRate:hit.winRate,goodRate:hit.goodRate,wolfRate:hit.wolfRate,title:hit.title,awards:[],jumpTo:()=>showHistory(season)});
+  }
+  try{
+    const s3src=await s3aResolveSrc();
+    const s3stats=await leagueFetchSeasonStats('playerProfiles/s3',name);
+    if(s3stats){
+      const awards=await leagueFetchAwards(s3src.hallOfFame,name);
+      out.push({season:'S3',rank:s3stats.rank,score:s3stats.score,games:s3stats.games.length,winRate:s3stats.rate+'%',goodRate:null,wolfRate:s3stats.wolfRate!=null?s3stats.wolfRate+'%':null,title:null,awards,jumpTo:()=>s3aOpen()});
+    }
+  }catch(e){console.warn('S3 前世战绩读取失败',e);}
+  return out;
+}
+async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';
   const reincTag=p.prevName?`<div style="margin-top:10px;font-size:11px;color:var(--dim);">☯️ 今生「${leagueEsc(p.name)}」· 前世为「${leagueEsc(p.prevName)}」</div>
     <div style="margin-top:8px;display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;">
       <button id="lifeTabNow" onclick="leagueLifeTab('now','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:var(--G);color:#2B1F0A;border:0;cursor:pointer;">🌱 今生记忆</button>
       <button id="lifeTabPrev" onclick="leagueLifeTab('prev','${leagueEsc(id)}')" style="padding:5px 14px;font-size:11px;background:transparent;color:var(--dim);border:0;cursor:pointer;">📜 前世记忆</button>
     </div>`:'';
   const nowBody=`<div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
-  const prevBody=prevHit?`<div class="league-stats"><div><b>${leagueEsc(prevHit.player.score)}</b><span>${leagueEsc(prevHit.season)} 总积分</span></div><div><b>${leagueEsc(prevHit.player.games)}</b><span>参赛场次</span></div><div><b>${leagueEsc(prevHit.player.winRate)}</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>前世战绩（${leagueEsc(prevHit.season)}）</h3><div class="league-match"><b>当年称号</b><small>${leagueEsc(prevHit.player.title||'—')}</small></div><div class="league-match"><b>当年排名</b><small>第 ${leagueEsc(prevHit.player.rank||'—')} 名</small></div><div class="league-match"><b>好人胜率</b><small>${leagueEsc(prevHit.player.goodRate||'—')}</small></div><div class="league-match"><b>狼人胜率</b><small>${leagueEsc(prevHit.player.wolfRate||'—')}</small></div></section><section class="league-card"><h3>轮回之语</h3><div class="no-data">前尘往事，封存于「${leagueEsc(prevHit.season)}」档案，点下方可查看完整榜单</div><button class="topbar-btn" style="width:100%;margin-top:10px;" onclick="showHistory('${leagueEsc(prevHit.season)}')">📖 翻开 ${leagueEsc(prevHit.season)} 命簿</button></section></div>`
-    :`<div class="no-data" style="padding:30px 0;">前世的记忆已随风而逝，未能在往届档案中寻得「${leagueEsc(p.prevName||'')}」的踪迹</div>`;
   document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p>${reincTag}</div><div id="lifeBody">${nowBody}</div>`;
-  leagueProfileCache={now:nowBody,prev:prevBody};
+  leagueProfileCache={now:nowBody,prev:p.prevName?'<div class="no-data" style="padding:30px 0;">正在查阅前世档案…</div>':''};
+  if(p.prevName){
+    const history=await leagueFindAllHistory(p.prevName);
+    leagueHistoryJumps=history.map(h=>h.jumpTo);
+    const prevBody=history.length?`<div class="league-cols" style="grid-template-columns:1fr;">${history.map((h,i)=>`
+      <section class="league-card">
+        <h3>前世战绩 · ${leagueEsc(h.season)}${h.title?`<span style="font-size:11px;color:var(--dim);font-weight:400;"> · ${leagueEsc(h.title)}</span>`:''}</h3>
+        <div class="league-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
+          <div><b>${leagueEsc(h.score)}</b><span>总积分</span></div>
+          <div><b>第 ${leagueEsc(h.rank)} 名</b><span>当年排名</span></div>
+          <div><b>${leagueEsc(h.winRate||'—')}</b><span>综合胜率</span></div>
+        </div>
+        ${h.goodRate||h.wolfRate?`<div class="league-match"><b>好人 / 狼人胜率</b><small>${leagueEsc(h.goodRate||'—')} / ${leagueEsc(h.wolfRate||'—')}</small></div>`:''}
+        <div class="league-match"><b>参赛场次</b><small>${leagueEsc(h.games)} 场</small></div>
+        ${h.awards&&h.awards.length?`<div style="margin-top:8px;">${h.awards.map(a=>`<span style="display:inline-block;background:linear-gradient(145deg,#ffe9a8,#e8b563);color:#2a1f00;font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;margin:2px 4px 0 0;">${leagueEsc(a)}</span>`).join('')}</div>`:''}
+        <button class="topbar-btn" style="width:100%;margin-top:10px;" onclick="leagueHistoryJumps[${i}]&&leagueHistoryJumps[${i}]()">📖 查看 ${leagueEsc(h.season)} 完整档案</button>
+      </section>`).join('')}
+    </div>`
+      :`<div class="no-data" style="padding:30px 0;">前世的记忆已随风而逝，未能在往届档案中寻得「${leagueEsc(p.prevName)}」的踪迹</div>`;
+    leagueProfileCache.prev=prevBody;
+    if(document.getElementById('lifeTabPrev')&&document.getElementById('lifeTabPrev').style.background!=='transparent'){
+      document.getElementById('lifeBody').innerHTML=prevBody;
+    }
+  }
 }
-let leagueProfileCache={};
+let leagueProfileCache={},leagueHistoryJumps=[];
 function leagueLifeTab(which,id){
   const body=document.getElementById('lifeBody');if(!body)return;
   body.innerHTML=leagueProfileCache[which]||'';
