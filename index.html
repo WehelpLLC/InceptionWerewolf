@@ -2458,8 +2458,10 @@ async function leagueFetchSeasonStats(dataPath,name){
       const games=[];Object.values(matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(p.id));if(e)games.push({m,e});});
       const wins=games.filter(x=>x.e.result==='win').length;
       const wolves=games.filter(x=>leagueWolf(x.e.role));
+      const goods=games.filter(x=>!leagueWolf(x.e.role));
       return{id:p.id,name:p.name,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),games,rate:games.length?Math.round(wins/games.length*100):0,
-        wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};
+        wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null,
+        goodRate:goods.length?Math.round(goods.filter(x=>x.e.result==='win').length/goods.length*100):null};
     }).sort((a,b)=>b.score-a.score);
     const idx=rows.findIndex(r=>r.name===name);if(idx<0)return null;
     return{rank:idx+1,total:rows.length,...rows[idx]};
@@ -2485,7 +2487,7 @@ async function leagueFindAllHistory(name){
     const s3stats=await leagueFetchSeasonStats('playerProfiles/s3',name);
     if(s3stats){
       const awards=await leagueFetchAwards(s3src.hallOfFame,name);
-      out.push({season:'S3',rank:s3stats.rank,score:s3stats.score,games:s3stats.games.length,winRate:s3stats.rate+'%',goodRate:null,wolfRate:s3stats.wolfRate!=null?s3stats.wolfRate+'%':null,title:null,awards,jumpTo:()=>s3aOpen()});
+      out.push({season:'S3',rank:s3stats.rank,score:s3stats.score,games:s3stats.games.length,winRate:s3stats.rate+'%',goodRate:s3stats.goodRate!=null?s3stats.goodRate+'%':null,wolfRate:s3stats.wolfRate!=null?s3stats.wolfRate+'%':null,title:null,awards,jumpTo:()=>s3aOpen()});
     }
   }catch(e){console.warn('S3 前世战绩读取失败',e);}
   return out;
