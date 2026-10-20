@@ -2758,9 +2758,12 @@ function lifeLogBreakthrough(playerId,weekNum,allMatches){
   return after.min>before.min?after:null;
 }
 // 单个玩家：本周新达成的勋章档位（同样用"截止本周"vs"截止上周"两次 medalTally 回放对比，不依赖快照）
-function lifeLogNewMedalTiers(playerId,weekNum,allMatches){
-  const beforeTally=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum-1))[playerId]||{};
-  const afterTally=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum))[playerId]||{};
+// 投食勋章按订单日期切周：截止「该周最后一场对局的日期」；没有这一周（比如第0周）则一单都不算
+function lifeLogFeedUntil(weekNum){const r=weekNum>=1?lifeLogWeekDateRange(weekNum):null;return r?r.end:'';}
+function lifeLogNewMedalTiers(playerId,weekNum,allMatches,feed){
+  const beforeAll=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum-1)),afterAll=medalTally(lifeLogMatchesThroughWeek(allMatches,weekNum));
+  if(feed){medalMergeFeed(beforeAll,feed.orders,feed.players,lifeLogFeedUntil(weekNum-1));medalMergeFeed(afterAll,feed.orders,feed.players,lifeLogFeedUntil(weekNum));}
+  const beforeTally=beforeAll[playerId]||{},afterTally=afterAll[playerId]||{};
   const out=[];
   Object.entries(afterTally).forEach(([medal,count])=>{
     const prevCount=beforeTally[medal]||0;
@@ -2822,11 +2825,13 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
 // 批量生成某一周所有玩家的命薄草稿（不覆盖已发布的条目，除非 force）
 async function lifeLogGenerate(weekNum,force){
   const weekId=lifeLogWeekId(weekNum);
-  const [allMatches,manualAll,existing]=await Promise.all([
+  const [allMatches,manualAll,existing,feedOrders]=await Promise.all([
     fb.get(`${P_PATH}/matches`),
     fb.get(`${LIFELOG_PATH}/manualEvents/${weekId}`),
-    fb.get(`${LIFELOG_PATH}/entries/${weekId}`)
+    fb.get(`${LIFELOG_PATH}/entries/${weekId}`),
+    fb.get(FEED_ORDERS_PATH)
   ]);
+  const feed={orders:feedOrders,players:league.players};
   const entries={};
   for(const row of league.rows){
     const {p}=row,name=p.name,pid=p.id;
@@ -2838,7 +2843,7 @@ async function lifeLogGenerate(weekNum,force){
     const brk=lifeLogBreakthrough(pid,weekNum,allMatches);
     if(brk)events.push({type:'breakthrough',realm:brk.n});
     // 新获勋章：同样用"截止本周"vs"截止上周"两次战绩回放算出的勋章数对比，不依赖快照
-    lifeLogNewMedalTiers(pid,weekNum,allMatches).forEach(x=>events.push({type:'medal',medal:x.medal,tier:x.tier}));
+    lifeLogNewMedalTiers(pid,weekNum,allMatches,feed).forEach(x=>events.push({type:'medal',medal:x.medal,tier:x.tier}));
     // 管理员手动补充的现场花絮
     (manualAll?.[pid]||[]).forEach(text=>events.push({type:'manual',text}));
     // 本周是否刚改名（走改名流程、留了 prevNameAt 时间戳的才算，手动设前身的不算）
@@ -4032,6 +4037,7 @@ loadMapAdm=async function(){
 };
 
 // ── 人工勋章录入 ──
+const FEED_MEDAL='灵膳仙厨·投食王';
 const MEDALS_S4=[
   {n:'天机窥狼',g:'神职',d:'预言家关键查杀，帮助放逐狼人',auto:true},
   {n:'鸩毒判官',g:'神职',d:'女巫毒中狼人',auto:true},
@@ -4041,6 +4047,7 @@ const MEDALS_S4=[
   {n:'群狼蔽月',g:'狼人',d:'狼队达成优秀团队表现',auto:false},
   {n:'凡心问道',g:'平民',d:'平民关键轮次正确归票狼人',auto:false},
   {n:'逆天改命',g:'通用',d:'完成一次法官认定的关键逆转',auto:false},
+  {n:FEED_MEDAL,g:'场外',d:'在灵膳投食录投食「全场」玩家（直播间观众同样计入）',auto:true,feed:true},
 ];
 const MEDAL_TIERS=[[1,'初窥'],[3,'小成'],[5,'大成'],[8,'圆满']];
 function medalTier(count){let t=null;MEDAL_TIERS.forEach(([c,n])=>{if(count>=c)t=n;});return t;}
@@ -6251,7 +6258,7 @@ feedAdmOrders=async function(){
 <!-- ══ 勋章系统 ══ -->
 <script>
 // ══ S4 勋章系统：统计（人工 + 自动）与展示 ══
-const MEDAL_ICON={'天机窥狼':'🔮','鸩毒判官':'🧪','诛魔一箭':'🏹','护法结界':'🛡️','夺舍伪仙':'🎭','群狼蔽月':'🌑','凡心问道':'🕯️','逆天改命':'⚡'};
+const MEDAL_ICON={'天机窥狼':'🔮','鸩毒判官':'🧪','诛魔一箭':'🏹','护法结界':'🛡️','夺舍伪仙':'🎭','群狼蔽月':'🌑','凡心问道':'🕯️','逆天改命':'⚡','灵膳仙厨·投食王':'🍳'};
 const MEDAL_TIER_STYLE={'初窥':{c:'#c98a5a',g:'rgba(201,138,90,.55)'},'小成':{c:'#cfd6e0',g:'rgba(207,214,224,.6)'},'大成':{c:'#f0c96a',g:'rgba(240,201,106,.75)'},'圆满':{c:'#b993ff',g:'rgba(185,147,255,.85)'}};
 const MEDAL_WOLF_EXTRA=new Set(['石像鬼','恶灵','恶灵骑士','假面','诡术师','蚀时狼妃','梦魇','梦魔','魅魔','狼美人','血月使徒','隐狼','机械狼','装甲狼','奎木狼','幽灵狼','狼术师','黑狼王','白狼王','狼王']);
 function medalIsWolf(role){role=String(role||'');if(!role)return false;if(role.includes('狼'))return true;if(MEDAL_WOLF_EXTRA.has(role))return true;try{if(typeof CUSTOM_WOLVES!=='undefined'&&CUSTOM_WOLVES.has(role))return true;}catch(e){}return false;}
@@ -6273,6 +6280,27 @@ function medalAuto(m){
   const g=R['守卫目标']||{},k=R['狼人击杀']||{};
   if(Object.keys(g).some(c=>{const a=medalSeats(g[c]),b=medalSeats(k[c]);return a.length&&a.some(x=>b.includes(x));}))add('护法结界',holders(['守卫']));
   return out;
+}
+// 🍳 灵膳仙厨·投食王：投食订单里 to=「全场」且已确认收款（非待付款）的，每个投食日算 1 次。
+// 订单只存了昵称，按 玩家当前昵称 → 前身昵称 对应到玩家；对不上任何玩家的（比如纯直播间观众）没有主页，无法挂勋章。
+// untilDate：只统计这个日期（含）之前的订单，用于命薄按周对比；不传则全部统计；传 '' 表示一单都不算。
+function medalFeedCounts(orders,players,untilDate){
+  const byName={};
+  Object.entries(players||{}).forEach(([k,p])=>{if(p&&p.name)byName[p.name]=p.id||k;});
+  Object.entries(players||{}).forEach(([k,p])=>{if(p&&p.prevName&&!byName[p.prevName])byName[p.prevName]=p.id||k;});
+  const days={};
+  Object.values(orders||{}).forEach(o=>{
+    if(!o||o.season!==SEASON||o.to!=='全场'||o.status==='pending')return;
+    if(untilDate!==undefined&&(!untilDate||String(o.date)>untilDate))return;
+    const pid=byName[String(o.from||'').trim()];if(!pid)return;
+    (days[pid]??=new Set()).add(String(o.date||o.ts||''));
+  });
+  const out={};Object.entries(days).forEach(([pid,set])=>{out[pid]=set.size;});
+  return out;
+}
+function medalMergeFeed(T,orders,players,untilDate){
+  Object.entries(medalFeedCounts(orders,players,untilDate)).forEach(([pid,n])=>{(T[pid]??={})[FEED_MEDAL]=n;});
+  return T;
 }
 // 统计整季：{pid:{medal:count}}
 function medalTally(matches){
@@ -6306,19 +6334,19 @@ async function medalRenderMine(){
   const tp=document.getElementById('tp2');if(!tp)return;
   if(!box){box=document.createElement('div');box.id='myMedals';const st=document.getElementById('myStats');tp.insertBefore(box,st);}
   box.innerHTML='<div class="md-title">🏅 我的勋章</div><div class="no-data" style="display:block">加载中…</div>';
-  const [mData,pData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`)]);
+  const [mData,pData,oData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`),fb.get(FEED_ORDERS_PATH)]);
   let pid=null;Object.entries(pData||{}).forEach(([id,p])=>{if(p&&p.name===cName)pid=p.id||id;});
-  const counts=(pid&&medalTally(mData)[pid])||{};
+  const counts=(pid&&medalMergeFeed(medalTally(mData),oData,pData)[pid])||{};
   const total=Object.values(counts).reduce((a,b)=>a+b,0),kinds=Object.keys(counts).length;
-  box.innerHTML=`<div class="md-title">🏅 我的勋章 <span>${kinds}/8 种 · 共 ${total} 枚</span></div>${medalGrid(counts)}<div class="md-rule">升阶：初窥 1 次 · 小成 3 次 · 大成 5 次 · 圆满 8 次。神职勋章按战绩自动判定，其余由法官录入。</div>`;
+  box.innerHTML=`<div class="md-title">🏅 我的勋章 <span>${kinds}/${MEDALS_S4.length} 种 · 共 ${total} 枚</span></div>${medalGrid(counts)}<div class="md-rule">升阶：初窥 1 次 · 小成 3 次 · 大成 5 次 · 圆满 8 次。神职勋章按战绩自动判定，其余由法官录入；🍳 投食王按灵膳投食录里投食「全场」的天数计（确认收款后生效）。</div>`;
 }
 // 联赛中心：勋章殿
 async function medalHall(){
   let ov=document.getElementById('medalHallOv');
   if(!ov){ov=document.createElement('div');ov.id='medalHallOv';ov.className='md-ov';document.body.appendChild(ov);}
   ov.innerHTML='<div class="md-ov-box"><div class="no-data" style="display:block">加载中…</div></div>';ov.style.display='flex';
-  const [mData,pData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`)]);
-  const T=medalTally(mData);const P={};Object.entries(pData||{}).forEach(([id,p])=>{if(p)P[p.id||id]=p;});
+  const [mData,pData,oData]=await Promise.all([fb.get(`${P_PATH}/matches`),fb.get(`${P_PATH}/players`),fb.get(FEED_ORDERS_PATH)]);
+  const T=medalMergeFeed(medalTally(mData),oData,pData);const P={};Object.entries(pData||{}).forEach(([id,p])=>{if(p)P[p.id||id]=p;});
   const sec=MEDALS_S4.map(md=>{
     const list=Object.entries(T).filter(([,c])=>c[md.n]).map(([pid,c])=>({p:P[pid]||{name:pid,emoji:'🎭'},n:c[md.n]})).sort((a,b)=>b.n-a.n);
     return `<div class="md-hall-row">${medalBadge(md.n,list[0]?.n||0,true)}<div style="flex:1;min-width:0"><b>${md.n}</b> <small>${md.d}</small>
