@@ -2884,12 +2884,16 @@ async function lifeLogForPlayer(name){
 // ── 命薄审核：后台 UI ──
 let llCurWeek=1;
 async function llInit(){
-  if(!league.rows||!league.rows.length)await leagueLoad();
+  // 每次进入都重新读取本赛季最新战绩：之前只在 league 还没加载时才读，管理员页面开着时新录的对局不会出现，周数就一直停在旧的一周
+  if(league.season!==SEASON){league.season=SEASON;const ls=document.getElementById('leagueSeason');if(ls)ls.value=SEASON;}
+  await leagueLoad();
   const weeks=lifeLogWeeksInMatches();
   const maxWeek=weeks.length?Math.max(...weeks):1;
+  const cnt={};Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!=='')cnt[Number(m.week)]=(cnt[Number(m.week)]||0)+1;});
   const sel=document.getElementById('llWeekSel');
-  const opts=[];for(let w=1;w<=Math.max(maxWeek,1);w++)opts.push(w);
-  sel.innerHTML=opts.map(w=>`<option value="${w}">第 ${w} 周</option>`).join('');
+  // 多给一个「下一周」：本周战绩还没录完/下周刚开始时也能先出命薄；每个选项标出已录对局数，方便核对周数有没有填错
+  const opts=[];for(let w=1;w<=maxWeek+1;w++)opts.push(w);
+  sel.innerHTML=opts.map(w=>`<option value="${w}">第 ${w} 周 · ${cnt[w]?cnt[w]+' 局':'暂无对局'}</option>`).join('');
   sel.value=llCurWeek=maxWeek||1;
   sel.onchange=()=>{llCurWeek=Number(sel.value);llLoadManualList();document.getElementById('llEntries').innerHTML='<div class="no-data">点上面「批量生成草稿」开始</div>';document.getElementById('llPublishBtn').style.display='none';};
   const psel=document.getElementById('llManualPlayer');
