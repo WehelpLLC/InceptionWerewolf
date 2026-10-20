@@ -591,6 +591,14 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
           </div>
         </div>
         <div id="templateHint" style="font-size:11px;color:var(--dim);margin:6px 0;"></div>
+        <div class="meta-field" style="margin:8px 0 10px;">
+          <div class="meta-label">⚖️ 本局法官（每执法一局，修炼 +1 格；可多选）</div>
+          <div style="display:flex;gap:6px;">
+            <select class="meta-inp" id="judgeSel" style="flex:1;"></select>
+            <button class="btn-line" onclick="judgeAdd()" style="white-space:nowrap;">+ 添加</button>
+          </div>
+          <div id="judgeChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+        </div>
         <div id="entryRows"></div>
         <button class="btn-line" onclick="addEntryRow()" style="width:100%;margin:8px 0;">+ 添加参赛玩家（手动）</button>
         <div id="winSideButtons" style="display:none;gap:8px;margin:10px 0;flex-wrap:wrap;"></div>
@@ -1768,11 +1776,48 @@ async function loadMatchForm(){
     const data=await fb.get(`${P_PATH}/players`);
     scorePlayers=data||{};
   }
+  judgeReset([]);
 }
 function getPlayerOptions(selId=''){
   const ps=Object.values(scorePlayers).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   return`<option value="">选择玩家</option><option value="__NEW__">➕ 新玩家（现场输入名字）</option>`+ps.map(p=>`<option value="${p.id}" ${p.id===selId?'selected':''}>${p.emoji||'🎭'} ${esc(p.name)}</option>`).join('');
 }
+// ── ⚖️ 法官记录：每局可选 1~N 位法官（从玩家名单里选），存到 match.judges（playerId 数组），每执法一局修炼 +1 格 ──
+window.MATCH_JUDGES=[];
+function judgeRefreshSel(){
+  const sel=document.getElementById('judgeSel');if(!sel)return;
+  const ps=Object.values(scorePlayers||{}).filter(p=>!window.MATCH_JUDGES.includes(p.id)).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  sel.innerHTML=`<option value="">选择法官</option><option value="__NEW__">➕ 新玩家（现场输入名字）</option>`+ps.map(p=>`<option value="${p.id}">${p.emoji||'🎭'} ${esc(p.name)}</option>`).join('');
+}
+function judgeRender(){
+  judgeRefreshSel();
+  const box=document.getElementById('judgeChips');if(!box)return;
+  box.innerHTML=window.MATCH_JUDGES.length?window.MATCH_JUDGES.map(id=>{
+    const p=scorePlayers[id];
+    return`<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,215,60,.12);border:1px solid rgba(200,160,40,.4);border-radius:14px;padding:3px 10px;font-size:12px;color:#e8d082;">⚖️ ${esc(p?p.name:'未知玩家')}<span style="cursor:pointer;color:var(--dim);" onclick="judgeRemove('${id}')">✕</span></span>`;
+  }).join(''):'<span style="font-size:11px;color:var(--dim);">本局暂未记录法官</span>';
+}
+async function judgeAdd(){
+  const sel=document.getElementById('judgeSel');if(!sel||!sel.value)return;
+  let id=sel.value;
+  if(id==='__NEW__'){
+    const name=(prompt('新法官的名字：')||'').trim();
+    if(!name){sel.value='';return;}
+    let exist=Object.values(scorePlayers).find(p=>p.name===name);
+    if(!exist){
+      const pid='p'+Date.now()+'_j';
+      exist={id:pid,name,emoji:'⚖️',created:new Date().toLocaleDateString()};
+      await fb.put(`${P_PATH}/players/${pid}`,exist);
+      scorePlayers[pid]=exist;
+      toast(`✓ 新玩家 ${name} 已建档`);
+    }
+    id=exist.id;
+  }
+  if(!window.MATCH_JUDGES.includes(id))window.MATCH_JUDGES.push(id);
+  judgeRender();
+}
+function judgeRemove(id){window.MATCH_JUDGES=window.MATCH_JUDGES.filter(x=>x!==id);judgeRender();}
+function judgeReset(judges){window.MATCH_JUDGES=Array.isArray(judges)?[...judges]:[];judgeRender();}
 function onPlayerSelChange(sel){
   const row=sel.closest('.entry-row');
   const existing=row.querySelector('.new-player-inp');
@@ -1930,6 +1975,7 @@ function clearForm(){
   document.getElementById('winSideButtons').style.display='none';
   document.getElementById('nightDayFields').innerHTML='';
   document.getElementById('templateHint').textContent='';
+  judgeReset([]);
   setMatchTrack('main');
 }
 let editingMatchId=null,editingMatchOldEntries=null,editingMatchOldTrack=null,editingMatchOldWeek=null;
@@ -1966,6 +2012,7 @@ async function editMatch(id){
       if(scoreInp)scoreInp.value=e.total;
     }
   });
+  judgeReset(m.judges);
   document.getElementById('saveMatchBtn').textContent='✓ 保存修改';
   document.getElementById('editHint').style.display='flex';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -2027,7 +2074,8 @@ async function saveMatch(){
   const track=currentMatchTrack||'main';
   const isEdit=!!editingMatchId;
   const mid=isEdit?editingMatchId:('m'+Date.now());
-  await fb.put(`${P_PATH}/matches/${mid}`,{id:mid,date,week,round,track,entries,recordData:ndData,medals:(typeof medalCollect==='function'?medalCollect():[]),table:(window.MATCH_TABLE||'A'),exhibition:!!window.MATCH_EXHIB});
+  const judges=[...(window.MATCH_JUDGES||[])];
+  await fb.put(`${P_PATH}/matches/${mid}`,{id:mid,date,week,round,track,entries,recordData:ndData,medals:(typeof medalCollect==='function'?medalCollect():[]),table:(window.MATCH_TABLE||'A'),exhibition:!!window.MATCH_EXHIB,judges});
   // 地图位置不再自动计算/写入，改为管理员在「梦境地图管理」里手动调整（+1出席/+2赢局/直接设定），避免自动计算偏差
   // 生成复盘草稿
   const tname=document.getElementById('mTemplate').value;
@@ -2036,7 +2084,7 @@ async function saveMatch(){
   }
   const wasEdit=isEdit;
   cancelEditMatch();loadMatchForm();loadMatchHist();
-  toast('✓ '+(track==='baby'?'🐣 宝宝赛':'🏆 正赛')+(wasEdit?'记录已修改！':'记录已保存！')+'（地图位置请到「梦境地图管理」手动调整）'+(tname?' 复盘已自动保存':''));
+  toast('✓ '+(track==='baby'?'🐣 宝宝赛':'🏆 正赛')+(wasEdit?'记录已修改！':'记录已保存！')+'（地图位置请到「梦境地图管理」手动调整'+(judges.length?`，⚖️ 法官 ${judges.map(id=>scorePlayers[id]?.name||'?').join('、')} 各 +1 格`:'')+'）'+(tname?' 复盘已自动保存':''));
 }
 async function adjustMapForEdit(oldWeek,oldTrack,oldEntries,newWeek,newTrack,newEntries,matchId){
   // 不用"净变化"的算法（在跨周编辑等场景下容易算错，历史已验证过），
@@ -2071,6 +2119,8 @@ function recomputePlayerPosition(playerId,allMatches){
     });
   });
   let total=0;
+  // ⚖️ 法官修炼：每执法（主持）一局 +1 格，表演赛不计
+  Object.values(allMatches).forEach(m=>{if(m&&!m.exhibition&&Array.isArray(m.judges)&&m.judges.includes(playerId))total+=1;});
   Object.keys(byWeek).forEach(wk=>{
     let attended=false;
     byWeek[wk].forEach(rec=>{
@@ -2199,7 +2249,7 @@ async function loadMatchHist(){
   el.innerHTML=matches.slice(0,20).map(m=>`
     <div class="hist-row">
       <div class="hist-head">
-        <div class="hist-title">${m.exhibition?'<span style="color:#e0a0ff">🎭表演赛</span> · ':''}${m.table==='B'?'<span style="color:#9fd0ff">学徒历练</span> · ':''}${m.date||''} · ${m.track==='baby'?`第${m.round||''}局 <span style="color:#ff6b9d;">🐣宝宝赛</span>`:`第${m.week||'?'}周第${m.round||''}局`}</div>
+        <div class="hist-title">${m.exhibition?'<span style="color:#e0a0ff">🎭表演赛</span> · ':''}${m.table==='B'?'<span style="color:#9fd0ff">学徒历练</span> · ':''}${m.date||''} · ${m.track==='baby'?`第${m.round||''}局 <span style="color:#ff6b9d;">🐣宝宝赛</span>`:`第${m.week||'?'}周第${m.round||''}局`}${(m.judges&&m.judges.length)?` · <span style="color:#e8d082;">⚖️ ${m.judges.map(id=>esc(playerMap[id]?.name||'?')).join('、')}</span>`:''}</div>
         <div style="display:flex;gap:6px;">
           <button class="btn-line" style="padding:5px 12px;font-size:12px;" onclick="editMatch('${m.id}')">✏️ 编辑</button>
           <button class="btn-danger" onclick="delMatch('${m.id}')">撤销</button>
@@ -2266,6 +2316,9 @@ const league={season:(typeof SEASON!=='undefined'?SEASON:'s4'),seasons:[],player
 function leagueEsc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function leagueWolf(role){return /狼|石像鬼|恶灵|梦魇|血月|诡术|假面|盗宝/.test(role||'');}
 function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.filter(e=>e.result==='win');if(!winners.length)return null;return winners.some(e=>leagueWolf(e.role))?'🐺 狼人胜利':'👑 好人胜利';}
+// ⚖️ 法官：某场对局的法官名、某玩家的执法场次（表演赛不计）
+function leagueJudgeLabel(m){const ids=(m&&Array.isArray(m.judges))?m.judges:[];if(!ids.length)return'';return' · ⚖️ '+ids.map(id=>leagueEsc((league.players[id]||Object.values(league.players).find(p=>String(p.id)===String(id))||{}).name||'?')).join('、');}
+function leagueJudgeCount(id){return Object.values(league.matches||{}).filter(m=>m&&!m.exhibition&&Array.isArray(m.judges)&&m.judges.map(String).includes(String(id))).length;}
 function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
 function leaguePath(){const meta=league.seasons.find(x=>x.id===league.season)?.meta||{};return meta.dataPath||`playerProfiles/${league.season}`;}
 function leagueShow(){showPage('pg-league');leagueLoadSeasons();}
@@ -2297,7 +2350,7 @@ const leagueLoadOnce=leagueLoad;
 leagueLoad=async function(){await leagueLoadOnce();await leagueStartRealtime();};
 const leagueLoadWithRealtime=leagueLoad;
 leagueLoad=async function(){await leagueLoadWithRealtime();if(false){const fallback=league.seasons.find(x=>x.id==='s3');if(fallback){league.season='s3';const select=document.getElementById('leagueSeason');if(select)select.value='s3';await leagueLoadWithRealtime();}}};
-function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,10);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3 style="display:flex;justify-content:space-between;align-items:center">积分一览<span style="display:flex;gap:6px;font-size:11px"><button onclick="shareLeaderboard()" style="padding:4px 10px;border-radius:12px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer">📷 分享</button><button onclick="league.sortBy='score';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='score'?'var(--G)':'transparent'};color:${league.sortBy==='score'?'#0d0f22':'var(--dim)'};cursor:pointer">按积分</button><button onclick="league.sortBy='rate';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='rate'?'var(--G)':'transparent'};color:${league.sortBy==='rate'?'#0d0f22':'var(--dim)'};cursor:pointer">按场次</button></span></h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}${typeof realmChipFor==='function'?realmChipFor(x.p.name):''}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%${league.sortBy==='rate'&&x.s.games.length<5?' <span style="color:var(--dim);opacity:.7">（未满5场）</span>':''}</small></span><em>${league.sortBy==='rate'?x.s.rate+'%':leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>近两周战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>第${leagueEsc(m.week||'?')}周 · ${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
+function leagueRender(){const area=document.getElementById('leagueArea');if(!area)return;const search=(document.getElementById('leagueSearch')?.value||'').trim().toLowerCase();const rows=league.rows.filter(x=>String(x.p.name||'').toLowerCase().includes(search));const matches=Object.values(league.matches).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.round||0)-Number(a.round||0)).slice(0,10);const top=league.rows[0];area.innerHTML=`<div class="league-stats"><div><b>${league.rows.length}</b><span>参赛玩家</span></div><div><b>${Object.keys(league.matches).length}</b><span>已记录对局</span></div><div><b>${top?leagueEsc(top.p.name):'—'}</b><span>积分领先</span></div></div><div class="league-cols"><section class="league-card"><h3 style="display:flex;justify-content:space-between;align-items:center">积分一览<span style="display:flex;gap:6px;font-size:11px"><button onclick="shareLeaderboard()" style="padding:4px 10px;border-radius:12px;border:1px solid rgba(255,215,60,.5);background:rgba(255,215,60,.12);color:#fdd840;cursor:pointer">📷 分享</button><button onclick="league.sortBy='score';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='score'?'var(--G)':'transparent'};color:${league.sortBy==='score'?'#0d0f22':'var(--dim)'};cursor:pointer">按积分</button><button onclick="league.sortBy='rate';leagueRecalculate();leagueRender();" style="padding:4px 10px;border-radius:12px;border:1px solid var(--line);background:${league.sortBy==='rate'?'var(--G)':'transparent'};color:${league.sortBy==='rate'?'#0d0f22':'var(--dim)'};cursor:pointer">按场次</button></span></h3><div class="league-search"><input id="leagueSearch" placeholder="搜索玩家昵称" value="${leagueEsc(document.getElementById('leagueSearch')?.value||'')}"></div>${rows.length?rows.map((x,i)=>`<button class="league-row" onclick="leagueProfile('${leagueEsc(x.p.id)}')"><span class="league-avatar">${leagueEsc(x.p.emoji||'🎭')}</span><span><b>${leagueEsc(x.p.name)}${typeof realmChipFor==='function'?realmChipFor(x.p.name):''}</b><small>${x.s.games.length} 场 · 胜率 ${x.s.rate}%${league.sortBy==='rate'&&x.s.games.length<5?' <span style="color:var(--dim);opacity:.7">（未满5场）</span>':''}</small></span><em>${league.sortBy==='rate'?x.s.rate+'%':leagueFmt(x.s.score)}　›</em></button>`).join(''):'<div class="no-data">没有找到玩家</div>'}</section><section class="league-card"><h3>近两周战报</h3>${matches.length?matches.map(m=>`<div class="league-match"><b>第${leagueEsc(m.week||'?')}周 · ${leagueEsc(m.date||'日期待定')} · 第 ${leagueEsc(m.round||'—')} 局</b><small>${leagueWinSide(m)||leagueEsc(m.winCamp||'赛果待记录')} · ${(m.entries||[]).length} 位玩家${leagueJudgeLabel(m)}</small></div>`).join(''):'<div class="no-data">尚未记录对局</div>'}</section></div>`;document.getElementById('leagueSearch')?.addEventListener('input',leagueRender);}
 function shareHallOfFame(){
   fb.get(window.HOF_SRC||'tournament/hallOfFame').then(async data=>{
     data=data||{};
@@ -2557,7 +2610,7 @@ function leagueGrowthHtml(path){
   return`<section class="league-card"><h3>📈 成长轨迹</h3><div style="display:flex;align-items:flex-start;gap:4px;flex-wrap:wrap;">${steps}</div></section>`;
 }
 async function leagueProfile(id){const row=league.rows.find(x=>String(x.p.id)===String(id));if(!row)return;const {p,s}=row,rank=league.rows.indexOf(row)+1,roles={};s.entries.forEach(({e})=>{const r=e.role||'未知角色';if(!roles[r])roles[r]={n:0,w:0};roles[r].n++;if(e.result==='win')roles[r].w++;});const roleHtml=Object.entries(roles).sort((a,b)=>b[1].n-a[1].n).map(([role,v])=>`<div class="league-match"><b>${leagueEsc(role)}</b><small>${v.n} 场 · 胜率 ${Math.round(v.w/v.n*100)}%</small></div>`).join('')||'<div class="no-data">暂无角色数据</div>';
-  const nowBodyBase=(lifeLogHtml,growthHtml)=>`${lifeLogHtml}${growthHtml}<div class="league-stats"><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div></div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
+  const nowBodyBase=(lifeLogHtml,growthHtml)=>`${lifeLogHtml}${growthHtml}<div class="league-stats"${leagueJudgeCount(p.id)?' style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))"':''}><div><b>${leagueFmt(s.score)}</b><span>总积分</span></div><div><b>${s.games.length}</b><span>参赛场次</span></div><div><b>${s.rate}%</b><span>综合胜率</span></div>${leagueJudgeCount(p.id)?`<div><b>${leagueJudgeCount(p.id)}</b><span>⚖️ 执法场次</span></div>`:''}</div><div class="league-cols"><section class="league-card"><h3>常用角色</h3>${roleHtml}</section><section class="league-card"><h3>近期战绩</h3>${s.entries.sort((a,b)=>String(b.m.date||'').localeCompare(String(a.m.date||''))).slice(0,10).map(({m,e})=>`<div class="league-match"><b>${leagueEsc(m.date||'日期待定')} · ${leagueEsc(e.role||'未知角色')}</b><small>${e.result==='win'?'胜利':'失利'} · ${leagueFmt(e.total)}</small></div>`).join('')||'<div class="no-data">暂无战绩</div>'}</section></div>`;
   const nowBody=nowBodyBase('','');
   document.getElementById('leagueArea').innerHTML=`<button class="topbar-btn" onclick="leagueRender()">← 返回榜单</button><div class="league-profile"><div class="league-avatar big">${leagueEsc(p.emoji||'🎭')}</div><h2>${leagueEsc(p.name)}</h2><p>本赛季第 ${rank} 名</p><div id="reincTag"></div></div><div id="lifeBody">${nowBody}</div>`;
   leagueProfileCache={now:nowBody,prev:''};
@@ -2669,7 +2722,8 @@ function lifeLogWeekStats(weekNum,playerId){
   const wins=games.filter(e=>e.result==='win').length;
   // 本周内最长连胜（按录入顺序近似，没有更精细的时间戳就按数组顺序）
   let streak=0,best=0;games.forEach(e=>{if(e.result==='win'){streak++;best=Math.max(best,streak);}else streak=0;});
-  return{games:games.length,wins,rate:games.length?Math.round(wins/games.length*100):0,bestStreak:best};
+  const judged=Object.values(league.matches||{}).filter(m=>m&&!m.exhibition&&Number(m.week)===Number(weekNum)&&Array.isArray(m.judges)&&m.judges.map(String).includes(String(playerId))).length;
+  return{games:games.length,wins,rate:games.length?Math.round(wins/games.length*100):0,bestStreak:best,judged};
 }
 // 旧版"上一周快照"读取，仅作兼容保留（新版突破/勋章判断已改为直接用本局全部战绩回放计算，不再依赖它）
 async function lifeLogPrevSnapshot(beforeWeekId){
@@ -2741,6 +2795,8 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
   else if(stats.games>=5&&stats.rate>=70)tail=`本周${stats.games}战${stats.wins}胜，状态火热`;
   else if(stats.games>0&&!hasHighlight)tail=`第${weekNum}周出战${stats.games}场，${stats.wins}胜`;
   if(tail)parts.push(tail);
+  // ⚖️ 法官修炼：本周执掌过几场法官（没出战也没突破勋章时，第一个事件要点出"第X周"）
+  if(stats.judged>0)parts.push(`${parts.length?'':`第${weekNum}周`}执掌法官${stats.judged}场`);
   // 情绪收尾词库：按"本周战果力度"分级，挑一个贴在句末，而不是只有一两个固定词
   let mood;
   if(hasHighlight&&stats.bestStreak>=3)mood='修为大涨！';
@@ -2749,6 +2805,7 @@ function lifeLogCompose(name,weekNum,events,stats,prevName){
   else if(stats.bestStreak>=3)mood='修为大涨，再接再厉！';
   else if(stats.games>=8)mood='意志坚定。';
   else if(stats.games>0)mood='修行如常。';
+  else if(stats.judged>0)mood='以法证道。';
   else mood=null;
   let body;
   if(parts.length){
