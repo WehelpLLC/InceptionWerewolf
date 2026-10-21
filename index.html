@@ -2698,10 +2698,34 @@ function leagueLifeTab(which,id){
 //   manualEvents/{weekId}/{pid} = [事件字符串,...]  —— 管理员批量生成前可以先手动补充的现场花絮
 const LIFELOG_PATH=`tournament/${SEASON}/lifeLog`;
 function lifeLogWeekId(weekNum){return 'w'+String(weekNum).padStart(2,'0');}
-// 取本赛季出现过的所有周号（从 league.matches 里的 m.week 扫出来，去重排序）
+// 宝宝赛 / B 桌（学徒历练）录入时「week」存的是比赛日期而不是周数，所以要按日期归到对应的周：
+// 以正赛各周「最早一局的日期」为该周起点（前放宽 2 天），日期落在哪一周的起点之后就归哪一周。表演赛不计；归不到任何一周的丢掉。
+// 返回 {id: {...m, week:归好的周数}}，原对象不改动——后面的统计、地图格数回放都用这份规范化后的数据。
+function lifeLogNormMatches(matches){
+  const starts={};
+  Object.values(matches||{}).forEach(m=>{
+    if(!m||m.exhibition||!/^\d+$/.test(String(m.week))||!m.date)return;
+    const w=Number(m.week);if(starts[w]==null||m.date<starts[w])starts[w]=m.date;
+  });
+  const weeks=Object.keys(starts).map(Number).sort((a,b)=>a-b);
+  const lead=2*86400000;
+  const out={};
+  Object.entries(matches||{}).forEach(([id,m])=>{
+    if(!m||m.exhibition)return;
+    if(/^\d+$/.test(String(m.week))){out[id]={...m,week:Number(m.week)};return;}
+    const d=new Date(String(m.date||m.week)+'T00:00:00').getTime();if(isNaN(d))return;
+    let hit=null;weeks.forEach(w=>{if(new Date(starts[w]+'T00:00:00').getTime()-lead<=d)hit=w;});
+    if(hit==null)return;
+    // 比最新已知周的起点晚满 7 天：说明已经是后面的周了（那一周的正赛可能还没录），按每周 7 天往后推
+    const st=new Date(starts[hit]+'T00:00:00').getTime(),extra=Math.floor((d-st+lead)/(7*86400000));
+    out[id]={...m,week:hit===weeks[weeks.length-1]?hit+Math.max(0,extra):hit};
+  });
+  return out;
+}
+// 取本赛季出现过的所有周号（含宝宝赛 / B 桌归周后的周），去重排序
 function lifeLogWeeksInMatches(){
   const ws=new Set();
-  Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!=='')ws.add(Number(m.week));});
+  Object.values(lifeLogNormMatches(league.matches)).forEach(m=>ws.add(m.week));
   return[...ws].sort((a,b)=>a-b);
 }
 // 某一周的日期范围（从该周的所有对局 date 字段取 min/max），取不到就返回 null
@@ -2724,15 +2748,15 @@ function lifeLogIsThisWeek(iso,weekNum){
 // 某一周、某玩家的对局统计（场次/胜率/连胜等）
 function lifeLogWeekStats(weekNum,playerId){
   const games=[];
-  Object.values(league.matches||{}).forEach(m=>{
-    if(!m||m.exhibition||Number(m.week)!==Number(weekNum))return;
+  const wm=Object.values(lifeLogNormMatches(league.matches)).filter(m=>m.week===Number(weekNum));
+  wm.forEach(m=>{
     const e=(m.entries||[]).find(x=>String(x.playerId)===String(playerId));
     if(e)games.push(e);
   });
   const wins=games.filter(e=>e.result==='win').length;
   // 本周内最长连胜（按录入顺序近似，没有更精细的时间戳就按数组顺序）
   let streak=0,best=0;games.forEach(e=>{if(e.result==='win'){streak++;best=Math.max(best,streak);}else streak=0;});
-  const judged=Object.values(league.matches||{}).filter(m=>m&&!m.exhibition&&Number(m.week)===Number(weekNum)&&Array.isArray(m.judges)&&m.judges.map(String).includes(String(playerId))).length;
+  const judged=wm.filter(m=>Array.isArray(m.judges)&&m.judges.map(String).includes(String(playerId))).length;
   return{games:games.length,wins,rate:games.length?Math.round(wins/games.length*100):0,bestStreak:best,judged};
 }
 // 旧版"上一周快照"读取，仅作兼容保留（新版突破/勋章判断已改为直接用本局全部战绩回放计算，不再依赖它）
@@ -2752,11 +2776,7 @@ async function lifeLogBuildSnapshot(){
 // 把全部战绩按"截止到第几周（含）"过滤，用于回放重算"那个时间点"应处的状态
 function lifeLogMatchesThroughWeek(allMatches,weekNum){
   const out={};
-  Object.entries(allMatches||{}).forEach(([id,m])=>{
-    if(!m||m.exhibition)return;
-    const wk=Number(m.week);
-    if(!isNaN(wk)&&wk<=weekNum)out[id]=m;
-  });
+  Object.entries(lifeLogNormMatches(allMatches)).forEach(([id,m])=>{if(m.week<=weekNum)out[id]=m;});
   return out;
 }
 // 单个玩家：本周结束时所处的境界 vs 本周开始前（即截止上一周）所处的境界——都从真实战绩直接回放算出，不依赖任何存档快照，
@@ -2884,10 +2904,10 @@ async function lifeLogForPlayer(name){
 
 // ── 命薄审核：后台 UI ──
 let llCurWeek=1;
-const LL_VER='2026-10-21a'; // 页面版本号：显示在命薄审核页，用来判断浏览器是不是还在用旧页面
+const LL_VER='2026-10-21b'; // 页面版本号：显示在命薄审核页，用来判断浏览器是不是还在用旧页面
 // 按当前 league.matches 渲染周数下拉：1..最大周+1，每周标注已录对局数；不论数据有没有读到，下拉都至少有「第 1 周」
 function llRenderWeeks(pick){
-  const cnt={};Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!==''&&!isNaN(Number(m.week)))cnt[Number(m.week)]=(cnt[Number(m.week)]||0)+1;});
+  const cnt={};Object.values(lifeLogNormMatches(league.matches)).forEach(m=>{cnt[m.week]=(cnt[m.week]||0)+1;});
   const weeks=Object.keys(cnt).map(Number);
   const maxWeek=weeks.length?Math.max(...weeks):1;
   const sel=document.getElementById('llWeekSel');
@@ -2906,9 +2926,9 @@ async function llInit(){
     if(league.season!==SEASON){league.season=SEASON;const ls=document.getElementById('leagueSeason');if(ls)ls.value=SEASON;}
     await Promise.race([leagueLoad(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('读取超时')),10000))]);
     const info=llRenderWeeks();
-    const n=Object.keys(league.matches||{}).length;
+    const n=Object.values(info.cnt).reduce((a,b)=>a+b,0);
     if(!n){if(st)st.textContent='⚠️ 本赛季没有读到任何对局（数据路径：'+leaguePath()+'）· 页面版本 '+LL_VER;}
-    else if(st)st.textContent='✓ 已读取本赛季 '+n+' 局对局：'+Object.keys(info.cnt).sort((a,b)=>a-b).map(w=>'第'+w+'周 '+info.cnt[w]+' 局').join('、')+' · 页面版本 '+LL_VER;
+    else if(st)st.textContent='✓ 已读取本赛季 '+n+' 局对局（不含表演赛；宝宝赛/B桌已按日期归周）：'+Object.keys(info.cnt).sort((a,b)=>a-b).map(w=>'第'+w+'周 '+info.cnt[w]+' 局').join('、')+' · 页面版本 '+LL_VER;
   }catch(e){
     if(st)st.textContent='⚠️ 读取最新战绩失败（'+e.message+'），下面是页面里已有的数据 · 页面版本 '+LL_VER;
     console.warn('命薄审核读取战绩失败',e);
