@@ -683,6 +683,7 @@ body{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#2
         <select id="llWeekSel" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-family:inherit;"></select>
         <button class="btn-gold" style="padding:9px 16px;white-space:nowrap;" onclick="llGenerate()">✨ 批量生成草稿</button>
       </div>
+      <div id="llStatus" style="font-size:11px;color:var(--dim);line-height:1.7;margin:-4px 0 12px;"></div>
       <div style="font-size:12px;color:var(--dim);line-height:1.8;margin-bottom:10px;">想让某人的小结提到具体现场花絮（比如"群狼蔽月"的名场面）？可以在生成前先手动加一条：</div>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <select id="llManualPlayer" style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-family:inherit;font-size:12px;"></select>
@@ -2883,19 +2884,35 @@ async function lifeLogForPlayer(name){
 
 // ── 命薄审核：后台 UI ──
 let llCurWeek=1;
-async function llInit(){
-  // 每次进入都重新读取本赛季最新战绩：之前只在 league 还没加载时才读，管理员页面开着时新录的对局不会出现，周数就一直停在旧的一周
-  if(league.season!==SEASON){league.season=SEASON;const ls=document.getElementById('leagueSeason');if(ls)ls.value=SEASON;}
-  await leagueLoad();
-  const weeks=lifeLogWeeksInMatches();
+const LL_VER='2026-10-21a'; // 页面版本号：显示在命薄审核页，用来判断浏览器是不是还在用旧页面
+// 按当前 league.matches 渲染周数下拉：1..最大周+1，每周标注已录对局数；不论数据有没有读到，下拉都至少有「第 1 周」
+function llRenderWeeks(pick){
+  const cnt={};Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!==''&&!isNaN(Number(m.week)))cnt[Number(m.week)]=(cnt[Number(m.week)]||0)+1;});
+  const weeks=Object.keys(cnt).map(Number);
   const maxWeek=weeks.length?Math.max(...weeks):1;
-  const cnt={};Object.values(league.matches||{}).forEach(m=>{if(m&&!m.exhibition&&m.week!=null&&m.week!=='')cnt[Number(m.week)]=(cnt[Number(m.week)]||0)+1;});
   const sel=document.getElementById('llWeekSel');
-  // 多给一个「下一周」：本周战绩还没录完/下周刚开始时也能先出命薄；每个选项标出已录对局数，方便核对周数有没有填错
   const opts=[];for(let w=1;w<=maxWeek+1;w++)opts.push(w);
   sel.innerHTML=opts.map(w=>`<option value="${w}">第 ${w} 周 · ${cnt[w]?cnt[w]+' 局':'暂无对局'}</option>`).join('');
-  sel.value=llCurWeek=maxWeek||1;
+  sel.value=llCurWeek=(pick&&opts.includes(pick))?pick:maxWeek;
   sel.onchange=()=>{llCurWeek=Number(sel.value);llLoadManualList();document.getElementById('llEntries').innerHTML='<div class="no-data">点上面「批量生成草稿」开始</div>';document.getElementById('llPublishBtn').style.display='none';};
+  return{cnt,maxWeek};
+}
+async function llInit(){
+  const st=document.getElementById('llStatus');
+  llRenderWeeks(); // 先用手头已有的数据立刻填好，不让下拉框空着
+  if(st)st.textContent='正在读取最新战绩…（页面版本 '+LL_VER+'）';
+  // 每次进入都重新读取本赛季最新战绩：管理员页面开着时新录的对局不会自动出现；读取超过 10 秒或失败就明说，并沿用已有数据
+  try{
+    if(league.season!==SEASON){league.season=SEASON;const ls=document.getElementById('leagueSeason');if(ls)ls.value=SEASON;}
+    await Promise.race([leagueLoad(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('读取超时')),10000))]);
+    const info=llRenderWeeks();
+    const n=Object.keys(league.matches||{}).length;
+    if(!n){if(st)st.textContent='⚠️ 本赛季没有读到任何对局（数据路径：'+leaguePath()+'）· 页面版本 '+LL_VER;}
+    else if(st)st.textContent='✓ 已读取本赛季 '+n+' 局对局：'+Object.keys(info.cnt).sort((a,b)=>a-b).map(w=>'第'+w+'周 '+info.cnt[w]+' 局').join('、')+' · 页面版本 '+LL_VER;
+  }catch(e){
+    if(st)st.textContent='⚠️ 读取最新战绩失败（'+e.message+'），下面是页面里已有的数据 · 页面版本 '+LL_VER;
+    console.warn('命薄审核读取战绩失败',e);
+  }
   const psel=document.getElementById('llManualPlayer');
   psel.innerHTML=league.rows.map(r=>`<option value="${r.p.id}">${leagueEsc(r.p.name)}</option>`).join('');
   llLoadManualList();
