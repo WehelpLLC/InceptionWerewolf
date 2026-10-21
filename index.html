@@ -4084,12 +4084,17 @@ function medalTier(count){let t=null;MEDAL_TIERS.forEach(([c,n])=>{if(count>=c)t
 // 手动颁发：所有勋章都可选（神职勋章平时按战绩自动判定，但夜间记录漏填时可以在这里补发；同一局同一人同一勋章只算 1 次，不会和自动判定重复）
 const MANUAL_MEDALS=MEDALS_S4.map(m=>[m.n,m.d,m.g]);
 function medalPlayerOptions(cur){
-  const opts=[...document.querySelectorAll('#entryRows .entry-row')].map(r=>{
+  // 本局已添加的参赛玩家排前面（带座位号）；其余所有玩家列在「其他玩家」里——勋章不一定发给本局参赛者（比如投食王、法官），所以不能只列参赛玩家
+  const seen=new Set();
+  const inMatch=[...document.querySelectorAll('#entryRows .entry-row')].map(r=>{
     const s=r.querySelector('select.entry-sel');const seat=r.querySelector('input[type="number"]')?.value;
     if(!s||!s.value||s.value==='__NEW__')return null;
+    seen.add(s.value);
     return {id:s.value,label:(seat?seat+'号 ':'')+(s.selectedOptions[0]?.textContent||'').trim()};
   }).filter(Boolean);
-  return '<option value="">选择玩家</option>'+opts.map(o=>`<option value="${s4Esc(o.id)}"${o.id===cur?' selected':''}>${s4Esc(o.label)}</option>`).join('');
+  const others=Object.values(scorePlayers||{}).filter(p=>p&&p.id&&!seen.has(p.id)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','zh')).map(p=>({id:p.id,label:`${p.emoji||'🎭'} ${p.name}${(window.MATCH_JUDGES||[]).includes(p.id)?'（本局法官）':''}`}));
+  const opt=o=>`<option value="${s4Esc(o.id)}"${o.id===cur?' selected':''}>${s4Esc(o.label)}</option>`;
+  return '<option value="">选择玩家</option>'+(inMatch.length?`<optgroup label="本局参赛">${inMatch.map(opt).join('')}</optgroup>`:'')+(others.length?`<optgroup label="${inMatch.length?'其他玩家':'全部玩家'}">${others.map(opt).join('')}</optgroup>`:'');
 }
 function medalAddRow(medal,pid){
   const wrap=document.getElementById('medalRows');if(!wrap)return;
