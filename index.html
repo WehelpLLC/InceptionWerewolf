@@ -776,7 +776,7 @@ async function fbPutStrict(p,d){
 }
 
 // ══ 常量 ══
-const ROLES=["混血儿", "平民", "预言家", "女巫", "猎人", "白神", "守卫", "骑士", "摄梦人", "魔术师", "通灵师", "守墓人", "道士", "阴阳师", "小精灵", "猎魔人", "定序王子", "奇迹商人", "舞者", "蒙面人", "禁言长老", "狼人", "狼王", "白狼王", "狼美人", "石像鬼", "隐狼", "机械狼", "幽灵狼", "恶灵骑士", "恶灵", "梦魇", "血月使徒", "诡术师", "假面", "盗宝大师", "狼术师", "黑市商人", "混血儿", "野孩子", "吹笛者", "妓女", "鬼魂新娘", "口吃法官", "炸弹", "狼人", "狼王", "白狼王", "黑狼王", "狼美人", "蚀时狼妃", "隐狼", "石像鬼", "机械狼", "恶灵骑士", "梦魔", "魅魔", "血月使徒", "诡术师", "假面", "狼术师", "恶魔", "长老", "潜行者"];
+const ROLES=["凯恩", "天使长", "莉娅", "莉莉丝", "混血儿", "平民", "预言家", "女巫", "猎人", "白神", "守卫", "骑士", "摄梦人", "魔术师", "通灵师", "守墓人", "道士", "阴阳师", "小精灵", "猎魔人", "定序王子", "奇迹商人", "舞者", "蒙面人", "禁言长老", "狼人", "狼王", "白狼王", "狼美人", "石像鬼", "隐狼", "机械狼", "幽灵狼", "恶灵骑士", "恶灵", "梦魇", "血月使徒", "诡术师", "假面", "盗宝大师", "狼术师", "黑市商人", "混血儿", "野孩子", "吹笛者", "妓女", "鬼魂新娘", "口吃法官", "炸弹", "狼人", "狼王", "白狼王", "黑狼王", "狼美人", "蚀时狼妃", "隐狼", "石像鬼", "机械狼", "恶灵骑士", "梦魔", "魅魔", "血月使徒", "诡术师", "假面", "狼术师", "恶魔", "长老", "潜行者"];
 const N=[16,8,4,2,1],TOTAL=5,RNAMES=['第一轮','第二轮','第三轮','半决赛','决赛'];
 const EMOJIS=['🐺','🦊','🌙','⚔️','🔮','🎭','🗡️','🌟','🎪','👑','🏆','🎲','🌸','🔥','💎','🦅','🎯','🌊','🌿','🎸','🐉','🦁','🌕','🎴','🃏','🎰','🌈','🧊','🔱','🎵'];
 const ADMIN_PW='inception2026';
@@ -1845,7 +1845,7 @@ function onPlayerSelChange(sel){
     sel.style.display='';
   }
 }
-const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["狼术师交换目标","狼人击杀","女巫救","女巫毒","魔术师交换目标","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"动物园":{"roles":["熊","企鹅","乌鸦","狐狸"],"wolfSpecial":"狼王","seatCount":12,"nightFields":["企鹅冰冻","狼人击杀","乌鸦诅咒","狐狸查验","熊是否咆哮"],"dayExtra":["狼王开枪目标"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]},"星移入瞳":{"roles":["毒师","猎人","白痴","鬼瞳"],"wolfSpecial":"奎木狼","nightFields":["奎木狼星移（方向）","击杀号码","毒师毒杀","鬼瞳瞳照"],"dayExtra":["猎人是否开枪","猎人开枪目标","瞳照狼人翻牌"]},"灵魂锁链":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]}};
+const ROLE_TEMPLATES={"预女猎白":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎白混":{"roles":["预言家","女巫","猎人","白痴"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"预女猎禁混":{"roles":["预言家","女巫","猎人","禁言长老"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验","禁言号码"],"dayExtra":["猎人是否开枪","猎人开枪目标","禁言情况"]},"狼王守卫":{"roles":["守卫","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"杠精板子":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":"狼王","nightFields":["击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口","杠精开杠目标","开杠结果"]},"狼王摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"狼王","nightFields":["梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"机械狼通灵师":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","通灵师查验"],"dayExtra":[]},"石像鬼守墓人":{"roles":["守墓人","女巫","猎人","预言家"],"wolfSpecial":"石像鬼","nightFields":["守墓人查验","石像鬼查验","石像鬼击杀","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"梦魇摄梦":{"roles":["摄梦人","女巫","猎人","预言家"],"wolfSpecial":"梦魇","nightFields":["梦魇目标","梦游目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"永序之轮":{"roles":["定序王子","女巫","守卫","预言家"],"wolfSpecial":"蚀时狼妃","nightFields":["封锁目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["时空逆转情况"]},"诡术之境":{"roles":["魔术师","女巫","定序王子","预言家"],"wolfSpecial":"诡术师","nightFields":["魔术师交换目标","诡术师交换目标","狼人击杀","女巫救","女巫毒","预言家查验","定序王子睁眼"],"dayExtra":["时空逆转情况"]},"魔幻对决":{"roles":["魔术师","女巫","猎人","预言家"],"wolfSpecial":"狼术师","nightFields":["狼术师交换目标","狼人击杀","女巫救","女巫毒","魔术师交换目标","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"]},"假面舞会":{"roles":["舞者","女巫","白痴","预言家"],"wolfSpecial":"假面","nightFields":["舞者睁眼","狼人击杀","女巫救","女巫毒","预言家查验","白神睁眼","舞池","假面查验","假面面具"],"dayExtra":[],"hasFirstSecondNight":true},"奇迹商人":{"roles":["奇迹商人","女巫","守卫","预言家"],"wolfSpecial":"狼王","nightFields":["奇迹商人目标","守卫目标","狼人击杀","女巫救","女巫毒","预言家查验","幸运儿行动"],"dayExtra":["狼王枪口"]},"迷雾装甲":{"roles":["守卫","女巫","猎人","通灵师"],"wolfSpecial":"装甲狼","wolfSpecial2":"机械狼","nightFields":["通灵师举手","守卫目标","狼人击杀","女巫救","女巫毒","机械狼学习目标","机械狼技能结果","装甲狼学习目标","装甲狼技能结果","通灵师查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"hasFirstSecondNight":true},"动物园":{"roles":["熊","企鹅","乌鸦","狐狸"],"wolfSpecial":"狼王","seatCount":12,"nightFields":["企鹅冰冻","狼人击杀","乌鸦诅咒","狐狸查验","熊是否咆哮"],"dayExtra":["狼王开枪目标"]},"盗宝大师":{"roles":["通灵师","蒙面人","摄梦人","猎人","毒师"],"wolfSpecial":"狼王","wolfSpecial2":"盗宝大师","seatCount":12,"nightFields":["盗宝大师选牌","摄梦人梦游目标","狼人击杀","毒师毒杀","通灵师查验","蒙面人触发情况"],"dayExtra":["猎人是否开枪","猎人开枪目标","狼王枪口"]},"丘比特板子":{"roles":["预言家","女巫","猎人","丘比特"],"wolfSpecial":null,"thirdParty":"情侣","thirdPartyMembers":["情侣"],"nightFields":["丘比特连线目标","狼人击杀","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标"],"winOptions":["狼人阵营胜","好人阵营胜","情侣阵营胜"]},"唐伯虎点秋香":{"roles":["预言家","女巫","猎人","糖伯虎"],"wolfSpecial":"狼王","thirdParty":"心上人","thirdPartyMembers":["唐伯虎","秋香"],"nightFields":["秋香确认位置","狼人击杀","女巫救","女巫毒","预言家查验","唐伯虎点秋香目标"],"dayExtra":["猎人是否开枪","猎人开枪目标","唐伯虎点秋香结果"],"winOptions":["狼人阵营胜","好人阵营胜","心上人阵营胜"]},"阴阳师":{"roles":["阴阳师","女巫","守卫","小精灵"],"wolfSpecial":"恶灵","nightFields":["恶灵催眠","守卫目标","击杀号码","女巫救","女巫毒","阴阳师查验","小精灵附身"],"dayExtra":["被催眠平民（不计票）","小精灵连带死亡"]},"针锋相杠":{"roles":["预言家","女巫","猎人","杠精"],"wolfSpecial":null,"goodExtra":"混血儿","nightFields":["混人号码","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","杠精开杠目标","开杠结果"]},"狼美骑士":{"roles":["预言家","女巫","守卫","骑士"],"wolfSpecial":"狼美人","nightFields":["守卫目标","击杀号码","狼美人魅惑","女巫救","女巫毒","预言家查验"],"dayExtra":["骑士决斗目标","决斗结果","殉情情况"]},"鬼魂新娘":{"roles":["预言家","女巫","守卫","猎人"],"wolfSpecial":null,"thirdParty":"鬼魂新娘","thirdPartyMembers":["鬼魂新娘","新郎","证婚人"],"nightFields":["新娘选新郎","证婚人号码","守卫目标","击杀号码","女巫救","女巫毒","预言家查验"],"dayExtra":["猎人是否开枪","猎人开枪目标","殉情情况"],"winOptions":["狼人阵营胜","好人阵营胜","鬼魂新娘阵营胜"]},"星移入瞳":{"roles":["毒师","猎人","白痴","鬼瞳"],"wolfSpecial":"奎木狼","nightFields":["奎木狼星移（方向）","击杀号码","毒师毒杀","鬼瞳瞳照"],"dayExtra":["猎人是否开枪","猎人开枪目标","瞳照狼人翻牌"]},"灵魂锁链":{"roles":["先知","女巫","守卫","道士"],"wolfSpecial":"幽灵狼","nightFields":["幽灵狼链接","道士结印","锁链是否解除","守卫目标","击杀号码","女巫救","女巫毒","先知查验"],"dayExtra":["锁链是否生效","锁链连带死亡"]},"暗黑破坏2":{"roles":["凯恩","天使长","女巫","摄梦人"],"wolfSpecial":"狼王","wolfSpecial2":"莉娅","wolfExtra":["莉莉丝"],"seatCount":12,"nightFields":["莉莉丝禁锢目标","梦游目标","击杀号码","女巫救","女巫毒","天使长祝福目标","天使长复活目标","凯恩鉴定","莉娅充能目标"],"dayExtra":["狼王枪口","迷雾是否开启"]}};
 function initTemplateSelect(){
   const sel=document.getElementById('mTemplate');
   if(!sel||sel.options.length>1)return;
@@ -1853,12 +1853,13 @@ function initTemplateSelect(){
     const opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);
   });
 }
+function tplWolves(t){return[t.wolfSpecial,t.wolfSpecial2,...(t.wolfExtra||[])].filter(Boolean);}
 function onTemplateChange(){
   const name=document.getElementById('mTemplate').value;
   document.getElementById('entryRows').innerHTML='';entryCount=0;
   if(!name){document.getElementById('templateHint').textContent='';document.getElementById('winSideButtons').style.display='none';document.getElementById('nightDayFields').innerHTML='';return;}
   const t=ROLE_TEMPLATES[name];
-  const wolfList=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean).join('、')||'狼人';
+  const wolfList=tplWolves(t).join('、')||'狼人';
   const thirdPartyHint=t.thirdParty?`　·　第三方：${(t.thirdPartyMembers||[t.thirdParty]).join('/')}`:'';
   document.getElementById('templateHint').innerHTML=`神职：${t.roles.join('/')}　·　特殊狼：${wolfList}${t.goodExtra?'　·　含'+t.goodExtra:''}${thirdPartyHint}`;
   const seatN=t.seatCount||12;
@@ -1901,7 +1902,7 @@ function buildRoleOptions(t){
   const goodRoles=[...t.roles];
   if(t.goodExtra)goodRoles.push(t.goodExtra);
   goodRoles.push('平民');
-  const wolfRoles=[t.wolfSpecial,t.wolfSpecial2,'狼人'].filter(Boolean);
+  const wolfRoles=[...tplWolves(t),'狼人'];
   const thirdRoles=t.thirdPartyMembers||(t.thirdParty?[t.thirdParty]:[]);
   const all=[...goodRoles,...wolfRoles,...thirdRoles];
   return all.map(r=>`<option>${r}</option>`).join('');
@@ -1910,7 +1911,7 @@ function setWinSide(side){
   const name=document.getElementById('mTemplate').value;
   if(!name){toast('请先选择版型');return;}
   const t=ROLE_TEMPLATES[name];
-  const wolfNames=new Set([t.wolfSpecial,t.wolfSpecial2,'狼人'].filter(Boolean));
+  const wolfNames=new Set([...tplWolves(t),'狼人']);
   const thirdNames=new Set(t.thirdPartyMembers||(t.thirdParty?[t.thirdParty]:[]));
   document.querySelectorAll('#entryRows .entry-row').forEach(row=>{
     const roleSel=row.querySelector('.role-sel');
@@ -1946,11 +1947,12 @@ function buildNightDayFields(t){
     if(f==='猎人是否开枪')return'是/否';
     if(f==='猎人开枪目标')return'开枪打的号码';
     if(f==='获胜方')return'狼/好';
+    if(f==='凯恩鉴定')return'如：3,7 拇指↑';
     if(f.includes('学习目标'))return'学的座位号';
     if(f.includes('技能结果'))return'如：查验3号/救5号';
     return'号码';
   };
-  const wideField=(f)=>f.includes('技能结果');
+  const wideField=(f)=>f.includes('技能结果')||f==='凯恩鉴定';
   const buildTable=(fields,cols,prefix)=>`
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="record-table" style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;">
@@ -2180,7 +2182,7 @@ function seatName(entries,seatNo){
 async function generateRecapDraft(tname,week,round,entries,ndData,track,date){
   const t=ROLE_TEMPLATES[tname];
   // 身份信息段
-  const wolfNames=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean);
+  const wolfNames=tplWolves(t);
   const byRole={};
   entries.forEach(e=>{(byRole[e.role]??=[]).push(e.seat);});
   const wolfSeats=entries.filter(e=>[...wolfNames,'狼人'].includes(e.role)).map(e=>e.seat).sort((a,b)=>a-b);
@@ -2198,7 +2200,7 @@ async function generateRecapDraft(tname,week,round,entries,ndData,track,date){
     const parts=[];
     t.nightFields.forEach(f=>{
       const v=ndData[f]?.[ci];
-      if(v)parts.push(`${f}${seatName(entries,v)||v}`);
+      if(v)parts.push(f==='凯恩鉴定'?`${f}${v}`:`${f}${seatName(entries,v)||v}`); // 凯恩鉴定填的是「两个号码+手势」，原样输出
     });
     if(parts.length)body+=`🌙${nightColLabels[ci]}：${parts.join(' ')}\n`;
     const dayParts=[];
@@ -2324,7 +2326,7 @@ async function mapSet(key,name,emoji){
 // ══ 联赛中心（增量加入；不改变人气王、地图或后台的原有数据与流程）══
 const league={season:(typeof SEASON!=='undefined'?SEASON:'s4'),seasons:[],players:{},matches:{},rows:[],sortBy:'score'};
 function leagueEsc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function leagueWolf(role){return /狼|石像鬼|恶灵|梦魇|血月|诡术|假面|盗宝/.test(role||'');}
+function leagueWolf(role){return /狼|石像鬼|恶灵|梦魇|血月|诡术|假面|盗宝|莉娅|莉莉丝/.test(role||'');}
 function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.filter(e=>e.result==='win');if(!winners.length)return null;return winners.some(e=>leagueWolf(e.role))?'🐺 狼人胜利':'👑 好人胜利';}
 // ⚖️ 法官：某场对局的法官名、某玩家的执法场次（表演赛不计）
 function leagueJudgeLabel(m){const ids=(m&&Array.isArray(m.judges))?m.judges:[];if(!ids.length)return'';return' · ⚖️ '+ids.map(id=>leagueEsc((league.players[id]||Object.values(league.players).find(p=>String(p.id)===String(id))||{}).name||'?')).join('、');}
@@ -5670,6 +5672,38 @@ const BOARD_RULES={
    "锁链需要满足「前一晚有狼人被放逐」等触发条件后才生效。"
   ],
   "status": "ok"
+ },
+ "暗黑破坏2": {
+  "summary": "12 人专业赛：好人 凯恩、天使长、女巫、摄梦人 + 4 名平民；狼人 狼人、狼王、莉娅、莉莉丝。别名：暗黑破坏Ⅱ、暗黑破坏II。把身份鉴定、复活、禁锢和票型隐藏放在同一局：凯恩给信息，天使长改票数、救人，莉莉丝禁锢技能，莉娅用迷雾隐藏票型。",
+  "link": "https://werewolves.games/an-hei-po-huai-2/",
+  "skills": {
+   "凯恩": "每晚鉴定两名玩家，不能选自己。反馈三类手势：拇指向上＝两人同为狼人、同为神职或同为平民（不要求是同一个具体角色）；拇指向下＝一神一民；狼爪＝一狼一好人。鉴定组合包含莉娅时，始终反馈拇指向上。",
+   "天使长": "祝福、复活各一次，都不能对自己使用。祝福：祝福莉莉丝会令其死亡；祝福其他玩家，其当天放逐票由 1 票变为 3 票。复活：可复活夜间死亡或白天被放逐的玩家。若被莉莉丝禁锢，永久失去复活技能。",
+   "莉莉丝": "狼人阵营。当夜第一个单独睁眼选择禁锢目标，之后与除莉娅外的狼人互认。被禁锢者：当夜免疫一切伤害；夜间和次日白天不能发动技能；次日白天不能被放逐，投给其的放逐票无效。不能禁锢自己，也不能连续两晚禁锢同一人。禁锢狼人不会封锁狼刀。",
+   "莉娅": "狼人阵营，与其他狼人互不认识。每晚选一名玩家充能：选到平民则成功，选到非平民则失败；成功后获得一次迷雾，本局不能再次充能。迷雾开启当天，除莉娅外所有玩家看不到逐人放逐票型，只能看到总票数和结果。免疫女巫毒，不能自爆；其他狼队友全部出局后继承狼刀。"
+  },
+  "order": [
+   "天黑请闭眼",
+   "莉莉丝请睁眼，单独选择今晚禁锢的玩家（不能禁锢自己，不能连续两晚禁锢同一人）",
+   "摄梦人请睁眼，选择今晚梦游的玩家",
+   "狼人请睁眼：莉莉丝与除莉娅外的狼人互认，选择袭击目标（莉娅不参与互认）",
+   "女巫请睁眼：告知刀口（刀口落在被禁锢者身上时，持有解药的女巫仍能看到），选择用药",
+   "天使长请睁眼：选择是否祝福 / 复活（各限一次）",
+   "凯恩请睁眼，鉴定两名玩家，法官用手势反馈",
+   "莉娅请睁眼，选择今晚充能的玩家（已成功获得过迷雾则跳过）",
+   "天亮"
+  ],
+  "notes": [
+   "【按原页面整理】专业赛 12 人。胜负条件：按当局赛事胜负口径执行。",
+   "【特殊结算】天使长的祝福与复活分别计数，使用其中一个不会消耗另一个。",
+   "【特殊结算】禁锢天使长造成的复活技能损失是永久的，不会随当夜禁锢结束而恢复。",
+   "【特殊结算】迷雾只影响逐人票型的可见性，不隐藏总票数和最终放逐结果。",
+   "【特殊结算】莉莉丝禁锢狼人不会封锁狼刀；狼刀落在被禁锢者身上，女巫持有解药时仍能看到刀口。",
+   "【需店内确认】原页面没有逐条列出完整夜间顺序，只写了「莉莉丝率先单独选择禁锢目标，再与除莉娅外的狼队互认」，其余身份按「梦游、狼刀、用药、祝福或复活、鉴定、充能或迷雾」罗列。上面的夜间顺序按这个罗列顺序整理，正式开局前请法官确认先后。",
+   "【需店内确认】原页面没有单独说明女巫、摄梦人、狼王的技能，这里按本店通行规则显示；与莉莉丝禁锢、莉娅迷雾等的交互，以原页面特殊结算为准。",
+   "其他写法：暗黑破坏Ⅱ、暗黑破坏II。初代版本见 https://werewolves.games/an-hei-po-huai/"
+  ],
+  "status": "std"
  }
 };
 
@@ -5681,7 +5715,7 @@ function brEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 function brLines(v){return String(v||'').split('\n').map(x=>x.trim()).filter(Boolean);}
 function boardRoleList(t){
   const good=[...(t.roles||[])];if(t.goodExtra)good.push(t.goodExtra);
-  const wolves=[t.wolfSpecial,t.wolfSpecial2].filter(Boolean);
+  const wolves=tplWolves(t);
   const third=t.thirdParty?(t.thirdPartyMembers||[t.thirdParty]):[];
   return {good,wolves,third};
 }
@@ -6316,7 +6350,7 @@ feedAdmOrders=async function(){
 // ══ S4 勋章系统：统计（人工 + 自动）与展示 ══
 const MEDAL_ICON={'天机窥狼':'🔮','鸩毒判官':'🧪','诛魔一箭':'🏹','护法结界':'🛡️','夺舍伪仙':'🎭','群狼蔽月':'🌑','凡心问道':'🕯️','逆天改命':'⚡','灵膳仙厨·投食王':'🍳'};
 const MEDAL_TIER_STYLE={'初窥':{c:'#c98a5a',g:'rgba(201,138,90,.55)'},'小成':{c:'#cfd6e0',g:'rgba(207,214,224,.6)'},'大成':{c:'#f0c96a',g:'rgba(240,201,106,.75)'},'圆满':{c:'#b993ff',g:'rgba(185,147,255,.85)'}};
-const MEDAL_WOLF_EXTRA=new Set(['石像鬼','恶灵','恶灵骑士','假面','诡术师','蚀时狼妃','梦魇','梦魔','魅魔','狼美人','血月使徒','隐狼','机械狼','装甲狼','奎木狼','幽灵狼','狼术师','黑狼王','白狼王','狼王']);
+const MEDAL_WOLF_EXTRA=new Set(['莉娅','莉莉丝','石像鬼','恶灵','恶灵骑士','假面','诡术师','蚀时狼妃','梦魇','梦魔','魅魔','狼美人','血月使徒','隐狼','机械狼','装甲狼','奎木狼','幽灵狼','狼术师','黑狼王','白狼王','狼王']);
 function medalIsWolf(role){role=String(role||'');if(!role)return false;if(role.includes('狼'))return true;if(MEDAL_WOLF_EXTRA.has(role))return true;try{if(typeof CUSTOM_WOLVES!=='undefined'&&CUSTOM_WOLVES.has(role))return true;}catch(e){}return false;}
 function medalSeats(v){return String(v||'').match(/\d+/g)?.map(Number)||[];}
 // 一局里自动判定的勋章：返回 [{medal,playerId}]
