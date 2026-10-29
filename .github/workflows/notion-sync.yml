@@ -1,0 +1,24 @@
+name: Sync to Notion
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # 约每 5 分钟（GitHub 可能延迟几分钟）
+  workflow_dispatch: {}
+concurrency:
+  group: notion-sync
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Sync players & matches to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
+        run: node scripts/notion-sync.mjs
