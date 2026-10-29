@@ -7,13 +7,19 @@
 //   FIREBASE_URL / NOTION_API  仅测试用，可覆盖
 import crypto from 'node:crypto';
 
+// 失败时把原因显示在 GitHub 的运行提示里（不会输出密钥）
+const fail = msg => { console.log(`::error title=Notion 同步失败::${String(msg).replace(/\r?\n/g, ' ').slice(0, 500)}`); console.error(msg); process.exit(1); };
+process.on('uncaughtException', e => fail(e?.message || e));
+process.on('unhandledRejection', e => fail(e?.message || e));
+
 const TOKEN = process.env.NOTION_TOKEN;
 const PARENT = (process.env.NOTION_PARENT_PAGE_ID || '').replace(/-/g, '').match(/[0-9a-f]{32}/i)?.[0];
 const FB = process.env.FIREBASE_URL || 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
 const API = process.env.NOTION_API || 'https://api.notion.com';
 const SEASON_PATH = process.env.SEASON_PATH || 'playerProfiles/s4';
 const LABEL = process.env.SEASON_LABEL || 'S4';
-if (!TOKEN || !PARENT) { console.error('缺少 NOTION_TOKEN 或 NOTION_PARENT_PAGE_ID'); process.exit(1); }
+if (!TOKEN) fail('GitHub 里没有读到 NOTION_TOKEN：请在仓库 Settings → Secrets and variables → Actions 添加名为 NOTION_TOKEN 的 secret');
+if (!PARENT) fail('没有读到有效的 NOTION_PARENT_PAGE_ID：请添加这个 secret，值为放数据的 Notion 页面链接或 32 位页面 ID');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function notion(method, path, body, tries = 5) {
@@ -36,7 +42,7 @@ const hash = o => crypto.createHash('sha1').update(JSON.stringify(o)).digest('he
 const txt = s => [{ type: 'text', text: { content: String(s ?? '').slice(0, 1990) } }];
 
 const [playersRaw, matchesRaw] = await Promise.all([fbGet(`${SEASON_PATH}/players`), fbGet(`${SEASON_PATH}/matches`)]);
-if (!playersRaw || !matchesRaw) { console.error('Firebase 返回为空，为安全起见本次不同步、不删除任何内容'); process.exit(1); }
+if (!playersRaw || !matchesRaw) { fail('Firebase 返回为空，为安全起见本次不同步、不删除任何内容'); }
 const players = Object.entries(playersRaw).map(([id, p]) => ({ ...p, id: p.id || id })).filter(p => p && p.name);
 const allMatches = Object.values(matchesRaw).filter(Boolean);
 const matches = allMatches.filter(m => !m.exhibition); // 表演赛不计入任何统计
