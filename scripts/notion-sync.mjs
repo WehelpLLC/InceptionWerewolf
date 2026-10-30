@@ -13,7 +13,9 @@ process.on('uncaughtException', e => fail(e?.message || e));
 process.on('unhandledRejection', e => fail(e?.message || e));
 
 const TOKEN = process.env.NOTION_TOKEN;
-const PARENT = (process.env.NOTION_PARENT_PAGE_ID || '').replace(/-/g, '').match(/[0-9a-f]{32}/i)?.[0];
+// 页面 ID 永远是链接路径最后的 32 位十六进制（可带连字符）；标题里的字母（如 "S4-"）不能算进去
+const PARENT = (() => { const last = (process.env.NOTION_PARENT_PAGE_ID || '').trim().split(/[?#]/)[0].replace(/\/+$/, '').split('/').pop();
+  const m = last.match(/([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/i); return m ? m[1].replace(/-/g, '').toLowerCase() : null; })();
 const FB = process.env.FIREBASE_URL || 'https://werewolf-favourite-tournament-default-rtdb.firebaseio.com';
 const API = process.env.NOTION_API || 'https://api.notion.com';
 const SEASON_PATH = process.env.SEASON_PATH || 'playerProfiles/s4';
