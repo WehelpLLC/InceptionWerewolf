@@ -1261,7 +1261,7 @@ async function loadMyData(){
   myE.sort((a,b)=>(b.m.date||'').localeCompare(a.m.date||''));
   if(!myE.length){document.getElementById('noData').style.display='block';return;}
   const total=myE.length,wins=myE.filter(x=>x.e.result==='win').length;
-  const score=+myE.reduce((s,x)=>s+x.e.total,0).toFixed(1);
+  const score=+(myE.reduce((s,x)=>s+x.e.total,0)+((window.CK_BONUS||{})[cName]||0)).toFixed(1);
   document.getElementById('dScore').textContent=(score>=0?'+':'')+score;
   document.getElementById('dGames').textContent=total;
   document.getElementById('dWR').textContent=Math.round(wins/total*100)+'%';
@@ -2331,7 +2331,7 @@ function leagueWinSide(m){if(!m||!m.entries)return null;const winners=m.entries.
 // ⚖️ 法官：某场对局的法官名、某玩家的执法场次（表演赛不计）
 function leagueJudgeLabel(m){const ids=(m&&Array.isArray(m.judges))?m.judges:[];if(!ids.length)return'';return' · ⚖️ '+ids.map(id=>leagueEsc((league.players[id]||Object.values(league.players).find(p=>String(p.id)===String(id))||{}).name||'?')).join('、');}
 function leagueJudgeCount(id){return Object.values(league.matches||{}).filter(m=>m&&!m.exhibition&&Array.isArray(m.judges)&&m.judges.map(String).includes(String(id))).length;}
-function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+games.reduce((a,x)=>a+Number(x.e.total||0),0).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
+function leagueStats(id){const games=[];Object.values(league.matches).forEach(m=>{const e=(m.entries||[]).find(x=>String(x.playerId)===String(id));if(e)games.push({m,e});});const wins=games.filter(x=>x.e.result==='win').length,wolves=games.filter(x=>leagueWolf(x.e.role));return{games,wins,entries:games,score:+(games.reduce((a,x)=>a+Number(x.e.total||0),0)+(league.season===SEASON?((window.CK_BONUS||{})[(league.players&&league.players[id]||{}).name]||0):0)).toFixed(1),rate:games.length?Math.round(wins/games.length*100):0,wolfRate:wolves.length?Math.round(wolves.filter(x=>x.e.result==='win').length/wolves.length*100):null};}
 function leaguePath(){const meta=league.seasons.find(x=>x.id===league.season)?.meta||{};return meta.dataPath||`playerProfiles/${league.season}`;}
 function leagueShow(){showPage('pg-league');leagueLoadSeasons();}
 const SEASON_NAMES={s1:'Season 1 · 面具之下',s2:'Season 2 · 追逃游戏',s3:'Season 3 · 人无完人·梦境远征',s4:'Season 4 · 问道·凡人修仙'};
@@ -6585,6 +6585,81 @@ async function medalHall(){
   addBtns();const _ls=typeof leagueShow==='function'?leagueShow:null;if(_ls){leagueShow=function(){const r=_ls.apply(this,arguments);setTimeout(addBtns,50);return r;};}
 })();
 
+</script>
+<!-- ══ 到店签到模块 ══ -->
+<script>
+// 📍 到店签到：玩家在店内定位签到，每场最早 N 位到店者额外 +积分（计入赛季总积分）
+// 数据：tournament/checkinConfig（店址/半径）、tournament/checkins/{场次}/entries/{玩家}（到店时间用服务器时间）
+const CK_BASE='tournament/checkins',CK_CFG='tournament/checkinConfig';
+window.CK_BONUS={};
+function ckKey(s){return encodeURIComponent(String(s)).replace(/\./g,'%2E');}
+function ckDist(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function ckRank(s){return Object.values((s&&s.entries)||{}).filter(e=>e&&e.ok&&!e.void&&typeof e.ts==='number').sort((a,b)=>a.ts-b.ts);}
+function ckEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function ckLoadBonus(){
+  try{const all=await fb.get(CK_BASE)||{},bonus={};
+    Object.values(all).forEach(s=>{if(!s||s.season!==SEASON)return;ckRank(s).slice(0,Number(s.topN)||5).forEach(e=>{bonus[e.name]=(bonus[e.name]||0)+(Number(s.bonus)||1);});});
+    window.CK_BONUS=bonus;}catch(e){console.warn('签到积分加载失败',e);}
+}
+function ckPos(){return new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('这个浏览器不支持定位'));navigator.geolocation.getCurrentPosition(p=>ok(p.coords),e=>no(new Error(e.code===1?'没有获得定位权限，请在浏览器/系统设置里允许定位后重试':'定位失败，请到信号好的地方重试')),{enableHighAccuracy:true,timeout:20000,maximumAge:0});});}
+async function ckOpenSession(){const all=await fb.get(CK_BASE)||{};const arr=Object.entries(all).filter(([,s])=>s&&s.status==='open').sort((a,b)=>(b[1].openedAt||0)-(a[1].openedAt||0));return arr[0]?{id:arr[0][0],...arr[0][1]}:null;}
+function ckModal(html){let m=document.getElementById('ckModal');if(!m){m=document.createElement('div');m.id='ckModal';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';m.onclick=e=>{if(e.target===m)m.remove();};document.body.appendChild(m);}
+  m.innerHTML=`<div style="background:#1a1428;border:1px solid #c9a24b;border-radius:16px;max-width:420px;width:100%;max-height:86vh;overflow:auto;padding:18px;color:#f3e3b0;font-size:14px;line-height:1.7;">${html}<div style="text-align:center;margin-top:12px;"><button onclick="document.getElementById('ckModal').remove()" style="background:none;border:1px solid #c9a24b66;color:#c9a24b;border-radius:10px;padding:6px 18px;">关闭</button></div></div>`;}
+const ckBtn='background:#c9a24b;color:#1a1428;border:0;border-radius:10px;padding:10px 14px;font-weight:800;font-size:14px;width:100%;margin-top:8px;';
+async function ckPlayerOpen(){
+  ckModal('<div style="text-align:center">加载中…</div>');
+  const s=await ckOpenSession();
+  if(!s){ckModal('<h3 style="margin:0 0 8px">📍 到店签到</h3><div>现在没有开放的签到。法官开启本场签到后，到店再来点这里。</div>');return;}
+  const list=ckRank(s),n=Number(s.topN)||5,bonus=Number(s.bonus)||1,mine=list.findIndex(e=>e.name===cName);
+  let me=mine>=0?`<div style="background:#2a3a2a;border-radius:10px;padding:8px 12px;margin:8px 0;">✅ 你已签到，是第 <b>${mine+1}</b> 位到店${mine<n?`，已获得 <b>+${bonus}</b> 积分`:'（前 '+n+' 位才有额外积分）'}</div>`:'';
+  ckModal(`<h3 style="margin:0 0 4px">📍 到店签到</h3><div style="color:#b9a56a">${ckEsc(s.label||'本场活动')} · 最早 ${n} 位到店 +${bonus} 积分</div>${me}
+    ${mine>=0?'':`<button style="${ckBtn}" onclick="ckDoCheckin('${s.id}')">📍 我到店了，签到</button><div style="font-size:12px;color:#b9a56a;margin-top:6px;">需要登录账号并允许定位；必须在店里才能签到成功。</div>`}
+    <div style="margin-top:10px;font-weight:700">已到店（${list.length}）</div>${list.slice(0,12).map((e,i)=>`<div>${i+1}. ${ckEsc(e.name)}${i<n?' ⭐':''}</div>`).join('')||'<div style="color:#b9a56a">还没有人签到</div>'}`);
+}
+async function ckDoCheckin(sid){
+  if(!cName){toast('请先进入玩家页');return;}
+  if(typeof authUser==='undefined'||!authUser){ckModal('<div>签到需要先登录账号（Google 或邮箱），这样才能保证是你本人。登录后回来再点签到。</div>');return;}
+  ckModal('<div style="text-align:center">正在定位…</div>');
+  try{
+    const cfg=await fb.get(CK_CFG);if(!cfg||!cfg.lat)throw new Error('店址还没有设置，请联系法官');
+    const c=await ckPos(),dist=ckDist(c.latitude,c.longitude,cfg.lat,cfg.lng),rad=Number(cfg.radius)||200;
+    if(c.accuracy>150)throw new Error('定位精度不够（误差约 '+Math.round(c.accuracy)+' 米），请打开手机定位的「精确位置」后重试');
+    if(dist-c.accuracy>rad)throw new Error('你离店里还有约 '+Math.round(dist)+' 米，到店后再签到');
+    const p=`${CK_BASE}/${sid}/entries/${ckKey(cName)}`,old=await fb.get(p);
+    if(!old)await authDb(p,'PUT',{name:cName,uid:authUser.uid,ts:{'.sv':'timestamp'},lat:+c.latitude.toFixed(5),lng:+c.longitude.toFixed(5),acc:Math.round(c.accuracy),dist:Math.round(dist),ok:true});
+    await ckLoadBonus();ckPlayerOpen();
+  }catch(e){ckModal(`<div>❌ ${ckEsc(e.message||e)}</div><button style="${ckBtn}" onclick="ckPlayerOpen()">返回</button>`);}
+}
+// ── 管理员 ──
+async function ckAdminOpen(){
+  ckModal('<div style="text-align:center">加载中…</div>');
+  const [cfg,s]=await Promise.all([fb.get(CK_CFG),ckOpenSession()]);
+  const list=s?ckRank(s):[],all=s?Object.values(s.entries||{}):[];
+  ckModal(`<h3 style="margin:0 0 6px">📍 签到管理</h3>
+   <div>店址：${cfg&&cfg.lat?`已设置（半径 ${cfg.radius||200} 米）`:'<b style="color:#ff9a9a">未设置</b>'}</div>
+   <button style="${ckBtn}" onclick="ckSetStore()">把我现在的位置设为店址</button>
+   <hr style="border:0;border-top:1px solid #c9a24b44;margin:12px 0">
+   ${s?`<div>进行中：<b>${ckEsc(s.label||'本场')}</b>（前 ${s.topN||5} 位 +${s.bonus||1}）</div><button style="${ckBtn}" onclick="ckClose('${s.id}')">结束本场签到</button>
+     <div style="margin-top:10px;font-weight:700">签到名单（${all.length}）</div>${all.sort((a,b)=>(a.ts||0)-(b.ts||0)).map(e=>{const r=list.indexOf(e)+1;return `<div>${e.void?'<s>':''}${r?r+'. ':'- '}${ckEsc(e.name)} · ${e.dist}m${e.void?'</s> 已作废':` <a href="#" style="color:#ff9a9a" onclick="ckVoid('${s.id}','${ckEsc(ckKey(e.name))}');return false">作废</a>`}</div>`;}).join('')}`
+   :`<input id="ckLabel" placeholder="本场名称，如 11/28 狼人杀" style="width:100%;padding:8px;border-radius:8px;border:1px solid #c9a24b66;background:#0d0a18;color:#f3e3b0;"><div style="display:flex;gap:8px;margin-top:6px"><input id="ckTop" type="number" value="5" style="width:50%;padding:8px;border-radius:8px;border:1px solid #c9a24b66;background:#0d0a18;color:#f3e3b0;" placeholder="前几名"><input id="ckBonus" type="number" value="1" style="width:50%;padding:8px;border-radius:8px;border:1px solid #c9a24b66;background:#0d0a18;color:#f3e3b0;" placeholder="加几分"></div><button style="${ckBtn}" onclick="ckStart()">开启本场签到</button>`}`);
+}
+async function ckSetStore(){try{const c=await ckPos();await fbPutStrict(CK_CFG,{lat:+c.latitude.toFixed(6),lng:+c.longitude.toFixed(6),radius:200,acc:Math.round(c.accuracy),at:new Date().toISOString()});toast('店址已设置（误差约 '+Math.round(c.accuracy)+' 米）');ckAdminOpen();}catch(e){toast(e.message||'设置失败');}}
+async function ckStart(){const label=(document.getElementById('ckLabel').value||'').trim()||'本场活动',topN=Number(document.getElementById('ckTop').value)||5,bonus=Number(document.getElementById('ckBonus').value)||1;
+  const cfg=await fb.get(CK_CFG);if(!cfg||!cfg.lat){toast('请先设置店址');return;}
+  const id='c'+Date.now().toString(36);await fbPutStrict(`${CK_BASE}/${id}`,{label,topN,bonus,season:SEASON,status:'open',openedAt:Date.now()});toast('已开启签到');ckAdminOpen();}
+async function ckClose(id){await fbPutStrict(`${CK_BASE}/${id}/status`,'closed');await ckLoadBonus();toast('已结束');ckAdminOpen();}
+async function ckVoid(id,key){await fbPutStrict(`${CK_BASE}/${id}/entries/${key}/void`,true);await ckLoadBonus();ckAdminOpen();}
+(function(){
+  const _ll=leagueLoad;leagueLoad=async function(){await ckLoadBonus();return _ll.apply(this,arguments);};
+  const addBtns=()=>{
+    const tb=document.querySelector('#pg-player button[onclick="leagueShow()"]');
+    if(tb&&!document.getElementById('ckBtnP')){const b=document.createElement('button');b.id='ckBtnP';b.className='topbar-btn';b.textContent='📍 签到';b.onclick=ckPlayerOpen;tb.after(b);}
+    const ab=document.querySelector('#pg-admin .topbar-btn');
+    if(ab&&!document.getElementById('ckBtnA')){const b=document.createElement('button');b.id='ckBtnA';b.className='topbar-btn';b.textContent='📍 签到';b.onclick=ckAdminOpen;ab.before(b);}
+  };
+  addBtns();setTimeout(addBtns,1500);ckLoadBonus();
+  const _sp=typeof showPage==='function'?showPage:null;if(_sp){showPage=function(){const r=_sp.apply(this,arguments);setTimeout(addBtns,50);return r;};}
+})();
 </script>
 </body>
 </html>
