@@ -1,0 +1,14 @@
+name: fbprobe (one-off)
+on: workflow_dispatch
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          B=https://werewolf-favourite-tournament-default-rtdb.firebaseio.com
+          for p in tournament tournament/userProfiles playerProfiles/s4/players tournament/checkins; do
+            printf "%s -> " "$p"; curl -s -o /dev/null -w "%{http_code}\n" "$B/$p.json?shallow=true"
+          done
+          echo "unauth write test (to scratch path, deleted after):"
+          curl -s -o /dev/null -w "PUT %{http_code}\n" -X PUT -d '{"t":1}' "$B/_probe_tmp.json"
+          curl -s -o /dev/null -w "DEL %{http_code}\n" -X DELETE "$B/_probe_tmp.json"
