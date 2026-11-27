@@ -4764,6 +4764,11 @@ const FEED={menu:null,players:[],to:null,item:null,timer:null,from:'pg-name',ran
 function feedEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function feedToday(){return new Date().toLocaleDateString('en-CA');}
 function feedPrice(p){return (p===null||p===undefined||p==='')?null:Number(p);}
+// 送给「全场」= 一桌 12 位玩家每人一份，价格 ×12
+const FEED_ALL_N=12;
+function feedQty(){return FEED.to==='__ALL__'?FEED_ALL_N:1;}
+function feedTotal(it){const p=feedPrice(it.price);return p===null?null:p*feedQty();}
+function feedItemLabel(it){return `${it.e} ${it.n}`+(feedQty()>1?` ×${feedQty()}`:'');}
 async function feedLoadMenu(){
   const m=await fb.get(FEED_MENU_PATH);
   FEED.menu=(m&&Array.isArray(m.items)&&m.items.length)?{payNote:m.payNote||'',items:m.items}:JSON.parse(JSON.stringify(FEED_DEFAULT));
@@ -4913,7 +4918,7 @@ function feedRenderSum(){
   if(!FEED.to||!it){el.innerHTML='';return;}
   const to=FEED.to==='__ALL__'?'全场':FEED.to;
   const msg=document.getElementById('feedMsg').value.trim();
-  el.innerHTML=`<div class="feed-sum">送给 <b>${feedEsc(to)}</b>：${feedEsc(it.e)} ${feedEsc(it.n)} · <b>$${feedPrice(it.price)}</b>${msg?`<br>附言：「${feedEsc(msg)}」`:''}</div>`;
+  el.innerHTML=`<div class="feed-sum">送给 <b>${feedEsc(to)}</b>：${feedEsc(it.e)} ${feedEsc(it.n)} · <b>$${feedTotal(it)}</b>${feedQty()>1?` <span style="font-size:12px;color:var(--dim)">（$${feedPrice(it.price)} × ${feedQty()} 人）</span>`:''}${msg?`<br>附言：「${feedEsc(msg)}」`:''}</div>`;
 }
 async function feedSubmit(){
   const it=feedCurItem();
@@ -4925,7 +4930,7 @@ async function feedSubmit(){
   if(it.needMsg&&!msg){toast('喝彩需要写一句应援');return;}
   const btn=document.getElementById('feedSubmit');btn.disabled=true;
   const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const order={id,season:SEASON,date:feedToday(),ts:Date.now(),from,to:FEED.to==='__ALL__'?'全场':FEED.to,itemId:it.id,item:`${it.e} ${it.n}`,price:feedPrice(it.price),msg,status:'pending'};
+  const order={id,season:SEASON,date:feedToday(),ts:Date.now(),from,to:FEED.to==='__ALL__'?'全场':FEED.to,itemId:it.id,item:feedItemLabel(it),qty:feedQty(),unit:feedPrice(it.price),price:feedTotal(it),msg,status:'pending'};
   try{
     await fbPutStrict(`${FEED_ORDERS_PATH}/${id}`,order);
     const pay=FEED.menu.payNote;
@@ -6384,7 +6389,7 @@ feedSubmit=async function(){
   if(it.needMsg&&!msg){toast('喝彩需要写一句应援');return;}
   const btn=document.getElementById('feedSubmit');btn.disabled=true;
   const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const order={id,code:payCode(),season:SEASON,date:feedToday(),ts:Date.now(),from,to:FEED.to==='__ALL__'?'全场':FEED.to,itemId:it.id,item:`${it.e} ${it.n}`,price:feedPrice(it.price),msg,status:'pending',...(authUser?{uid:authUser.uid}:{})};
+  const order={id,code:payCode(),season:SEASON,date:feedToday(),ts:Date.now(),from,to:FEED.to==='__ALL__'?'全场':FEED.to,itemId:it.id,item:feedItemLabel(it),qty:feedQty(),unit:feedPrice(it.price),price:feedTotal(it),msg,status:'pending',...(authUser?{uid:authUser.uid}:{})};
   try{
     await fbPutStrict(`${FEED_ORDERS_PATH}/${id}`,order);
     FEED.item=null;document.getElementById('feedMsg').value='';feedRenderItems();feedRenderSum();
